@@ -8,7 +8,9 @@ export default function ClientScripts() {
     ;(function() {
 
 (function(){
-var cur=document.getElementById('cursor'),cring=document.getElementById('c-ring'),
+var cur=document.getElementById('cursor');
+if(!cur) return;
+var cring=document.getElementById('c-ring'),
     cwaves=document.getElementById('c-waves'),
     wp1=document.getElementById('wp1'),wp2=document.getElementById('wp2'),wp3=document.getElementById('wp3');
 var mx=0,my=0,rx=0,ry=0,wt=0,ready=false;
