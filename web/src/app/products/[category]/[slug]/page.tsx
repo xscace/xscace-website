@@ -1,0 +1,73 @@
+import { client } from '@/lib/sanity'
+import { notFound } from 'next/navigation'
+import ProductDetail from './ProductDetail'
+
+export const revalidate = 3600
+
+async function getProduct(slug: string) {
+  return client.fetch(`
+    *[_type == "product" && slug.current == $slug && status == "Active"][0] {
+      _id, productName, productFullName, series, subCategory, powerType, tagline,
+      shortDescription, longDescription, slug, status, launchYear,
+      proprietaryTechBadges, skuBase, skuVariants,
+      heroImage, galleryImages, lifestyleImages,
+      installationDiagramImages, dimensionDrawing, wiringDiagramImage,
+      cutoutTemplateImage, directivityPlotImage,
+      heroVideo, model3dUrl, arViewLink, hasArView,
+      powerRmsW, powerPeakW, impedanceOhms, sensitivityDb,
+      freqLowHz, freqHighHz, freqQualifier,
+      driverCount, driverSize, driverMaterial, driverDescription,
+      tweeterCount, tweeterType, builtInSubDriver,
+      directivityHDeg, directivityVDeg,
+      crossoverType, crossoverFrequency,
+      ipRating, marineTreatable,
+      eqData,
+      totalPowerW, channelCount, ampClass, channelConfigurations,
+      powerPerCh8OhmW, powerPerCh4OhmW, thdN, snrDb,
+      freqResponse, inputImpedance, inputSensitivity,
+      hasDsp, dspProcessorSpec, dspPresets,
+      hasStreamer, streamingProtocols, protectionFeatures,
+      weightKg, heightMm, widthMm, depthMm, diameterMm,
+      housingMaterial, finish, colorsStandard, customRalAvailable,
+      cutoutHeightMm, cutoutWidthMm, cutoutDiameterMm,
+      requiredCavityDepthMm, mountingMethod, mountingMethods,
+      paintableGrille, grilleMaterial, fireRating,
+      tweeterAimable, installationOrientation,
+      mountingBracketRequired, mountingBracketDimensions,
+      inputs, outputs, communicationPorts,
+      wirelessConnectivity, networkProtocol, controlProtocol,
+      speakerWireConnector, rackMountable, rackUnitSize,
+      lineTransformerCompatible,
+      mobileAppName, mobileAppLinkIos, mobileAppLinkAndroid,
+      desktopSoftwareName, desktopSoftwareUrl, compatibleControlSystems,
+      eqProfileName, recommendedCrossoverHz,
+      minRiggingHeight, minSpeakerSpacing,
+      screwSize, wireGaugeRecommended, wireConnectorType,
+      itemsInBox, installationSteps, recommendedRoomSize, positioningNote,
+      cadFile,
+      category->{ name, slug },
+      recommendedPairingPrimary->{ _id, productName, slug, heroImage, series, category->{ name, slug } },
+      recommendedPairingSecondary->{ _id, productName, slug, heroImage, series, category->{ name, slug } },
+      compatibleAmplifiers[]->{ _id, productName, slug, heroImage, series, category->{ name, slug } },
+      compatibleSubwoofers[]->{ _id, productName, slug, heroImage, series, category->{ name, slug } },
+      compatibleSpeakers[]->{ _id, productName, slug, heroImage, series, category->{ name, slug } },
+    }
+  `, { slug })
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ category: string; slug: string }> }) {
+  const { slug } = await params
+  const product = await getProduct(slug)
+  if (!product) return { title: 'Product Not Found' }
+  return {
+    title: `${product.productName} — XSCACE`,
+    description: product.shortDescription || product.tagline,
+  }
+}
+
+export default async function ProductPage({ params }: { params: Promise<{ category: string; slug: string }> }) {
+  const { slug } = await params
+  const product = await getProduct(slug)
+  if (!product) notFound()
+  return <ProductDetail product={product} />
+}
