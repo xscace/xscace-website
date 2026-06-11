@@ -52,8 +52,13 @@ export default defineType({
       of: [{type: 'image', options: {hotspot: true}, fields: [{name: 'alt', type: 'string', title: 'Label'}]}],
     }),
     defineField({
-      name: 'heroVideo', title: 'Hero Video URL', type: 'url', group: 'media',
-      description: 'YouTube or Vimeo URL. Autoplays muted in hero section.',
+      name: 'heroVideoFile', title: 'Hero Video File (upload MP4)', type: 'file', group: 'media',
+      description: 'Upload compressed MP4 — preferred over URL. Autoplays muted in hero.',
+      options: {accept: 'video/*'},
+    }),
+    defineField({
+      name: 'heroVideo', title: 'Hero Video URL (YouTube/external)', type: 'url', group: 'media',
+      description: 'Fallback if no file uploaded above.',
     }),
     defineField({
       name: 'productVideos', title: 'Product Videos', type: 'array', group: 'media',
@@ -62,7 +67,10 @@ export default defineType({
         type: 'object',
         name: 'productVideo',
         fields: [
-          {name: 'url',       title: 'Video URL',        type: 'url'},
+          {name: 'videoFile', title: 'Video File (upload MP4)', type: 'file', options: {accept: 'video/*'},
+            description: 'Upload compressed MP4 — preferred over URL'},
+          {name: 'url',       title: 'OR External URL',  type: 'url',
+            description: 'Fallback if no file uploaded above'},
           {name: 'title',     title: 'Title',            type: 'string'},
           {name: 'type',      title: 'Type',             type: 'string', options: {list: ['lifestyle','demo','review']}},
           {name: 'thumbnail', title: 'Custom Thumbnail', type: 'image'},

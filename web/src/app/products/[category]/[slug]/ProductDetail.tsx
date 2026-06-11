@@ -23,6 +23,7 @@ interface Product {
   dimensionDrawing?: any
   directivityPlotImage?: any
   heroVideo?: any
+  heroVideoFile?: { asset?: { _ref?: string } }
   model3dUrl?: string
   arViewLink?: string
   hasArView?: boolean
@@ -574,6 +575,31 @@ function VideoGallery({ images, videos, productName, getImageUrl }: {
       ? url.split('youtu.be/')[1]?.split('?')[0]
       : url?.split('v=')[1]?.split('&')[0]
 
+  // Get playable URL from a video item (Sanity file asset or YouTube URL)
+  const getVideoSrc = (v: any): { type: 'file'|'youtube', src: string } | null => {
+    if (!v) return null
+    // Sanity file asset — build CDN URL from _ref
+    // ref format: "file-{hash}-{ext}" → "{hash}.{ext}"
+    const ref = v.videoFile?.asset?._ref
+    if (ref) {
+      // Strip "file-" prefix, replace last "-ext" with ".ext"
+      const withoutPrefix = ref.replace(/^file-/, '')
+      const dotted = withoutPrefix.replace(/-([a-zA-Z0-9]+)$/, '.$1')
+      return { type: 'file', src: `https://cdn.sanity.io/files/7r0kq57d/production/${dotted}` }
+    }
+    // Also handle resolved asset URL (if query returns asset->{ url })
+    if (v.videoFile?.asset?.url) {
+      return { type: 'file', src: v.videoFile.asset.url }
+    }
+    // Legacy YouTube URL
+    if (v.url) {
+      const ytId = getYtId(v.url)
+      if (ytId) return { type: 'youtube', src: ytId }
+      return { type: 'file', src: v.url }
+    }
+    return null
+  }
+
   const embedUrl = (url: string, startSec = 0) => {
     const id = getYtId(url)
     if (!id) return null
@@ -619,15 +645,19 @@ function VideoGallery({ images, videos, productName, getImageUrl }: {
 
         {/* Left video */}
         <div className="vg-panel">
-          {videos.length > 0 && embedUrl(videos[leftIdx]?.url) ? (
+          {videos.length > 0 && getVideoSrc(videos[leftIdx]) ? (
             <div className={`vg-embed-wrap${leftFading ? ' vg-fading' : ''}`}>
-              <iframe
-                key={`left-${leftIdx}`}
-                src={embedUrl(videos[leftIdx].url)!}
-                className="vg-iframe"
-                allow="autoplay; encrypted-media"
-                allowFullScreen
-              />
+              {(() => {
+                const vs = getVideoSrc(videos[leftIdx])!
+                return vs.type === 'file' ? (
+                  <video key={`left-${leftIdx}`} className="vg-video-el"
+                    src={vs.src} autoPlay muted loop playsInline/>
+                ) : (
+                  <iframe key={`left-${leftIdx}`}
+                    src={`https://www.youtube-nocookie.com/embed/${vs.src}?autoplay=1&mute=1&loop=1&playlist=${vs.src}&controls=0&modestbranding=1&playsinline=1&rel=0&disablekb=1&iv_load_policy=3`}
+                    className="vg-iframe" allow="autoplay; encrypted-media" allowFullScreen/>
+                )
+              })()}
             </div>
           ) : allImages[0] && getImageUrl(allImages[0], 900) ? (
             <img src={getImageUrl(allImages[0], 900)!} alt={productName} className="vg-fallback"/>
@@ -662,15 +692,20 @@ function VideoGallery({ images, videos, productName, getImageUrl }: {
 
         {/* Right video */}
         <div className="vg-panel">
-          {videos.length > 0 && embedUrl(videos[rightIdx]?.url) ? (
+          {videos.length > 0 && getVideoSrc(videos[rightIdx]) ? (
             <div className={`vg-embed-wrap${rightFading ? ' vg-fading' : ''}`}>
-              <iframe
-                key={`right-${rightIdx}`}
-                src={embedUrl(videos[rightIdx].url, 8)!}
-                className="vg-iframe"
-                allow="autoplay; encrypted-media"
-                allowFullScreen
-              />
+              {(() => {
+                const vs = getVideoSrc(videos[rightIdx])!
+                return vs.type === 'file' ? (
+                  <video key={`right-${rightIdx}`} className="vg-video-el"
+                    src={vs.src} autoPlay muted loop playsInline
+                    style={{animationDelay: '3s'}}/>
+                ) : (
+                  <iframe key={`right-${rightIdx}`}
+                    src={`https://www.youtube-nocookie.com/embed/${vs.src}?autoplay=1&mute=1&loop=1&playlist=${vs.src}&controls=0&modestbranding=1&playsinline=1&rel=0&disablekb=1&iv_load_policy=3&start=8`}
+                    className="vg-iframe" allow="autoplay; encrypted-media" allowFullScreen/>
+                )
+              })()}
             </div>
           ) : allImages[1] && getImageUrl(allImages[1], 900) ? (
             <img src={getImageUrl(allImages[1], 900)!} alt={productName} className="vg-fallback"/>
@@ -883,10 +918,34 @@ export default function ProductDetail({ product }: { product: Product }) {
               {product.sensitivityDb && <span className="pd-pill">{product.sensitivityDb}dB</span>}
               {product.freqLowHz && product.freqHighHz && (
                 <span className="pd-pill">
-                  {product.freqLowHz}Hz – {product.freqHighHz >= 1000 ? product.freqHighHz/1000 + 'kHz' : product.freqHighHz + 'Hz'}
+                  {product.freqLowHz}Hz – {product.freqHighHz >= 1000 ? product.freqHighHz/1000 + 'kHz' : product.freqHighHz + 'Hz'}
                 </span>
               )}
               {product.powerType && <span className="pd-pill">{product.powerType}</span>}
+
+              {/* Feature pills — marine + RAL */}
+              {(product.marineTreatable || product.ipRating || product.customRalAvailable) && (
+                <span className="pd-pill-sep"/>
+              )}
+              {(product.marineTreatable || product.ipRating) && (
+                <span className="pd-pill-feature pd-pill-marine">
+                  <svg width="9" height="12" viewBox="0 0 9 12" fill="none" aria-hidden="true">
+                    <path d="M4.5 0C4.5 0 0.5 4 0.5 7a4 4 0 008 0C8.5 4 4.5 0 4.5 0z"
+                      fill="rgba(140,200,240,0.2)" stroke="rgba(140,200,240,0.75)" strokeWidth="0.7"/>
+                  </svg>
+                  {product.ipRating || 'Marine'}
+                </span>
+              )}
+              {product.customRalAvailable && (
+                <span className="pd-pill-feature pd-pill-ral">
+                  <span className="pd-ral-dots">
+                    <span className="pd-ral-dot" style={{background:'#0A0A0A', border:'1px solid rgba(255,255,255,0.2)'}}/>
+                    <span className="pd-ral-dot" style={{background:'#F2F0EC'}}/>
+                    <span className="pd-ral-dot" style={{background:'#C9A96E'}}/>
+                  </span>
+                  Custom RAL
+                </span>
+              )}
             </div>
 
             {/* CTAs */}
@@ -906,32 +965,39 @@ export default function ProductDetail({ product }: { product: Product }) {
 
           {/* Hero image / video */}
           <div className="pd-hero-right">
-            {product.heroVideo ? (
+            {product.heroVideoFile?.asset?._ref || product.heroVideo ? (
               <div className="pd-hero-video-wrap">
-                {(product.heroVideo.includes('youtube') || product.heroVideo.includes('youtu.be')) ? (
-                  <div className="pd-hero-video-crop">
-                  <iframe className="pd-hero-iframe"
-                    src={`https://www.youtube-nocookie.com/embed/${
-                      product.heroVideo.includes('youtu.be/')
-                        ? product.heroVideo.split('youtu.be/')[1]?.split('?')[0]
-                        : product.heroVideo.split('v=')[1]?.split('&')[0]
-                    }?autoplay=1&mute=1&loop=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&playsinline=1&playlist=${
-                      product.heroVideo.includes('youtu.be/')
-                        ? product.heroVideo.split('youtu.be/')[1]?.split('?')[0]
-                        : product.heroVideo.split('v=')[1]?.split('&')[0]
-                    }`}
-                    allow="autoplay; encrypted-media; picture-in-picture"
-                    frameBorder="0"
+                {product.heroVideoFile?.asset?._ref ? (
+                  /* Native MP4 from Sanity — fastest, no bot detection */
+                  <video
+                    className="pd-hero-video"
+                    src={`https://cdn.sanity.io/files/7r0kq57d/production/${product.heroVideoFile.asset._ref.replace(/^file-/, '').replace(/-([a-zA-Z0-9]+)$/, '.$1')}`}
+                    autoPlay muted loop playsInline
                   />
-                </div>
-                ) : product.heroVideo.includes('vimeo') ? (
+                ) : (product.heroVideo?.includes('youtube') || product.heroVideo?.includes('youtu.be')) ? (
+                  <div className="pd-hero-video-crop">
+                    <iframe className="pd-hero-iframe"
+                      src={`https://www.youtube-nocookie.com/embed/${
+                        product.heroVideo.includes('youtu.be/')
+                          ? product.heroVideo.split('youtu.be/')[1]?.split('?')[0]
+                          : product.heroVideo.split('v=')[1]?.split('&')[0]
+                      }?autoplay=1&mute=1&loop=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&playsinline=1&playlist=${
+                        product.heroVideo.includes('youtu.be/')
+                          ? product.heroVideo.split('youtu.be/')[1]?.split('?')[0]
+                          : product.heroVideo.split('v=')[1]?.split('&')[0]
+                      }`}
+                      allow="autoplay; encrypted-media; picture-in-picture"
+                      frameBorder="0"
+                    />
+                  </div>
+                ) : product.heroVideo?.includes('vimeo') ? (
                   <iframe className="pd-hero-iframe"
                     src={`https://player.vimeo.com/video/${product.heroVideo.split('vimeo.com/')[1]?.split('?')[0]}?autoplay=1&muted=1&loop=1&background=1`}
                     allow="autoplay; fullscreen" allowFullScreen frameBorder="0"
                   />
-                ) : (
+                ) : product.heroVideo ? (
                   <video className="pd-hero-video" src={product.heroVideo} autoPlay muted loop playsInline/>
-                )}
+                ) : null}
               </div>
             ) : heroImgUrl ? (
               <img src={heroImgUrl} alt={product.productName} className="pd-hero-img"/>
@@ -957,7 +1023,10 @@ export default function ProductDetail({ product }: { product: Product }) {
       />
 
             
-      {/* ── MEDIA GALLERY ── */}
+
+      {/* wave divider */}
+      <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
+      {/* ── RESOURCES & MEDIA ── */}
       {(galleryAll.length > 0 || (product.productVideos && product.productVideos.length > 0)) && (
         <VideoGallery
           images={galleryAll}
@@ -967,9 +1036,10 @@ export default function ProductDetail({ product }: { product: Product }) {
         />
       )}
 
+
       {/* wave divider */}
       <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
-      {/* ── SPECS ── */}
+{/* ── SPECS ── */}
       <section className="pd-section pd-specs-section">
         <div className="pd-section-inner">
           <div className="pd-section-ey">Specifications</div>
@@ -1075,7 +1145,6 @@ export default function ProductDetail({ product }: { product: Product }) {
       
       {/* wave divider */}
       <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
-      {/* ── SETUPS ── */}
       <section className="pd-section pd-setups-section">
         <div className="pd-section-inner">
           <div className="pd-section-ey">In Use</div>
@@ -1207,6 +1276,10 @@ export default function ProductDetail({ product }: { product: Product }) {
 
       
 
+            {/* ── SETUPS ── */}
+
+      {/* wave divider */}
+      <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
       {/* ── RIGGING & MOUNTS ── */}
       {hasMount && (
         <section className="pd-section pd-mounts-section">
@@ -1375,3 +1448,163 @@ export default function ProductDetail({ product }: { product: Product }) {
     </div>
   )
 }
+// ── MARINE + RAL SECTION ──────────────────────────────────────────────────────
+
+const STANDARD_COLORS = [
+  { name: 'Black',      hex: '#0A0A0A' },
+  { name: 'White',      hex: '#F2F0EC' },
+  { name: 'Champagne',  hex: '#C9A96E' },
+]
+
+const WHEEL_COLORS = [
+  '#C9A96E','#F2F0EC','#0A0A0A','#3C3F41','#5A6872',
+  '#C5B396','#755C48','#7B7B54','#6D8194','#6D3727',
+  '#E8E0D0','#CBD0CC','#3D3C2E','#2A2A2C','#C8C8C8',
+]
+
+function MarineRalSection({ product }: { product: any }) {
+  const showMarine = product.marineTreatable || product.ipRating
+  const showRal    = product.customRalAvailable
+  if (!showMarine && !showRal) return null
+
+  const [chameleonHue, setChameleonHue] = useState(0) // 0..14 index into WHEEL_COLORS
+  const [dragging, setDragging] = useState(false)
+  const wheelRef = useRef<HTMLDivElement>(null)
+  const dragStartX = useRef(0)
+  const dragStartIdx = useRef(0)
+
+  // Auto-cycle chameleon color slowly
+  const autoRef = useRef<any>(null)
+  const pausedRef = useRef(false)
+  useEffect(() => {
+    autoRef.current = setInterval(() => {
+      if (!pausedRef.current) {
+        setChameleonHue(h => (h + 1) % WHEEL_COLORS.length)
+      }
+    }, 900)
+    return () => clearInterval(autoRef.current)
+  }, [])
+
+  const activeColor = WHEEL_COLORS[chameleonHue]
+
+  // Drag-to-scroll wheel
+  const onWheelDown = (e: React.MouseEvent) => {
+    setDragging(true)
+    pausedRef.current = true
+    dragStartX.current = e.clientX
+    dragStartIdx.current = chameleonHue
+  }
+  useEffect(() => {
+    const onUp = () => { setDragging(false); pausedRef.current = false }
+    const onMove = (e: MouseEvent) => {
+      if (!dragging) return
+      const delta = Math.round((e.clientX - dragStartX.current) / 28)
+      const newIdx = ((dragStartIdx.current + delta) % WHEEL_COLORS.length + WHEEL_COLORS.length) % WHEEL_COLORS.length
+      setChameleonHue(newIdx)
+    }
+    window.addEventListener('mouseup', onUp)
+    window.addEventListener('mousemove', onMove)
+    return () => { window.removeEventListener('mouseup', onUp); window.removeEventListener('mousemove', onMove) }
+  }, [dragging])
+
+  return (
+    <section className="mrc-section">
+
+      {/* Marine card */}
+      {showMarine && (
+        <div className="mrc-card">
+          {/* Animated drop icon */}
+          <div className="mrc-marine-icon">
+            <svg viewBox="0 0 64 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="mrc-drop-svg">
+              {/* Speaker silhouette */}
+              <rect x="26" y="4" width="12" height="52" rx="1" fill="rgba(201,169,110,0.15)" stroke="rgba(201,169,110,0.4)" strokeWidth="0.8"/>
+              {/* Grille lines */}
+              {[12,20,28,36,44].map(y => (
+                <line key={y} x1="27" y1={y} x2="37" y2={y} stroke="rgba(201,169,110,0.2)" strokeWidth="0.6"/>
+              ))}
+              {/* Animated drops */}
+              <circle className="mrc-d1" cx="32" cy="0" r="2.5" fill="rgba(140,200,240,0.7)"/>
+              <circle className="mrc-d2" cx="24" cy="0" r="1.8" fill="rgba(140,200,240,0.5)"/>
+              <circle className="mrc-d3" cx="40" cy="0" r="2" fill="rgba(140,200,240,0.6)"/>
+              {/* Bead on surface */}
+              <ellipse className="mrc-bead" cx="32" cy="56" rx="4" ry="2.5" fill="rgba(140,200,240,0.4)"/>
+              {/* Runoff */}
+              <ellipse className="mrc-pool" cx="32" cy="62" rx="10" ry="2" fill="rgba(140,200,240,0.15)"/>
+            </svg>
+          </div>
+
+          <div className="mrc-label">Marine Treatable</div>
+          {product.ipRating && <div className="mrc-sub">{product.ipRating}</div>}
+        </div>
+      )}
+
+      {/* RAL card */}
+      {showRal && (
+        <div className="mrc-card">
+          {/* Chameleon SVG */}
+          <div className="mrc-cham-wrap">
+            <svg viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="mrc-cham-svg">
+              {/* Tail — curl */}
+              <path d="M10 55 Q5 65 12 68 Q20 70 18 62 Q16 56 22 54" stroke={activeColor} strokeWidth="2" strokeLinecap="round" fill="none" style={{transition:'stroke .6s ease'}}/>
+              {/* Body */}
+              <ellipse cx="52" cy="52" rx="30" ry="18" fill={activeColor} style={{transition:'fill .6s ease'}}/>
+              {/* Belly */}
+              <ellipse cx="52" cy="58" rx="22" ry="10" fill="rgba(0,0,0,0.12)"/>
+              {/* Back ridge */}
+              <path d="M28 46 Q35 32 52 34 Q70 36 78 46" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+              {/* Head */}
+              <ellipse cx="82" cy="50" rx="14" ry="12" fill={activeColor} style={{transition:'fill .6s ease'}}/>
+              {/* Snout */}
+              <path d="M92 50 Q100 50 103 48" stroke={activeColor} strokeWidth="3" strokeLinecap="round" style={{transition:'stroke .6s ease'}}/>
+              {/* Eye */}
+              <circle cx="86" cy="46" r="5" fill="rgba(255,255,255,0.9)"/>
+              <circle cx="87" cy="46" r="3" fill="#111"/>
+              <circle cx="88" cy="45" r="1" fill="rgba(255,255,255,0.9)"/>
+              {/* Legs */}
+              <path d="M38 68 Q35 75 32 78" stroke={activeColor} strokeWidth="2.5" strokeLinecap="round" style={{transition:'stroke .6s ease'}}/>
+              <path d="M45 70 Q44 77 42 80" stroke={activeColor} strokeWidth="2.5" strokeLinecap="round" style={{transition:'stroke .6s ease'}}/>
+              <path d="M60 70 Q62 77 64 80" stroke={activeColor} strokeWidth="2.5" strokeLinecap="round" style={{transition:'stroke .6s ease'}}/>
+              <path d="M68 68 Q71 74 74 78" stroke={activeColor} strokeWidth="2.5" strokeLinecap="round" style={{transition:'stroke .6s ease'}}/>
+            </svg>
+          </div>
+
+          {/* Standard color dots */}
+          <div className="mrc-std">
+            {STANDARD_COLORS.map(c => (
+              <button key={c.name}
+                className={`mrc-std-dot${activeColor === c.hex ? ' active' : ''}`}
+                style={{background: c.hex}}
+                title={c.name}
+                onClick={() => { const i = WHEEL_COLORS.indexOf(c.hex); if (i >= 0) { setChameleonHue(i); pausedRef.current = false } }}
+              />
+            ))}
+            <span className="mrc-std-names">Black · White · Champagne</span>
+          </div>
+
+          {/* Draggable color wheel strip */}
+          <div
+            ref={wheelRef}
+            className="mrc-wheel"
+            onMouseDown={onWheelDown}
+            style={{cursor: dragging ? 'grabbing' : 'grab'}}
+          >
+            {WHEEL_COLORS.map((hex, i) => (
+              <div
+                key={i}
+                className={`mrc-wheel-seg${i === chameleonHue ? ' active' : ''}`}
+                style={{background: hex}}
+                onClick={() => { setChameleonHue(i); pausedRef.current = false }}
+              />
+            ))}
+            <div className="mrc-wheel-hint">← drag →</div>
+          </div>
+
+          <div className="mrc-label">Custom Colour</div>
+          <div className="mrc-sub">Any RAL · Powder coat or anodised</div>
+        </div>
+      )}
+
+    </section>
+  )
+}
+
