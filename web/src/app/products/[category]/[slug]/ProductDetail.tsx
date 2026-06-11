@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import TechShowcase from './TechShowcase'
+import ModelReveal from './ModelReveal'
+import { TECH_ICONS } from './techIcons'
 
 interface Product {
   _id: string
@@ -114,14 +115,13 @@ interface Product {
 }
 
 const TECH_MAP: Record<string, { label: string; desc: string }> = {
-  'Nano Resonance':       { label: 'Nano Resonance',       desc: 'Heavy cone mass for ultra-low resonant frequency' },
-  'PowerDense Dynamics':  { label: 'PowerDense Dynamics',  desc: 'Copper-silver composite voice coil' },
-  'AeroFrame Chassis':    { label: 'AeroFrame Chassis',    desc: '6061 aerospace aluminium passive heatsink' },
-  'PrecisionXover Array': { label: 'PrecisionXover Array', desc: 'Air-core inductors at ±0.5dB tolerance' },
-  'XS-Flow':              { label: 'XS-Flow™',             desc: 'Micro-waveguides for controlled dispersion' },
-  'PsySculpt':            { label: 'PsySculpt™',           desc: 'Fletcher-Munson equal-loudness DSP compensation' },
+  'Nano Resonance':       { label: 'Nano Resonance',       desc: 'Heavy cone mass lowers resonant frequency below what cabinet volume alone achieves. Defies Hoffmans Iron Law at 12mm depth.' },
+  'PowerDense Dynamics':  { label: 'PowerDense Dynamics',  desc: 'Copper-silver composite voice coil dissipates heat faster than copper alone — sustaining output under continuous high-power drive.' },
+  'AeroFrame Chassis':    { label: 'AeroFrame Chassis',    desc: '6061-T6 aerospace aluminium machined as passive heatsink. Conducts heat from voice coil without forced cooling.' },
+  'PrecisionXover Array': { label: 'PrecisionXover Array', desc: 'Air-core inductors and polypropylene capacitors in a miniaturised crossover achieving +/-0.5dB tolerance at the crossover point.' },
+  'XS-Flow':              { label: 'XS-Flow',              desc: 'Micro-waveguides inside the enclosure control internal standing waves and channel airflow — extending bass output in a 12mm cavity.' },
+  'PsySculpt':            { label: 'PsySculpt',            desc: 'ADAU1701 DSP implements Fletcher-Munson equal-loudness compensation for consistent perceived tone at any volume level.' },
 }
-
 function getImageUrl(img: any, w = 1200): string | null {
   if (!img) return null
   // Handle direct asset ref
@@ -138,7 +138,9 @@ function getFileUrl(file: any): string | null {
 }
 
 // ── EQ CURVE ──────────────────────────────────────────────────────────────────
-function EQCurve({ freqLow, freqHigh, sensitivity, eqData }: { freqLow: number; freqHigh: number; sensitivity?: number; eqData?: string }) {
+function EQCurve({ freqLow, freqHigh, sensitivity, eqData }: {
+  freqLow: number; freqHigh: number; sensitivity?: number; eqData?: string
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -148,116 +150,183 @@ function EQCurve({ freqLow, freqHigh, sensitivity, eqData }: { freqLow: number; 
     const dpr = Math.min(window.devicePixelRatio || 1, 2)
     canvas.width = W * dpr; canvas.height = H * dpr; ctx.scale(dpr, dpr)
 
-    const PAD = { l: 48, r: 24, t: 20, b: 36 }
+    const PAD = { l: 52, r: 28, t: 24, b: 40 }
     const plotW = W - PAD.l - PAD.r
     const plotH = H - PAD.t - PAD.b
 
-    // Freq axis: 20Hz to 20kHz, log scale
+    // Log frequency mapping
     const logToX = (f: number) => PAD.l + (Math.log10(f / 20) / Math.log10(20000 / 20)) * plotW
-    // dB axis: -30 to +6
-    const dbToY = (db: number) => PAD.t + plotH - ((db + 30) / 36) * plotH
+    // dB axis: -30 to +12dB range
+    const DB_MIN = -30, DB_MAX = 12
+    const dbToY = (db: number) => PAD.t + plotH * (1 - (db - DB_MIN) / (DB_MAX - DB_MIN))
 
-    // Grid lines
-    ctx.strokeStyle = 'rgba(201,169,110,0.06)'
-    ctx.lineWidth = 0.5
-    ;[20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000].forEach(f => {
-      const x = logToX(f)
-      ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, PAD.t + plotH); ctx.stroke()
-      ctx.fillStyle = 'rgba(201,169,110,0.25)'
-      ctx.font = '8px DM Mono, monospace'
-      ctx.textAlign = 'center'
-      ctx.fillText(f >= 1000 ? `${f/1000}k` : `${f}`, x, PAD.t + plotH + 14)
-    })
-    ;[-20, -10, 0].forEach(db => {
-      const y = dbToY(db)
-      ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(PAD.l + plotW, y); ctx.stroke()
-      ctx.fillStyle = 'rgba(201,169,110,0.25)'
-      ctx.font = '8px DM Mono, monospace'
-      ctx.textAlign = 'right'
-      ctx.fillText(`${db}`, PAD.l - 6, y + 3)
-    })
+    // ── Parse EQ filters from eqData CSV ──
+    // Format: freq,gain,type,q  OR  HP/LP,freq,q (high/low pass)
+    // Types: PK=peaking, LS=low shelf, HS=high shelf, HP=high pass, LP=low pass
+    type Filter = { type: string; freq: number; gain: number; q: number }
+    const filters: Filter[] = []
+    let hpFreq = freqLow, hpQ = 0.7
+    let lpFreq = freqHigh
 
-    // Generate a realistic-looking speaker response curve
-    const points: [number, number][] = []
-    const steps = 300
-    for (let i = 0; i <= steps; i++) {
-      const f = 20 * Math.pow(20000 / 20, i / steps)
-      let db = 0
-
-      // Roll-off below freqLow
-      if (f < freqLow) {
-        const octavesBelow = Math.log2(freqLow / f)
-        db = -12 * octavesBelow * octavesBelow * 0.5
+    if (eqData) {
+      const lines = eqData.trim().split('\n').slice(1) // skip header
+      for (const line of lines) {
+        const parts = line.trim().split(',')
+        if (parts.length < 2) continue
+        const [a, b, c, d] = parts
+        if (a === 'HP' || a === 'LP') {
+          // High/Low pass: HP,freq,q
+          if (a === 'HP') { hpFreq = parseFloat(b); hpQ = parseFloat(c) || 0.7 }
+          if (a === 'LP') { lpFreq = parseFloat(b) }
+        } else {
+          // PK/LS/HS: freq,gain,type,q
+          filters.push({ type: c || 'PK', freq: parseFloat(a), gain: parseFloat(b), q: parseFloat(d) || 1 })
+        }
       }
-      // Roll-off above freqHigh
-      if (f > freqHigh) {
-        const octavesAbove = Math.log2(f / freqHigh)
-        db = -18 * octavesAbove * octavesAbove * 0.4
-      }
-      // Slight bass boost around 2x freqLow
-      const bassBoostF = freqLow * 2.2
-      if (f > freqLow * 0.8 && f < freqLow * 6) {
-        const dist = Math.log2(f / bassBoostF)
-        db += 2.5 * Math.exp(-dist * dist * 2)
-      }
-      // Very subtle midrange presence dip
-      const dipF = 3000
-      if (f > 800 && f < 8000) {
-        const dist = Math.log2(f / dipF)
-        db -= 1.2 * Math.exp(-dist * dist * 0.8)
-      }
-      // Tweeter peak near top end
-      if (freqHigh > 10000) {
-        const peakF = freqHigh * 0.7
-        const dist = Math.log2(f / peakF)
-        db += 1.5 * Math.exp(-dist * dist * 3)
-      }
-      // Noise floor clamp
-      db = Math.max(db, -28)
-      points.push([f, db])
     }
 
-    // Fill under curve
-    const grad = ctx.createLinearGradient(0, PAD.t, 0, PAD.t + plotH)
-    grad.addColorStop(0, 'rgba(201,169,110,0.12)')
-    grad.addColorStop(1, 'rgba(201,169,110,0)')
-    ctx.beginPath()
-    ctx.moveTo(logToX(points[0][0]), dbToY(points[0][1]))
-    points.forEach(([f, db]) => ctx.lineTo(logToX(f), dbToY(db)))
-    ctx.lineTo(logToX(points[points.length-1][0]), PAD.t + plotH)
-    ctx.lineTo(logToX(points[0][0]), PAD.t + plotH)
-    ctx.closePath()
-    ctx.fillStyle = grad; ctx.fill()
+    // ── Biquad filter response calculation ──
+    // Standard biquad magnitude response at frequency f given sample rate Fs=48000
+    const Fs = 48000
+    const biquadMag = (f: Filter, freq: number): number => {
+      const w = 2 * Math.PI * freq / Fs
+      const A = Math.pow(10, f.gain / 40)
+      const w0 = 2 * Math.PI * f.freq / Fs
+      const alpha = Math.sin(w0) / (2 * f.q)
+      let b0, b1, b2, a0, a1, a2
 
-    // Curve line
-    ctx.beginPath()
-    ctx.moveTo(logToX(points[0][0]), dbToY(points[0][1]))
-    points.forEach(([f, db]) => ctx.lineTo(logToX(f), dbToY(db)))
-    ctx.strokeStyle = '#c9a96e'; ctx.lineWidth = 1.5
-    ctx.lineJoin = 'round'; ctx.stroke()
+      if (f.type === 'PK') {
+        b0 = 1 + alpha * A; b1 = -2 * Math.cos(w0); b2 = 1 - alpha * A
+        a0 = 1 + alpha / A; a1 = -2 * Math.cos(w0); a2 = 1 - alpha / A
+      } else if (f.type === 'LS') {
+        b0 = A * ((A+1) - (A-1)*Math.cos(w0) + 2*Math.sqrt(A)*alpha)
+        b1 = 2*A * ((A-1) - (A+1)*Math.cos(w0))
+        b2 = A * ((A+1) - (A-1)*Math.cos(w0) - 2*Math.sqrt(A)*alpha)
+        a0 = (A+1) + (A-1)*Math.cos(w0) + 2*Math.sqrt(A)*alpha
+        a1 = -2 * ((A-1) + (A+1)*Math.cos(w0))
+        a2 = (A+1) + (A-1)*Math.cos(w0) - 2*Math.sqrt(A)*alpha
+      } else if (f.type === 'HS') {
+        b0 = A * ((A+1) + (A-1)*Math.cos(w0) + 2*Math.sqrt(A)*alpha)
+        b1 = -2*A * ((A-1) + (A+1)*Math.cos(w0))
+        b2 = A * ((A+1) + (A-1)*Math.cos(w0) - 2*Math.sqrt(A)*alpha)
+        a0 = (A+1) - (A-1)*Math.cos(w0) + 2*Math.sqrt(A)*alpha
+        a1 = 2 * ((A-1) - (A+1)*Math.cos(w0))
+        a2 = (A+1) - (A-1)*Math.cos(w0) - 2*Math.sqrt(A)*alpha
+      } else {
+        return 0
+      }
+      // Evaluate H(e^jw) magnitude in dB
+      const cosw = Math.cos(w), cos2w = Math.cos(2*w)
+      const sinw = Math.sin(w), sin2w = Math.sin(2*w)
+      const numR = b0 + b1*cosw + b2*cos2w
+      const numI = -b1*sinw - b2*sin2w
+      const denR = a0 + a1*cosw + a2*cos2w
+      const denI = -a1*sinw - a2*sin2w
+      const mag2 = (numR*numR + numI*numI) / (denR*denR + denI*denI)
+      return 10 * Math.log10(Math.max(mag2, 1e-10))
+    }
 
-    // Freq range markers
-    ctx.setLineDash([3, 4])
-    ctx.strokeStyle = 'rgba(201,169,110,0.3)'; ctx.lineWidth = 0.8
-    ;[freqLow, freqHigh].forEach(f => {
+    // High-pass roll-off below hpFreq (Butterworth 2nd order approximation)
+    const hpMag = (freq: number): number => {
+      const ratio = freq / hpFreq
+      const db = 20 * Math.log10(ratio * ratio / Math.sqrt(1 + Math.pow(ratio / hpQ, 4)))
+      return Math.max(db, -40)
+    }
+
+    // ── Draw grid ──
+    const freqTicks = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]
+    const dbTicks = [-24, -18, -12, -6, 0, 6]
+
+    ctx.strokeStyle = 'rgba(201,169,110,0.05)'
+    ctx.lineWidth = 0.5
+    freqTicks.forEach(f => {
+      if (f < 20 || f > 20000) return
       const x = logToX(f)
       ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, PAD.t + plotH); ctx.stroke()
+      ctx.fillStyle = 'rgba(201,169,110,0.3)'
+      ctx.font = '8px DM Mono, monospace'
+      ctx.textAlign = 'center'
+      ctx.fillText(f >= 1000 ? `${f/1000}k` : `${f}`, x, PAD.t + plotH + 16)
     })
-    ctx.setLineDash([])
+    dbTicks.forEach(db => {
+      const y = dbToY(db)
+      if (y < PAD.t || y > PAD.t + plotH) return
+      ctx.strokeStyle = db === 0 ? 'rgba(201,169,110,0.15)' : 'rgba(201,169,110,0.05)'
+      ctx.lineWidth = db === 0 ? 0.8 : 0.5
+      ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(PAD.l + plotW, y); ctx.stroke()
+      ctx.fillStyle = 'rgba(201,169,110,0.35)'
+      ctx.font = '8px DM Mono, monospace'
+      ctx.textAlign = 'right'
+      ctx.fillText(`${db > 0 ? '+' : ''}${db}`, PAD.l - 8, y + 3)
+    })
+
+    // ── Draw actual frequency response ──
+    const STEPS = 400
+    const points: [number, number][] = []
+
+    for (let i = 0; i <= STEPS; i++) {
+      const f = 20 * Math.pow(20000 / 20, i / STEPS)
+      let db = 0
+
+      // Apply high-pass roll-off
+      if (f < hpFreq * 2) db += hpMag(f)
+
+      // Apply each EQ filter
+      for (const filter of filters) {
+        db += biquadMag(filter, f)
+      }
+
+      // Hard clip below freqLow and above freqHigh
+      if (f < freqLow * 0.5) db += -40 * Math.pow(Math.log2(freqLow * 0.5 / f), 1.5)
+      if (f > freqHigh * 1.5) db += -20 * Math.pow(Math.log2(f / (freqHigh * 1.5)), 1.5)
+
+      db = Math.max(db, DB_MIN - 2)
+      points.push([logToX(f), dbToY(db)])
+    }
+
+    // Gradient fill under curve
+    const grad = ctx.createLinearGradient(0, PAD.t, 0, PAD.t + plotH)
+    grad.addColorStop(0, 'rgba(201,169,110,0.18)')
+    grad.addColorStop(0.5, 'rgba(201,169,110,0.06)')
+    grad.addColorStop(1, 'rgba(201,169,110,0)')
+    ctx.fillStyle = grad
+    ctx.beginPath()
+    ctx.moveTo(points[0][0], PAD.t + plotH)
+    points.forEach(([x, y]) => ctx.lineTo(x, y))
+    ctx.lineTo(points[points.length-1][0], PAD.t + plotH)
+    ctx.closePath()
+    ctx.fill()
+
+    // Curve line
+    ctx.strokeStyle = 'rgba(201,169,110,0.7)'
+    ctx.lineWidth = 1.5
+    ctx.lineJoin = 'round'
+    ctx.beginPath()
+    points.forEach(([x, y], i) => i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y))
+    ctx.stroke()
+
+    // Mark freq limits
+    ;[freqLow, freqHigh].forEach(f => {
+      const x = logToX(f)
+      ctx.strokeStyle = 'rgba(201,169,110,0.25)'
+      ctx.lineWidth = 0.8
+      ctx.setLineDash([3, 3])
+      ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, PAD.t + plotH); ctx.stroke()
+      ctx.setLineDash([])
+    })
 
     // Labels
-    ctx.fillStyle = 'rgba(201,169,110,0.6)'
     ctx.font = '8px DM Mono, monospace'
-    ctx.textAlign = 'center'
-    ctx.fillText(`${freqLow}Hz`, logToX(freqLow), PAD.t - 6)
-    ctx.fillText(`${freqHigh >= 1000 ? freqHigh/1000 + 'kHz' : freqHigh + 'Hz'}`, logToX(freqHigh), PAD.t - 6)
+    ctx.fillStyle = 'rgba(201,169,110,0.4)'
+    ctx.textAlign = 'left'
+    ctx.fillText('dB', 4, PAD.t - 8)
 
-  }, [freqLow, freqHigh, sensitivity])
+  }, [freqLow, freqHigh, sensitivity, eqData])
 
-  return <canvas ref={canvasRef} className="eq-canvas" style={{ width: '100%', height: '200px', display: 'block' }}/>
+  return <canvas ref={canvasRef} className="pd-eq-canvas" style={{ width: '100%', height: '220px', display: 'block' }}/>
 }
 
-// ── 3D VIEWER ─────────────────────────────────────────────────────────────────
+
 function injectScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
     // Always check if already loaded correctly first
@@ -481,9 +550,15 @@ function AnnotatedImage({ imgUrl, productName, badges }: { imgUrl: string; produ
   )
 }
 
+
+
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────────
 export default function ProductDetail({ product }: { product: Product }) {
   const [activeGallery, setActiveGallery] = useState(0)
+  const [activeMediaType, setActiveMediaType] = useState<'image'|'video'>('image')
+  const [activeVideoUrl, setActiveVideoUrl] = useState<string|null>(null)
+  const [activeVideoTitle, setActiveVideoTitle] = useState<string|null>(null)
+  const waveRafsRef = useRef<number[]>([])
 
   const heroImgUrl = getImageUrl(product.heroImage, 1600)
   const badges = product.proprietaryTechBadges?.split(',').map(s => s.trim()).filter(Boolean) || []
@@ -506,6 +581,62 @@ export default function ProductDetail({ product }: { product: Product }) {
   const hasEqData = !!product.eqData
 
   // Three.js loads inside ModelViewer via esm.sh dynamic import
+
+  // Animate wave dividers — matches homepage wave style
+  useEffect(() => {
+    const canvases = document.querySelectorAll('.pd-wave-canvas') as NodeListOf<HTMLCanvasElement>
+    const rafs: number[] = []
+
+    canvases.forEach((canvas, ci) => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      canvas.width = canvas.offsetWidth * dpr
+      canvas.height = 56 * dpr
+      canvas.style.height = '56px'
+      const ctx = canvas.getContext('2d')!
+      ctx.scale(dpr, dpr)
+
+      let t = ci * 2.1  // different phase per divider
+
+      const draw = () => {
+        const W = canvas.offsetWidth, H = 56
+        ctx.clearRect(0, 0, W, H)
+
+        // Same multi-layer approach as homepage scroll wave
+        const layers = [
+          { amp: 3.5, freq: 2.1,  speed: 0.18, alpha: 0.10, width: 0.8 },
+          { amp: 5.0, freq: 1.4,  speed: 0.12, alpha: 0.16, width: 1.0 },
+          { amp: 2.5, freq: 3.8,  speed: 0.28, alpha: 0.07, width: 0.6 },
+        ]
+
+        layers.forEach(l => {
+          ctx.beginPath()
+          for (let x = 0; x <= W; x += 2) {
+            const nx = x / W
+            const y = H / 2
+              + Math.sin(nx * Math.PI * l.freq * 2 + t * l.speed * Math.PI * 2) * l.amp
+              + Math.sin(nx * Math.PI * l.freq * 3.3 + t * l.speed * 1.7 * Math.PI * 2) * l.amp * 0.4
+            x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+          }
+          // Fade edges
+          const g = ctx.createLinearGradient(0, 0, W, 0)
+          g.addColorStop(0, 'rgba(201,169,110,0)')
+          g.addColorStop(0.08, `rgba(201,169,110,${l.alpha})`)
+          g.addColorStop(0.92, `rgba(201,169,110,${l.alpha})`)
+          g.addColorStop(1, 'rgba(201,169,110,0)')
+          ctx.strokeStyle = g
+          ctx.lineWidth = l.width
+          ctx.stroke()
+        })
+
+        t += 0.016
+        rafs[ci] = requestAnimationFrame(draw)
+      }
+      draw()
+    })
+
+    waveRafsRef.current = rafs
+    return () => rafs.forEach(id => cancelAnimationFrame(id))
+  }, [])
 
   // Spec rows helper
   const specRow = (label: string, value: any, unit = '') =>
@@ -588,12 +719,12 @@ export default function ProductDetail({ product }: { product: Product }) {
               <a href={`/products?cat=${product.category?.slug?.current}`} className="pd-bc-link">
                 {product.category?.name}
               </a>
+              {product.series && (
+                <><span className="pd-bc-sep">·</span>
+                <span className="pd-bc-cur">{product.series}</span></>
+              )}
             </div>
-            <div className="pd-hero-series">{product.series || product.subCategory}</div>
             <h1 className="pd-hero-name">{product.productName}</h1>
-            {product.productFullName && product.productFullName !== product.productName && (
-              <div className="pd-hero-fullname">{product.productFullName}</div>
-            )}
             {product.tagline && <div className="pd-hero-tagline">{product.tagline}</div>}
 
             {/* Key specs pills */}
@@ -630,18 +761,21 @@ export default function ProductDetail({ product }: { product: Product }) {
             {product.heroVideo ? (
               <div className="pd-hero-video-wrap">
                 {(product.heroVideo.includes('youtube') || product.heroVideo.includes('youtu.be')) ? (
+                  <div className="pd-hero-video-crop">
                   <iframe className="pd-hero-iframe"
-                    src={`https://www.youtube.com/embed/${
+                    src={`https://www.youtube-nocookie.com/embed/${
                       product.heroVideo.includes('youtu.be/')
                         ? product.heroVideo.split('youtu.be/')[1]?.split('?')[0]
                         : product.heroVideo.split('v=')[1]?.split('&')[0]
-                    }?autoplay=1&mute=1&loop=1&controls=0&modestbranding=1&playlist=${
+                    }?autoplay=1&mute=1&loop=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&playsinline=1&playlist=${
                       product.heroVideo.includes('youtu.be/')
                         ? product.heroVideo.split('youtu.be/')[1]?.split('?')[0]
                         : product.heroVideo.split('v=')[1]?.split('&')[0]
                     }`}
-                    allow="autoplay; fullscreen" allowFullScreen frameBorder="0"
+                    allow="autoplay; encrypted-media; picture-in-picture"
+                    frameBorder="0"
                   />
+                </div>
                 ) : product.heroVideo.includes('vimeo') ? (
                   <iframe className="pd-hero-iframe"
                     src={`https://player.vimeo.com/video/${product.heroVideo.split('vimeo.com/')[1]?.split('?')[0]}?autoplay=1&muted=1&loop=1&background=1`}
@@ -662,35 +796,174 @@ export default function ProductDetail({ product }: { product: Product }) {
         </div>
       </section>
 
-      
 
-            {/* ── WOW: TECH SHOWCASE ── */}
-      <section className="pd-section pd-wow-section">
-        <TechShowcase
-          productId={product._id}
-          productName={product.productName}
-          modelUrl={product.model3dUrl || `/models/${product.slug?.current}.glb`}
-          badges={badges}
-          heroImgUrl={heroImgUrl}
-        />
+
+      
+      {/* wave divider */}
+      <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
+      {/* ── MODEL REVEAL + CONSTRAINTS ── */}
+      <ModelReveal
+        modelUrl={product.model3dUrl || `/models/${product.slug?.current}.glb`}
+        productName={product.productName}
+        productId={product._id}
+      />
+
+            
+      {/* wave divider */}
+      <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
+      {/* ── SPECS ── */}
+      <section className="pd-section pd-specs-section">
+        <div className="pd-section-inner">
+          <div className="pd-section-ey">Specifications</div>
+        </div>
+        <div className={`pd-specs-grid${connectivitySpecs.length > 0 ? " pd-specs-grid-3" : ""}`}>
+          {acousticSpecs.length > 0 && (
+            <div className="pd-spec-col">
+              <div className="pd-spec-col-title">{isAmp ? 'Electronics' : 'Acoustic'}</div>
+              {acousticSpecs.map(s => (
+                <div key={s.label} className="pd-spec-row">
+                  <span className="pd-spec-label">{s.label}</span>
+                  <span className="pd-spec-value">{s.value}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {physicalSpecs.length > 0 && (
+            <div className="pd-spec-col">
+              <div className="pd-spec-col-title">Physical</div>
+              {physicalSpecs.map(s => (
+                <div key={s.label} className="pd-spec-row">
+                  <span className="pd-spec-label">{s.label}</span>
+                  <span className="pd-spec-value">{s.value}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {connectivitySpecs.length > 0 && (
+            <div className="pd-spec-col">
+              <div className="pd-spec-col-title">Connectivity</div>
+              {connectivitySpecs.map(s => (
+                <div key={s.label} className="pd-spec-row">
+                  <span className="pd-spec-label">{s.label}</span>
+                  <span className="pd-spec-value">{s.value}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </section>
+
+      {/* ── MEDIA GALLERY ── */}
+      {(galleryAll.length > 0 || product.productVideos?.length > 0) && (
+        <section className="pd-media-section">
+
+          {/* Main display — image or video */}
+          <div className="pd-media-main">
+            {activeMediaType === 'video' && activeVideoUrl ? (
+              <div className="pd-media-video-wrap">
+                {activeVideoUrl.includes('youtube') || activeVideoUrl.includes('youtu.be') ? (
+                  <div className="pd-hero-video-crop" style={{height:'100%'}}>
+                    <iframe
+                      src={`https://www.youtube-nocookie.com/embed/${
+                        activeVideoUrl.includes('youtu.be/')
+                          ? activeVideoUrl.split('youtu.be/')[1]?.split('?')[0]
+                          : activeVideoUrl.split('v=')[1]?.split('&')[0]
+                      }?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3`}
+                      className="pd-hero-iframe"
+                      allow="autoplay; encrypted-media"
+                      allowFullScreen
+                    />
+                  </div>
+                ) : (
+                  <video src={activeVideoUrl} autoPlay controls className="pd-media-video-el"/>
+                )}
+                {activeVideoTitle && (
+                  <div className="pd-media-video-title">{activeVideoTitle}</div>
+                )}
+              </div>
+            ) : (
+              galleryAll[activeGallery] && getImageUrl(galleryAll[activeGallery], 1600) && (
+                <img
+                  src={getImageUrl(galleryAll[activeGallery], 1600)!}
+                  alt={product.productName}
+                  className="pd-media-img"
+                />
+              )
+            )}
+          </div>
+
+          {/* Filmstrip — images + video thumbnails */}
+          <div className="pd-media-strip">
+
+            {/* Image thumbnails */}
+            {galleryAll.map((img: any, i: number) => {
+              const url = getImageUrl(img, 300)
+              if (!url) return null
+              return (
+                <button key={`img-${i}`}
+                  className={`pd-media-thumb${activeMediaType === 'image' && activeGallery === i ? ' active' : ''}`}
+                  onClick={() => { setActiveGallery(i); setActiveMediaType('image'); setActiveVideoUrl(null) }}>
+                  <img src={url} alt=""/>
+                  <div className="pd-media-thumb-type">Photo</div>
+                </button>
+              )
+            })}
+
+            {/* Video thumbnails — creative: dark overlay with play icon + title */}
+            {product.productVideos?.map((v: any, i: number) => {
+              const ytId = v.url?.includes('youtu.be/')
+                ? v.url.split('youtu.be/')[1]?.split('?')[0]
+                : v.url?.split('v=')[1]?.split('&')[0]
+              const thumbUrl = ytId
+                ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg`
+                : getImageUrl(v.thumbnail, 300)
+              return (
+                <button key={`vid-${i}`}
+                  className={`pd-media-thumb pd-media-thumb-video${activeMediaType === 'video' && activeVideoUrl === v.url ? ' active' : ''}`}
+                  onClick={() => { setActiveVideoUrl(v.url); setActiveVideoTitle(v.title); setActiveMediaType('video') }}>
+                  {thumbUrl && <img src={thumbUrl} alt=""/>}
+                  <div className="pd-media-thumb-play">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="16">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  </div>
+                  <div className="pd-media-thumb-type">{v.type || 'Video'}</div>
+                </button>
+              )
+            })}
+
+          </div>
+        </section>
+      )}
 
       {/* ── TECH BADGES ── */}
       {badges.length > 0 && (
         <section className="pd-section pd-tech-section">
-          <div className="pd-section-inner">
-            <div className="pd-section-ey">Proprietary Technology</div>
-            <h2 className="pd-section-title">Built different. <em>By design.</em></h2>
+          <div className="pd-tech-header">
+            <div>
+              <div className="pd-section-ey">Proprietary Technology</div>
+              <h2 className="pd-section-title">Built different. <em>By design.</em></h2>
+            </div>
+            <a href="/about#technology" className="pd-tech-learn-more">
+              Full Technology Story
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round"/>
+              </svg>
+            </a>
           </div>
           <div className="pd-tech-grid">
             {badges.map(badge => {
               const tech = TECH_MAP[badge]
+              if (!tech) return null
               return (
-                <div key={badge} className="pd-tech-card">
-                  <div className="pd-tech-bar"/>
-                  <div className="pd-tech-name">{tech?.label || badge}</div>
-                  <div className="pd-tech-desc">{tech?.desc || ''}</div>
-                </div>
+                <a key={badge} href="/about#technology" className="pd-tech-card">
+                  {TECH_ICONS[badge] && (
+                    <div className="pd-tech-icon" dangerouslySetInnerHTML={{__html: TECH_ICONS[badge]}}></div>
+                  )}
+                  <div className="pd-tech-name">{tech.label || badge}</div>
+                  <div className="pd-tech-desc">{tech.desc || ''}</div>
+                  <div className="pd-tech-link">Learn more →</div>
+                </a>
               )
             })}
           </div>
@@ -724,6 +997,9 @@ export default function ProductDetail({ product }: { product: Product }) {
 
       
 
+      
+      {/* wave divider */}
+      <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
       {/* ── SETUPS ── */}
       <section className="pd-section pd-setups-section">
         <div className="pd-section-inner">
@@ -786,85 +1062,68 @@ export default function ProductDetail({ product }: { product: Product }) {
 
           {/* Home Cinema */}
           <div className="pd-setup-card">
-            <div className="pd-setup-label">Home Cinema · 5.1</div>
+            <div className="pd-setup-label">Home Cinema · Dolby Atmos 5.1</div>
+            <div className="pd-setup-desc">Architect's reference cinema</div>
             <div className="pd-setup-chain">
+
+              {/* LCR — QuadCane */}
               <div className="pd-setup-product">
-                <div className="pd-setup-product-img">
-                  {heroImgUrl
-                    ? <img src={heroImgUrl} alt={product.productName}/>
-                    : <div className="pd-setup-product-ph">{product.productName[0]}</div>
-                  }
+                <div className="pd-setup-product-img pd-setup-product-img-dark">
+                  <svg viewBox="0 0 32 80" fill="none" width="18">
+                    <rect x="2" y="2" width="28" height="76" rx="1" stroke="#c9a96e" strokeWidth="0.8"/>
+                    {[16,28,40,52,64].map((y,i) => <circle key={i} cx="16" cy={y} r="3" stroke="#c9a96e" strokeWidth="0.6"/>)}
+                  </svg>
                 </div>
-                <div className="pd-setup-product-name">{product.productName}</div>
-                <div className="pd-setup-product-qty">× 5</div>
+                <div className="pd-setup-product-name">QuadCane</div>
+                <div className="pd-setup-product-qty">× 2 · LCR</div>
               </div>
-              {product.compatibleSubwoofers?.slice(0,1).map((p: any) => {
-                const pImg = getImageUrl(p.heroImage, 200)
-                return (
-                  <div key={p._id} className="pd-setup-arrow-group">
-                    <div className="pd-setup-arrow">+</div>
-                    <a href={`/products/${p.category?.slug?.current}/${p.slug?.current}`}
-                      className="pd-setup-product pd-setup-product-link">
-                      <div className="pd-setup-product-img">
-                        {pImg ? <img src={pImg} alt={p.productName}/> : <div className="pd-setup-product-ph">{p.productName[0]}</div>}
-                      </div>
-                      <div className="pd-setup-product-name">{p.productName}</div>
-                      <div className="pd-setup-product-qty">Subwoofer</div>
-                    </a>
-                  </div>
-                )
-              })}
-              {!product.compatibleSubwoofers?.length && (
-                <div className="pd-setup-arrow-group">
-                  <div className="pd-setup-arrow">+</div>
-                  <div className="pd-setup-product">
-                    <div className="pd-setup-product-img pd-setup-product-img-dark">
-                      <svg viewBox="0 0 32 32" fill="none" width="24">
-                        <rect x="2" y="2" width="28" height="28" rx="1" stroke="#c9a96e" strokeWidth="0.8"/>
-                        <circle cx="16" cy="16" r="8" stroke="#c9a96e" strokeWidth="0.7" opacity="0.5"/>
-                        <circle cx="16" cy="16" r="3" fill="#c9a96e" opacity="0.3"/>
-                      </svg>
-                    </div>
-                    <div className="pd-setup-product-name">Juniper</div>
-                    <div className="pd-setup-product-qty">Subwoofer</div>
-                  </div>
+
+              <div className="pd-setup-arrow">+</div>
+
+              {/* Surrounds — Cane */}
+              <div className="pd-setup-product">
+                <div className="pd-setup-product-img pd-setup-product-img-dark">
+                  <svg viewBox="0 0 20 60" fill="none" width="14">
+                    <rect x="2" y="2" width="16" height="56" rx="1" stroke="#c9a96e" strokeWidth="0.8"/>
+                    {[14,28,42].map((y,i) => <circle key={i} cx="10" cy={y} r="2.5" stroke="#c9a96e" strokeWidth="0.6"/>)}
+                  </svg>
                 </div>
-              )}
-              {product.compatibleAmplifiers?.slice(0,1).map((p: any) => {
-                const pImg = getImageUrl(p.heroImage, 200)
-                return (
-                  <div key={p._id} className="pd-setup-arrow-group">
-                    <div className="pd-setup-arrow">+</div>
-                    <a href={`/products/${p.category?.slug?.current}/${p.slug?.current}`}
-                      className="pd-setup-product pd-setup-product-link">
-                      <div className="pd-setup-product-img">
-                        {pImg ? <img src={pImg} alt={p.productName}/> : <div className="pd-setup-product-ph">{p.productName[0]}</div>}
-                      </div>
-                      <div className="pd-setup-product-name">{p.productName}</div>
-                      <div className="pd-setup-product-qty">Amplifier</div>
-                    </a>
-                  </div>
-                )
-              })}
-              {!product.compatibleAmplifiers?.length && product.powerType === 'Passive' && (
-                <div className="pd-setup-arrow-group">
-                  <div className="pd-setup-arrow">+</div>
-                  <div className="pd-setup-product">
-                    <div className="pd-setup-product-img pd-setup-product-img-dark">
-                      <svg viewBox="0 0 40 28" fill="none" width="32">
-                        <rect x="2" y="2" width="36" height="24" rx="1" stroke="#c9a96e" strokeWidth="0.8"/>
-                        {[0,1,2,3].map(i=><rect key={i} x={6+i*8} y={8} width={5} height={8+i*2} rx="0.5" fill="#c9a96e" opacity={0.2+i*0.1}/>)}
-                      </svg>
-                    </div>
-                    <div className="pd-setup-product-name">Xylem DSP</div>
-                    <div className="pd-setup-product-qty">Amplifier</div>
-                  </div>
+                <div className="pd-setup-product-name">Cane</div>
+                <div className="pd-setup-product-qty">× 3 · Surround</div>
+              </div>
+
+              <div className="pd-setup-arrow">+</div>
+
+              {/* Subwoofer — Juniper */}
+              <div className="pd-setup-product">
+                <div className="pd-setup-product-img pd-setup-product-img-dark">
+                  <svg viewBox="0 0 48 40" fill="none" width="28">
+                    <rect x="2" y="2" width="44" height="36" rx="2" stroke="#c9a96e" strokeWidth="0.8"/>
+                    <circle cx="24" cy="20" r="12" stroke="#c9a96e" strokeWidth="0.8"/>
+                    <circle cx="24" cy="20" r="5" stroke="#c9a96e" strokeWidth="0.6"/>
+                  </svg>
                 </div>
-              )}
+                <div className="pd-setup-product-name">Juniper</div>
+                <div className="pd-setup-product-qty">× 1 · Subwoofer</div>
+              </div>
+
+              <div className="pd-setup-arrow">+</div>
+
+              {/* AVR */}
+              <div className="pd-setup-product">
+                <div className="pd-setup-product-img pd-setup-product-img-dark">
+                  <svg viewBox="0 0 48 28" fill="none" width="32">
+                    <rect x="2" y="2" width="44" height="24" rx="1" stroke="#c9a96e" strokeWidth="0.8"/>
+                    <text x="24" y="16" textAnchor="middle" fill="#c9a96e" fontSize="6" fontFamily="DM Mono">AVR</text>
+                  </svg>
+                </div>
+                <div className="pd-setup-product-name">Any AVR</div>
+                <div className="pd-setup-product-qty">7.1+</div>
+              </div>
+
             </div>
             <div className="pd-setup-note">
-              Phantom centre · All channels driven by Xylem DSP
-              {product.recommendedCrossoverHz ? ` · High-pass at ${product.recommendedCrossoverHz}Hz` : ''}
+              Phantom centre channel · Xylem DSP recommended for room correction
             </div>
           </div>
 
@@ -961,6 +1220,10 @@ export default function ProductDetail({ product }: { product: Product }) {
       )}
 
       
+
+      
+      {/* wave divider */}
+      <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
 
       {/* ── DOWNLOADS ── */}
       {hasDownloads && (
