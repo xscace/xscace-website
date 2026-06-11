@@ -1040,46 +1040,7 @@ export default function ProductDetail({ product }: { product: Product }) {
       {/* wave divider */}
       <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
 {/* ── SPECS ── */}
-      <section className="pd-section pd-specs-section">
-        <div className="pd-section-inner">
-          <div className="pd-section-ey">Specifications</div>
-        </div>
-        <div className={`pd-specs-grid${connectivitySpecs.length > 0 ? " pd-specs-grid-3" : ""}`}>
-          {acousticSpecs.length > 0 && (
-            <div className="pd-spec-col">
-              <div className="pd-spec-col-title">{isAmp ? 'Electronics' : 'Acoustic'}</div>
-              {acousticSpecs.map(s => (
-                <div key={s.label} className="pd-spec-row">
-                  <span className="pd-spec-label">{s.label}</span>
-                  <span className="pd-spec-value">{s.value}</span>
-                </div>
-              ))}
-            </div>
-          )}
-          {physicalSpecs.length > 0 && (
-            <div className="pd-spec-col">
-              <div className="pd-spec-col-title">Physical</div>
-              {physicalSpecs.map(s => (
-                <div key={s.label} className="pd-spec-row">
-                  <span className="pd-spec-label">{s.label}</span>
-                  <span className="pd-spec-value">{s.value}</span>
-                </div>
-              ))}
-            </div>
-          )}
-          {connectivitySpecs.length > 0 && (
-            <div className="pd-spec-col">
-              <div className="pd-spec-col-title">Connectivity</div>
-              {connectivitySpecs.map(s => (
-                <div key={s.label} className="pd-spec-row">
-                  <span className="pd-spec-label">{s.label}</span>
-                  <span className="pd-spec-value">{s.value}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+      <SpecsTicker product={product} acousticSpecs={acousticSpecs} physicalSpecs={physicalSpecs} connectivitySpecs={connectivitySpecs} isAmp={isAmp}/>
 
       {/* ── TECH BADGES ── */}
       {badges.length > 0 && (
@@ -1608,3 +1569,159 @@ function MarineRalSection({ product }: { product: any }) {
   )
 }
 
+
+// ── SPECS TICKER (HORIZONTAL) ────────────────────────────────────────────────
+
+function humanize(label: string, value: string): string | null {
+  const v = parseFloat(value)
+  switch (label) {
+    case 'Depth':       return v <= 25 ? 'shallower than your thumb' : v <= 50 ? 'flushes to the wall' : null
+    case 'Weight':      return v < 0.3 ? 'lighter than a coffee cup' : v < 0.5 ? 'lighter than a can of soda' : null
+    case 'Sensitivity': return v >= 92 ? 'fills a 60m² room effortlessly' : v >= 88 ? 'efficient — less amp power needed' : null
+    case 'Power':       return v >= 50 ? 'fills a large living room' : v >= 20 ? 'fills a medium room' : null
+    case 'Freq Low':    return v <= 150 ? 'reaches into upper bass' : null
+    case 'Freq High':   return v >= 20 ? 'full audible range' : null
+    case 'Height':      return v < 200 ? 'smaller than you expect' : null
+    case 'Housing':     return value?.toLowerCase().includes('aluminium') ? 'aircraft-grade passive heatsink' : null
+    case 'Drivers':     return value?.includes('4') ? 'four drivers, one voice' : null
+    default:            return null
+  }
+}
+
+function SpecsTicker({ product, acousticSpecs, physicalSpecs, connectivitySpecs, isAmp }: {
+  product: any
+  acousticSpecs: {label:string;value:string}[]
+  physicalSpecs: {label:string;value:string}[]
+  connectivitySpecs: {label:string;value:string}[]
+  isAmp: boolean
+}) {
+  const allSpecs = [
+    ...acousticSpecs.map(s => ({ ...s, group: isAmp ? 'Electronics' : 'Acoustic' })),
+    ...physicalSpecs.map(s => ({ ...s, group: 'Physical' })),
+    ...connectivitySpecs.map(s => ({ ...s, group: 'Connectivity' })),
+  ]
+
+  const [cur, setCur] = useState(0)
+  const [fading, setFading] = useState(false)
+  const trackRef = useRef<HTMLDivElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
+  const accRef = useRef(0)
+  const audioCtxRef = useRef<any>(null)
+  const touchX0Ref = useRef(0)
+  const touchIdx0Ref = useRef(0)
+  const COL_W = 120 // px per spec column
+
+  const go = (idx: number, silent = false) => {
+    idx = Math.max(0, Math.min(allSpecs.length - 1, idx))
+    if (idx === cur && !silent) return
+    if (!silent) ding()
+
+    // Scroll list so active col centres in track
+    const trackW = trackRef.current?.offsetWidth || 800
+    const offset = trackW / 2 - COL_W / 2 - idx * COL_W
+    if (listRef.current) {
+      listRef.current.style.transition = silent ? 'none' : 'transform .22s cubic-bezier(0.23,1,0.32,1)'
+      listRef.current.style.transform = `translateX(${offset}px)`
+    }
+
+    setFading(true)
+    setTimeout(() => { setCur(idx); setFading(false) }, 70)
+  }
+
+  const ding = () => {
+    try {
+      if (!audioCtxRef.current)
+        audioCtxRef.current = new ((window as any).AudioContext || (window as any).webkitAudioContext)()
+      const ac = audioCtxRef.current
+      const o = ac.createOscillator(), g = ac.createGain()
+      o.connect(g); g.connect(ac.destination)
+      o.frequency.value = 750 + Math.random() * 350
+      o.type = 'triangle'
+      g.gain.setValueAtTime(0.05, ac.currentTime)
+      g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.035)
+      o.start(); o.stop(ac.currentTime + 0.04)
+    } catch(e) {}
+  }
+
+  useEffect(() => { go(0, true) }, [])
+
+  // Wheel — horizontal scroll
+  useEffect(() => {
+    const el = trackRef.current
+    if (!el) return
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
+      accRef.current += delta
+      if (Math.abs(accRef.current) > 30) {
+        go(cur + Math.sign(accRef.current))
+        accRef.current = 0
+      }
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [cur, allSpecs.length])
+
+  const spec = allSpecs[cur]
+  const note = spec ? humanize(spec.label, spec.value) : null
+
+  return (
+    <section className="st-section">
+
+      {/* Section heading */}
+      <div className="st-section-heading">
+        <h2 className="pd-section-title">Technical <em>Specifications</em></h2>
+        <div className="st-total">{allSpecs.length} parameters · scroll to explore</div>
+      </div>
+
+      {/* Top: value display */}
+      <div className={`st-display${fading ? ' st-fading' : ''}`}>
+        <div className="st-display-inner">
+          <div className="st-spec-label">{spec?.label}</div>
+          <div className="st-spec-value">{spec?.value}</div>
+          {note && <div className="st-spec-note">{note}</div>}
+        </div>
+        <div className="st-nav">
+          <button className="st-nav-btn" onClick={() => go(cur - 1)} disabled={cur === 0}>←</button>
+          <span className="st-nav-count">{String(cur + 1).padStart(2,'0')} / {String(allSpecs.length).padStart(2,'0')}</span>
+          <button className="st-nav-btn" onClick={() => go(cur + 1)} disabled={cur === allSpecs.length - 1}>→</button>
+        </div>
+      </div>
+
+      {/* Bottom: horizontal ticker */}
+      <div className="st-track" ref={trackRef}
+        onTouchStart={e => { touchX0Ref.current = e.touches[0].clientX; touchIdx0Ref.current = cur }}
+        onTouchMove={e => {
+          const dx = touchX0Ref.current - e.touches[0].clientX
+          go(touchIdx0Ref.current + Math.round(dx / COL_W))
+        }}
+      >
+        {/* Left/right fade masks */}
+        <div className="st-fade-left"/>
+        <div className="st-fade-right"/>
+
+        {/* Centre indicator line */}
+        <div className="st-center-mark"/>
+
+        <div className="st-list" ref={listRef} style={{width: `${allSpecs.length * COL_W}px`}}>
+          {allSpecs.map((s, i) => (
+            <div
+              key={`${s.label}-${i}`}
+              className={`st-col${i === cur ? ' active' : ''}`}
+              style={{width: `${COL_W}px`}}
+              onClick={() => go(i)}
+            >
+              {/* Group marker on first of group */}
+              {(i === 0 || s.group !== allSpecs[i-1]?.group) && (
+                <div className="st-group">{s.group}</div>
+              )}
+              <div className="st-col-label">{s.label}</div>
+              <div className="st-col-preview">{s.value}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+    </section>
+  )
+}

@@ -2858,3 +2858,154 @@ a.p-card, a.p-card:hover {
   width: 8px; height: 8px; border-radius: 50%;
   flex-shrink: 0;
 }
+
+/* ── SPECS TICKER (HORIZONTAL) ───────────────────────────────── */
+.st-section {
+  background: #000;
+  display: flex; flex-direction: column;
+}
+
+/* Top: value display */
+.st-section-heading {
+  padding: 48px 56px 0;
+  display: flex; align-items: baseline; justify-content: space-between;
+}
+.st-section-title {
+  font-size: 9px; letter-spacing: .24em; text-transform: uppercase;
+  color: rgba(201,169,110,0.35); font-family: 'DM Mono', monospace;
+}
+.st-total {
+  font-size: 9px; letter-spacing: .18em; text-transform: uppercase;
+  color: rgba(201,169,110,0.18); font-family: 'DM Mono', monospace;
+}
+
+.st-display {
+  padding: 24px 56px 32px;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 24px;
+  min-height: 160px;
+  transition: opacity .08s;
+  border-bottom: 1px solid rgba(201,169,110,0.07);
+}
+.st-display.st-fading { opacity: 0; }
+
+.st-display-inner {
+  display: flex; flex-direction: column; gap: 6px;
+}
+.st-spec-label {
+  font-size: 9px; letter-spacing: .24em; text-transform: uppercase;
+  color: rgba(201,169,110,0.6); font-family: 'DM Mono', monospace;
+}
+.st-spec-value {
+  font-family: 'Cormorant', serif; font-weight: 300;
+  font-size: clamp(52px, 7vw, 88px);
+  color: rgba(238,235,229,0.96);
+  line-height: 1; letter-spacing: -.02em;
+}
+.st-spec-note {
+  font-family: 'Cormorant', serif; font-style: italic; font-weight: 300;
+  font-size: 17px; color: rgba(201,169,110,0.55);
+  margin-top: 2px;
+}
+
+/* Nav */
+.st-nav {
+  display: flex; align-items: center; gap: 16px;
+  flex-shrink: 0; padding-bottom: 6px;
+}
+.st-nav-btn {
+  background: none; border: 1px solid rgba(201,169,110,0.15);
+  color: rgba(201,169,110,0.4); font-size: 13px;
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: border-color .2s, color .2s;
+  font-family: 'DM Mono', monospace;
+}
+.st-nav-btn:hover:not(:disabled) { border-color: rgba(201,169,110,0.5); color: #c9a96e; }
+.st-nav-btn:disabled { opacity: 0.2; cursor: default; }
+.st-nav-count {
+  font-size: 9px; letter-spacing: .18em;
+  color: rgba(201,169,110,0.4); font-family: 'DM Mono', monospace;
+  min-width: 52px; text-align: center;
+}
+
+/* Horizontal track */
+.st-track {
+  position: relative;
+  overflow: hidden;
+  height: 88px;
+  cursor: ew-resize;
+}
+
+/* Left/right fade masks */
+.st-fade-left {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 120px;
+  background: linear-gradient(to right, #000 20%, transparent);
+  z-index: 2; pointer-events: none;
+}
+.st-fade-right {
+  position: absolute; right: 0; top: 0; bottom: 0; width: 120px;
+  background: linear-gradient(to left, #000 20%, transparent);
+  z-index: 2; pointer-events: none;
+}
+
+/* Centre indicator */
+.st-center-mark {
+  position: absolute; left: 50%; top: 0; bottom: 0;
+  width: 1px; background: rgba(201,169,110,0.15);
+  transform: translateX(-50%);
+  z-index: 1; pointer-events: none;
+}
+
+/* Scrolling list */
+.st-list {
+  display: flex; height: 100%;
+  will-change: transform;
+}
+
+/* Each column */
+.st-col {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  height: 100%; flex-shrink: 0;
+  cursor: pointer; position: relative;
+  gap: 4px;
+  transition: background .15s;
+}
+.st-col.active {
+  background: rgba(201,169,110,0.06);
+}
+.st-col.active::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: #c9a96e;
+}
+
+.st-col-label {
+  font-size: 8px; letter-spacing: .16em; text-transform: uppercase;
+  font-family: 'DM Mono', monospace;
+  color: rgba(201,169,110,0.32);
+  transition: color .15s;
+  text-align: center;
+}
+.st-col.active .st-col-label { color: rgba(238,235,229,0.92); }
+.st-col:hover:not(.active) .st-col-label { color: rgba(201,169,110,0.4); }
+
+.st-col-preview {
+  font-family: 'Cormorant', serif; font-weight: 300;
+  font-size: 15px; color: rgba(201,169,110,0.28);
+  text-align: center; transition: color .15s;
+}
+.st-col.active .st-col-preview { color: rgba(201,169,110,0.75); }
+
+/* Group label — sits at top of column */
+.st-group {
+  position: absolute; top: 6px;
+  font-size: 7px; letter-spacing: .16em; text-transform: uppercase;
+  color: rgba(201,169,110,0.15); font-family: 'DM Mono', monospace;
+}
+
+@media (max-width: 768px) {
+  .st-display { padding: 32px 24px 24px; min-height: 130px; }
+  .st-spec-value { font-size: clamp(42px, 10vw, 64px); }
+}
