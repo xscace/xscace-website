@@ -224,7 +224,7 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
         renderer.setSize(W, H)
         renderer.toneMapping = THREE.ACESFilmicToneMapping
         renderer.toneMappingExposure = 0.75
-        renderer.setClearColor(0x080808, 1)
+        renderer.setClearColor(0x000000, 1)
         renderer.shadowMap.enabled = true
         renderer.shadowMap.type = THREE.PCFSoftShadowMap
         el.appendChild(renderer.domElement)

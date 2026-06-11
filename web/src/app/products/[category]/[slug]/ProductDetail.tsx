@@ -638,13 +638,7 @@ function VideoGallery({ images, videos, productName, getImageUrl }: {
           {/* Bottom merge — bleeds into background */}
           <div className="vg-bottom-fade"/>
 
-          {/* Label */}
-          <div className="vg-label">
-            <span className="vg-label-type">Lifestyle · {year}</span>
-            {videos[leftIdx]?.title && (
-              <span className="vg-label-title">{videos[leftIdx].title}</span>
-            )}
-          </div>
+
 
           {/* Dot indicator */}
           {videos.length > 1 && (
@@ -685,35 +679,12 @@ function VideoGallery({ images, videos, productName, getImageUrl }: {
           <div className="vg-vignette"/>
           <div className="vg-bottom-fade"/>
 
-          <div className="vg-label">
-            <span className="vg-label-type">In the room</span>
-            {videos[rightIdx]?.title && videos[rightIdx].title !== videos[leftIdx]?.title && (
-              <span className="vg-label-title">{videos[rightIdx].title}</span>
-            )}
-          </div>
+
         </div>
 
       </div>
 
-      {/* ── Image strip underneath ── */}
-      {allImages.length > 0 && (
-        <div className="vg-strip">
-          {allImages.map((img: any, i: number) => {
-            const url = getImageUrl(img, 500)
-            if (!url) return null
-            return (
-              <button
-                key={i}
-                className="vg-strip-thumb"
-                onClick={() => setLightbox(url)}
-              >
-                <img src={url} alt={img.alt || productName}/>
-                <div className="vg-strip-num">{String(i + 1).padStart(2, '0')}</div>
-              </button>
-            )
-          })}
-        </div>
-      )}
+
 
       {/* Lightbox */}
       {lightbox && (
