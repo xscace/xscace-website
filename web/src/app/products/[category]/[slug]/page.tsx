@@ -14,6 +14,7 @@ async function getProduct(slug: string) {
       installationDiagramImages, dimensionDrawing, wiringDiagramImage,
       cutoutTemplateImage, directivityPlotImage,
       heroVideo, model3dUrl, arViewLink, hasArView,
+      productVideos[]{ url, title, type, thumbnail },
       powerRmsW, powerPeakW, impedanceOhms, sensitivityDb,
       freqLowHz, freqHighHz, freqQualifier,
       driverCount, driverSize, driverMaterial, driverDescription,
@@ -45,12 +46,17 @@ async function getProduct(slug: string) {
       screwSize, wireGaugeRecommended, wireConnectorType,
       itemsInBox, installationSteps, recommendedRoomSize, positioningNote,
       cadFile,
+      geoDescription, seoTitle, seoDescription, seoKeywords,
+      backBoxRequired, backBoxIncluded, grilleIncluded,
+      certifications, typicalUseCases,
       category->{ name, slug },
       recommendedPairingPrimary->{ _id, productName, slug, heroImage, series, category->{ name, slug } },
       recommendedPairingSecondary->{ _id, productName, slug, heroImage, series, category->{ name, slug } },
       compatibleAmplifiers[]->{ _id, productName, slug, heroImage, series, category->{ name, slug } },
       compatibleSubwoofers[]->{ _id, productName, slug, heroImage, series, category->{ name, slug } },
       compatibleSpeakers[]->{ _id, productName, slug, heroImage, series, category->{ name, slug } },
+      accessories[]->{ _id, productName, slug, heroImage },
+      relatedProducts[]->{ _id, productName, slug, heroImage },
     }
   `, { slug })
 }
@@ -60,8 +66,8 @@ export async function generateMetadata({ params }: { params: Promise<{ category:
   const product = await getProduct(slug)
   if (!product) return { title: 'Product Not Found' }
   return {
-    title: `${product.productName} — XSCACE`,
-    description: product.shortDescription || product.tagline,
+    title: `${product.seoTitle || product.productName + ' — XSCACE'}`,
+    description: product.seoDescription || product.shortDescription || product.tagline,
   }
 }
 

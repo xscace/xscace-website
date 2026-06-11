@@ -553,11 +553,183 @@ function AnnotatedImage({ imgUrl, productName, badges }: { imgUrl: string; produ
 
 
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────────
+
+// ── VIDEO GRID GALLERY ───────────────────────────────────────────────────────
+function VideoGallery({ images, videos, productName, getImageUrl }: {
+  images: any[]
+  videos: any[]
+  productName: string
+  getImageUrl: (img: any, w?: number) => string | null
+}) {
+  const [leftIdx, setLeftIdx] = useState(0)
+  const [rightIdx, setRightIdx] = useState(Math.min(1, videos.length - 1))
+  const [leftFading, setLeftFading] = useState(false)
+  const [rightFading, setRightFading] = useState(false)
+  const [lightbox, setLightbox] = useState<string | null>(null)
+  const leftTimer = useRef<any>(null)
+  const rightTimer = useRef<any>(null)
+
+  const getYtId = (url: string) =>
+    url?.includes('youtu.be/')
+      ? url.split('youtu.be/')[1]?.split('?')[0]
+      : url?.split('v=')[1]?.split('&')[0]
+
+  const embedUrl = (url: string, startSec = 0) => {
+    const id = getYtId(url)
+    if (!id) return null
+    return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&controls=0&modestbranding=1&playsinline=1&rel=0&disablekb=1&iv_load_policy=3${startSec ? `&start=${startSec}` : ''}`
+  }
+
+  // Auto-cycle left video (offset cycle so they don't switch at the same time)
+  useEffect(() => {
+    if (videos.length <= 1) return
+    leftTimer.current = setInterval(() => {
+      setLeftFading(true)
+      setTimeout(() => {
+        setLeftIdx(i => (i + 1) % videos.length)
+        setLeftFading(false)
+      }, 500)
+    }, 20000)
+    return () => clearInterval(leftTimer.current)
+  }, [videos.length])
+
+  // Auto-cycle right video (offset by 10s)
+  useEffect(() => {
+    if (videos.length <= 1) return
+    const t = setTimeout(() => {
+      rightTimer.current = setInterval(() => {
+        setRightFading(true)
+        setTimeout(() => {
+          setRightIdx(i => (i + 1) % videos.length)
+          setRightFading(false)
+        }, 500)
+      }, 20000)
+    }, 10000)
+    return () => { clearTimeout(t); clearInterval(rightTimer.current) }
+  }, [videos.length])
+
+  const year = new Date().getFullYear()
+  const allImages = [...(images || [])]
+
+  return (
+    <section className="vg-section">
+
+      {/* ── Two video panels side by side ── */}
+      <div className="vg-videos">
+
+        {/* Left video */}
+        <div className="vg-panel">
+          {videos.length > 0 && embedUrl(videos[leftIdx]?.url) ? (
+            <div className={`vg-embed-wrap${leftFading ? ' vg-fading' : ''}`}>
+              <iframe
+                key={`left-${leftIdx}`}
+                src={embedUrl(videos[leftIdx].url)!}
+                className="vg-iframe"
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+              />
+            </div>
+          ) : allImages[0] && getImageUrl(allImages[0], 900) ? (
+            <img src={getImageUrl(allImages[0], 900)!} alt={productName} className="vg-fallback"/>
+          ) : null}
+
+          {/* Vignette */}
+          <div className="vg-vignette"/>
+          {/* Bottom merge — bleeds into background */}
+          <div className="vg-bottom-fade"/>
+
+          {/* Label */}
+          <div className="vg-label">
+            <span className="vg-label-type">Lifestyle · {year}</span>
+            {videos[leftIdx]?.title && (
+              <span className="vg-label-title">{videos[leftIdx].title}</span>
+            )}
+          </div>
+
+          {/* Dot indicator */}
+          {videos.length > 1 && (
+            <div className="vg-dots">
+              {videos.map((_: any, i: number) => (
+                <button key={i}
+                  className={`vg-dot${leftIdx === i ? ' active' : ''}`}
+                  onClick={() => {
+                    setLeftFading(true)
+                    setTimeout(() => { setLeftIdx(i); setLeftFading(false) }, 400)
+                    clearInterval(leftTimer.current)
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Divider */}
+        <div className="vg-divider"/>
+
+        {/* Right video */}
+        <div className="vg-panel">
+          {videos.length > 0 && embedUrl(videos[rightIdx]?.url) ? (
+            <div className={`vg-embed-wrap${rightFading ? ' vg-fading' : ''}`}>
+              <iframe
+                key={`right-${rightIdx}`}
+                src={embedUrl(videos[rightIdx].url, 8)!}
+                className="vg-iframe"
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+              />
+            </div>
+          ) : allImages[1] && getImageUrl(allImages[1], 900) ? (
+            <img src={getImageUrl(allImages[1], 900)!} alt={productName} className="vg-fallback"/>
+          ) : null}
+
+          <div className="vg-vignette"/>
+          <div className="vg-bottom-fade"/>
+
+          <div className="vg-label">
+            <span className="vg-label-type">In the room</span>
+            {videos[rightIdx]?.title && videos[rightIdx].title !== videos[leftIdx]?.title && (
+              <span className="vg-label-title">{videos[rightIdx].title}</span>
+            )}
+          </div>
+        </div>
+
+      </div>
+
+      {/* ── Image strip underneath ── */}
+      {allImages.length > 0 && (
+        <div className="vg-strip">
+          {allImages.map((img: any, i: number) => {
+            const url = getImageUrl(img, 500)
+            if (!url) return null
+            return (
+              <button
+                key={i}
+                className="vg-strip-thumb"
+                onClick={() => setLightbox(url)}
+              >
+                <img src={url} alt={img.alt || productName}/>
+                <div className="vg-strip-num">{String(i + 1).padStart(2, '0')}</div>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Lightbox */}
+      {lightbox && (
+        <div className="vg-lightbox" onClick={() => setLightbox(null)}>
+          <img src={lightbox} alt={productName} className="vg-lb-img"/>
+          <button className="vg-lb-close" onClick={() => setLightbox(null)}>×</button>
+        </div>
+      )}
+
+    </section>
+  )
+}
+
+
 export default function ProductDetail({ product }: { product: Product }) {
   const [activeGallery, setActiveGallery] = useState(0)
-  const [activeMediaType, setActiveMediaType] = useState<'image'|'video'>('image')
-  const [activeVideoUrl, setActiveVideoUrl] = useState<string|null>(null)
-  const [activeVideoTitle, setActiveVideoTitle] = useState<string|null>(null)
   const waveRafsRef = useRef<number[]>([])
 
   const heroImgUrl = getImageUrl(product.heroImage, 1600)
@@ -814,6 +986,16 @@ export default function ProductDetail({ product }: { product: Product }) {
       />
 
             
+      {/* ── MEDIA GALLERY ── */}
+      {(galleryAll.length > 0 || (product.productVideos && product.productVideos.length > 0)) && (
+        <VideoGallery
+          images={galleryAll}
+          videos={product.productVideos || []}
+          productName={product.productName}
+          getImageUrl={getImageUrl}
+        />
+      )}
+
       {/* wave divider */}
       <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
       {/* ── SPECS ── */}
@@ -857,89 +1039,6 @@ export default function ProductDetail({ product }: { product: Product }) {
           )}
         </div>
       </section>
-
-      {/* ── MEDIA GALLERY ── */}
-      {(galleryAll.length > 0 || product.productVideos?.length > 0) && (
-        <section className="pd-media-section">
-
-          {/* Main display — image or video */}
-          <div className="pd-media-main">
-            {activeMediaType === 'video' && activeVideoUrl ? (
-              <div className="pd-media-video-wrap">
-                {activeVideoUrl.includes('youtube') || activeVideoUrl.includes('youtu.be') ? (
-                  <div className="pd-hero-video-crop" style={{height:'100%'}}>
-                    <iframe
-                      src={`https://www.youtube-nocookie.com/embed/${
-                        activeVideoUrl.includes('youtu.be/')
-                          ? activeVideoUrl.split('youtu.be/')[1]?.split('?')[0]
-                          : activeVideoUrl.split('v=')[1]?.split('&')[0]
-                      }?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3`}
-                      className="pd-hero-iframe"
-                      allow="autoplay; encrypted-media"
-                      allowFullScreen
-                    />
-                  </div>
-                ) : (
-                  <video src={activeVideoUrl} autoPlay controls className="pd-media-video-el"/>
-                )}
-                {activeVideoTitle && (
-                  <div className="pd-media-video-title">{activeVideoTitle}</div>
-                )}
-              </div>
-            ) : (
-              galleryAll[activeGallery] && getImageUrl(galleryAll[activeGallery], 1600) && (
-                <img
-                  src={getImageUrl(galleryAll[activeGallery], 1600)!}
-                  alt={product.productName}
-                  className="pd-media-img"
-                />
-              )
-            )}
-          </div>
-
-          {/* Filmstrip — images + video thumbnails */}
-          <div className="pd-media-strip">
-
-            {/* Image thumbnails */}
-            {galleryAll.map((img: any, i: number) => {
-              const url = getImageUrl(img, 300)
-              if (!url) return null
-              return (
-                <button key={`img-${i}`}
-                  className={`pd-media-thumb${activeMediaType === 'image' && activeGallery === i ? ' active' : ''}`}
-                  onClick={() => { setActiveGallery(i); setActiveMediaType('image'); setActiveVideoUrl(null) }}>
-                  <img src={url} alt=""/>
-                  <div className="pd-media-thumb-type">Photo</div>
-                </button>
-              )
-            })}
-
-            {/* Video thumbnails — creative: dark overlay with play icon + title */}
-            {product.productVideos?.map((v: any, i: number) => {
-              const ytId = v.url?.includes('youtu.be/')
-                ? v.url.split('youtu.be/')[1]?.split('?')[0]
-                : v.url?.split('v=')[1]?.split('&')[0]
-              const thumbUrl = ytId
-                ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg`
-                : getImageUrl(v.thumbnail, 300)
-              return (
-                <button key={`vid-${i}`}
-                  className={`pd-media-thumb pd-media-thumb-video${activeMediaType === 'video' && activeVideoUrl === v.url ? ' active' : ''}`}
-                  onClick={() => { setActiveVideoUrl(v.url); setActiveVideoTitle(v.title); setActiveMediaType('video') }}>
-                  {thumbUrl && <img src={thumbUrl} alt=""/>}
-                  <div className="pd-media-thumb-play">
-                    <svg viewBox="0 0 24 24" fill="currentColor" width="16">
-                      <path d="M8 5v14l11-7z"/>
-                    </svg>
-                  </div>
-                  <div className="pd-media-thumb-type">{v.type || 'Video'}</div>
-                </button>
-              )
-            })}
-
-          </div>
-        </section>
-      )}
 
       {/* ── TECH BADGES ── */}
       {badges.length > 0 && (
