@@ -685,7 +685,6 @@ export default function ProductDetail({ product }: { product: Product }) {
     specRow('Fire Rating', product.fireRating),
     product.tweeterAimable ? { label: 'Aimable Tweeter', value: 'Yes' } : null,
     specRow('Crossover', product.crossoverType),
-    specRow('IP Rating', product.ipRating),
   ].filter(Boolean) as { label: string; value: string }[]
 
   // Electronics / connectivity specs (amplifiers)
@@ -719,13 +718,19 @@ export default function ProductDetail({ product }: { product: Product }) {
               <a href={`/products?cat=${product.category?.slug?.current}`} className="pd-bc-link">
                 {product.category?.name}
               </a>
-              {product.series && (
+              {product.series && product.series !== product.category?.name && (
                 <><span className="pd-bc-sep">·</span>
                 <span className="pd-bc-cur">{product.series}</span></>
               )}
             </div>
             <h1 className="pd-hero-name">{product.productName}</h1>
             {product.tagline && <div className="pd-hero-tagline">{product.tagline}</div>}
+            {product.shortDescription && (
+              <p className="pd-hero-desc">{product.shortDescription}</p>
+            )}
+            {product.skuBase && (
+              <div className="pd-hero-sku">{product.skuBase}</div>
+            )}
 
             {/* Key specs pills */}
             <div className="pd-hero-pills">
