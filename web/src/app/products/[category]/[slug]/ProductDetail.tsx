@@ -734,6 +734,128 @@ function VideoGallery({ images, videos, productName, getImageUrl }: {
 }
 
 
+// ── RAINBOW PILL ─────────────────────────────────────────────────────────────
+function RainbowPill() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const pillRef = useRef<HTMLSpanElement>(null)
+  const rafRef = useRef<number>(0)
+
+  useEffect(() => {
+    const canvas = canvasRef.current!
+    const pill = pillRef.current!
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    const W = pill.offsetWidth || 120
+    const H = pill.offsetHeight || 30
+    canvas.width = W * dpr
+    canvas.height = H * dpr
+    const ctx = canvas.getContext('2d')!
+    ctx.scale(dpr, dpr)
+
+    interface Drop {
+      x: number; y: number; vy: number; vx: number
+      r: number; hue: number; alpha: number
+      tail: {x:number;y:number;r:number}[]
+      splat: boolean; splatLife: number
+    }
+    const drops: Drop[] = []
+    let hue = 0
+    let frame = 0
+
+    const spawn = () => {
+      hue = (hue + 53) % 360
+      drops.push({
+        x: 6 + Math.random() * (W - 12),
+        y: -5,
+        vy: 0.5 + Math.random() * 0.6,
+        vx: (Math.random() - 0.5) * 0.3,
+        r: 2 + Math.random() * 1.5,
+        hue,
+        alpha: 0.8 + Math.random() * 0.2,
+        tail: [],
+        splat: false,
+        splatLife: 0,
+      })
+    }
+
+    const draw = () => {
+      ctx.clearRect(0, 0, W, H)
+      frame++
+      if (frame % 22 === 0) spawn()
+
+      for (let i = drops.length - 1; i >= 0; i--) {
+        const d = drops[i]
+
+        if (d.splat) {
+          // Splat ring spreading out at bottom edge
+          d.splatLife -= 0.06
+          if (d.splatLife <= 0) { drops.splice(i, 1); continue }
+          const spread = (1 - d.splatLife) * d.r * 3
+          ctx.beginPath()
+          ctx.ellipse(d.x, H - 1, spread, spread * 0.35, 0, 0, Math.PI * 2)
+          ctx.strokeStyle = `hsla(${d.hue},100%,65%,${d.splatLife * 0.4})`
+          ctx.lineWidth = 0.8
+          ctx.stroke()
+          continue
+        }
+
+        // Record tail
+        d.tail.push({x: d.x, y: d.y, r: d.r})
+        if (d.tail.length > 16) d.tail.shift()
+
+        d.y += d.vy; d.x += d.vx
+        d.vy += 0.03
+
+        // Draw tail — fading liquid trail
+        d.tail.forEach((pt, ti) => {
+          const progress = ti / d.tail.length
+          const a = progress * d.alpha * 0.5
+          ctx.beginPath()
+          ctx.ellipse(pt.x, pt.y, pt.r * 0.45, pt.r * (0.3 + progress * 0.5), 0, 0, Math.PI * 2)
+          ctx.fillStyle = `hsla(${d.hue},100%,60%,${a})`
+          ctx.fill()
+        })
+
+        // Drop head — teardrop shape
+        ctx.save()
+        ctx.translate(d.x, d.y)
+        // Teardrop: circle body + pointed top
+        const grad = ctx.createRadialGradient(-d.r * 0.3, -d.r * 0.3, 0, 0, 0, d.r * 1.3)
+        grad.addColorStop(0, `hsla(${(d.hue + 40) % 360},100%,90%,${d.alpha})`)
+        grad.addColorStop(0.5, `hsla(${d.hue},100%,65%,${d.alpha})`)
+        grad.addColorStop(1, `hsla(${(d.hue - 20 + 360) % 360},100%,40%,${d.alpha * 0.3})`)
+        ctx.beginPath()
+        ctx.arc(0, 0, d.r, 0, Math.PI * 2)
+        ctx.fillStyle = grad
+        ctx.fill()
+        // Specular highlight
+        ctx.beginPath()
+        ctx.ellipse(-d.r * 0.3, -d.r * 0.35, d.r * 0.28, d.r * 0.2, -0.4, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(255,255,255,${d.alpha * 0.6})`
+        ctx.fill()
+        ctx.restore()
+
+        // Hit bottom — splat
+        if (d.y + d.r >= H) {
+          d.splat = true
+          d.splatLife = 1
+          d.y = H - 1
+        }
+      }
+      rafRef.current = requestAnimationFrame(draw)
+    }
+    draw()
+    return () => cancelAnimationFrame(rafRef.current)
+  }, [])
+
+  return (
+    <span className="pd-pill-ral-rainbow" ref={pillRef}>
+      <canvas ref={canvasRef} className="pd-rainbow-canvas" aria-hidden="true"/>
+      <span className="pd-rainbow-text">Custom RAL</span>
+    </span>
+  )
+}
+
+
 export default function ProductDetail({ product }: { product: Product }) {
   const [activeGallery, setActiveGallery] = useState(0)
   const waveRafsRef = useRef<number[]>([])
@@ -915,36 +1037,57 @@ export default function ProductDetail({ product }: { product: Product }) {
               {product.powerRmsW && <span className="pd-pill">{product.powerRmsW}W</span>}
               {product.totalPowerW && <span className="pd-pill">{product.totalPowerW}W</span>}
               {product.impedanceOhms && <span className="pd-pill">{product.impedanceOhms}Ω</span>}
-              {product.sensitivityDb && <span className="pd-pill">{product.sensitivityDb}dB</span>}
               {product.freqLowHz && product.freqHighHz && (
                 <span className="pd-pill">
-                  {product.freqLowHz}Hz – {product.freqHighHz >= 1000 ? product.freqHighHz/1000 + 'kHz' : product.freqHighHz + 'Hz'}
+                  {product.freqLowHz}Hz – {product.freqHighHz >= 1000 ? `${product.freqHighHz/1000}kHz` : `${product.freqHighHz}Hz`}
                 </span>
               )}
               {product.powerType && <span className="pd-pill">{product.powerType}</span>}
 
-              {/* Feature pills — marine + RAL */}
-              {(product.marineTreatable || product.ipRating || product.customRalAvailable) && (
-                <span className="pd-pill-sep"/>
-              )}
-              {(product.marineTreatable || product.ipRating) && (
-                <span className="pd-pill-feature pd-pill-marine">
-                  <svg width="9" height="12" viewBox="0 0 9 12" fill="none" aria-hidden="true">
-                    <path d="M4.5 0C4.5 0 0.5 4 0.5 7a4 4 0 008 0C8.5 4 4.5 0 4.5 0z"
-                      fill="rgba(140,200,240,0.2)" stroke="rgba(140,200,240,0.75)" strokeWidth="0.7"/>
-                  </svg>
-                  {product.ipRating || 'Marine'}
-                </span>
-              )}
-              {product.customRalAvailable && (
-                <span className="pd-pill-feature pd-pill-ral">
-                  <span className="pd-ral-dots">
-                    <span className="pd-ral-dot" style={{background:'#0A0A0A', border:'1px solid rgba(255,255,255,0.2)'}}/>
-                    <span className="pd-ral-dot" style={{background:'#F2F0EC'}}/>
-                    <span className="pd-ral-dot" style={{background:'#C9A96E'}}/>
+              {/* Standard colors */}
+              {product.colorsStandard && (
+                <>
+                  <span className="pd-pill-sep"/>
+                  <span className="pd-pill pd-pill-colors">
+                    {(product.colorsStandard as string).split(',').map((c: string) => {
+                      const col = c.trim()
+                      const hex: Record<string,string> = {
+                        'Matte Champagne':'#C9A96E','Champagne':'#C9A96E',
+                        'Anthracite':'#3C3F41','Anthracite Grey':'#3C3F41',
+                        'White':'#F2F0EC','Matte White':'#F2F0EC','Pure White':'#F4F4F4',
+                        'Black':'#0A0A0A','Jet Black':'#0A0A0A','Matte Black':'#111',
+                      }
+                      return <span key={col} className="pd-color-dot"
+                        style={{background: hex[col] || '#888',
+                          border: col.toLowerCase().includes('white') ? '1px solid rgba(255,255,255,0.25)' : 'none'}}
+                        title={col}/>
+                    })}
                   </span>
-                  Custom RAL
-                </span>
+                </>
+              )}
+
+              {/* Marine Treatable — wet animated */}
+              {(product.marineTreatable || product.ipRating) && (
+                <>
+                  <span className="pd-pill-sep"/>
+                  <span className="pd-pill-marine-wet">
+                    <span className="pd-marine-drops" aria-hidden="true">
+                      <span className="pd-drop pd-drop-1"/>
+                      <span className="pd-drop pd-drop-2"/>
+                      <span className="pd-drop pd-drop-3"/>
+                    </span>
+                    Marine Treatable
+                    {product.ipRating && <span className="pd-marine-ip">{product.ipRating}</span>}
+                  </span>
+                </>
+              )}
+
+              {/* Custom RAL — liquid rainbow */}
+              {product.customRalAvailable && (
+                <>
+                  <span className="pd-pill-sep"/>
+                  <RainbowPill/>
+                </>
               )}
             </div>
 
@@ -1575,16 +1718,36 @@ function MarineRalSection({ product }: { product: any }) {
 function humanize(label: string, value: string): string | null {
   const v = parseFloat(value)
   switch (label) {
-    case 'Depth':       return v <= 25 ? 'shallower than your thumb' : v <= 50 ? 'flushes to the wall' : null
-    case 'Weight':      return v < 0.3 ? 'lighter than a coffee cup' : v < 0.5 ? 'lighter than a can of soda' : null
-    case 'Sensitivity': return v >= 92 ? 'fills a 60m² room effortlessly' : v >= 88 ? 'efficient — less amp power needed' : null
-    case 'Power':       return v >= 50 ? 'fills a large living room' : v >= 20 ? 'fills a medium room' : null
-    case 'Freq Low':    return v <= 150 ? 'reaches into upper bass' : null
-    case 'Freq High':   return v >= 20 ? 'full audible range' : null
-    case 'Height':      return v < 200 ? 'smaller than you expect' : null
-    case 'Housing':     return value?.toLowerCase().includes('aluminium') ? 'aircraft-grade passive heatsink' : null
-    case 'Drivers':     return value?.includes('4') ? 'four drivers, one voice' : null
-    default:            return null
+    case 'Dimensions':
+      return value?.includes('23') ? 'shallower than your thumb at 23mm depth' : null
+    case 'Weight':
+      return v < 0.3 ? 'lighter than a coffee cup'
+           : v < 0.5 ? 'lighter than a can of soda'
+           : v < 1   ? 'lighter than a bottle of water' : null
+    case 'Sensitivity':
+      return v >= 92 ? 'fills a 60m² room effortlessly'
+           : v >= 88 ? 'efficient — less amp power needed' : null
+    case 'Power RMS':
+      return v >= 50 ? 'fills a large living room'
+           : v >= 20 ? 'fills a medium room'
+           : v > 0   ? 'for intimate spaces' : null
+    case 'Frequency':
+      return 'full audible spectrum'
+    case 'Housing':
+      return value?.toLowerCase().includes('aluminium')
+        ? 'aircraft-grade — passive heatsink' : null
+    case 'Driver':
+      return value?.includes('4') ? 'four drivers, one voice'
+           : value?.includes('3') ? 'three-way precision' : null
+    case 'Crossover':
+      return value?.toLowerCase().includes('passive') ? 'precision at the crossover point' : null
+    case 'IP Rating':
+      return value?.includes('66') ? 'dust-tight · powerful water jet resistant' : null
+    case 'Impedance':
+      return v === 8 ? 'standard amp-friendly load'
+           : v === 4 ? 'high-current demand' : null
+    default:
+      return null
   }
 }
 
