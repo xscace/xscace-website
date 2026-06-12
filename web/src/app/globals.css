@@ -2677,13 +2677,12 @@ a.p-card, a.p-card:hover {
 .ar-wall-btn {
   position: relative;
   display: inline-flex; align-items: center; gap: 9px;
-  padding: 0 16px 0 12px;
-  height: 38px;
+  padding: 12px 16px 12px 12px;
   background: #000;
   border: 0.5px solid rgba(201,169,110,0.22);
   color: rgba(201,169,110,0.75);
-  font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: .13em;
-  text-transform: uppercase;
+  font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .12em;
+  text-transform: uppercase; font-weight: 500;
   cursor: pointer; overflow: hidden;
   transition: border-color .25s, color .25s;
   flex-shrink: 0;
@@ -2752,7 +2751,7 @@ a.p-card, a.p-card:hover {
   padding-left: 8px; margin-left: 2px;
 }
 
-/* ── AR MODAL ──────────────────────────────────────────────────────────────── */
+/* ── AR MODAL + QR ─────────────────────────────────────────────────────────── */
 .ar-modal-backdrop {
   position: fixed; inset: 0; z-index: 1000;
   background: rgba(0,0,0,0.92);
@@ -2762,8 +2761,6 @@ a.p-card, a.p-card:hover {
 @keyframes arBackdropIn { from { opacity: 0; } to { opacity: 1; } }
 
 .ar-modal {
-  width: min(900px, 96vw);
-  height: min(680px, 92vh);
   background: #000;
   border: 0.5px solid rgba(201,169,110,0.15);
   display: flex; flex-direction: column;
@@ -2771,9 +2768,11 @@ a.p-card, a.p-card:hover {
   overflow: hidden;
 }
 @keyframes arModalIn {
-  from { opacity: 0; transform: scale(0.97) translateY(12px); }
+  from { opacity: 0; transform: scale(0.97) translateY(10px); }
   to   { opacity: 1; transform: none; }
 }
+
+.ar-qr-modal { width: min(520px, 94vw); }
 
 .ar-modal-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -2799,54 +2798,57 @@ a.p-card, a.p-card:hover {
 }
 .ar-modal-close:hover { border-color: rgba(201,169,110,0.4); color: rgba(201,169,110,0.8); }
 
-.ar-modal-stage {
-  flex: 1; position: relative; overflow: hidden; background: #000;
-}
-.ar-modal-stage model-viewer {
-  width: 100%; height: 100%; display: block; background: #000;
+/* QR body — side by side on desktop */
+.ar-qr-body {
+  display: flex; align-items: center; gap: 40px;
+  padding: 36px 40px;
 }
 
-/* AR button inside modal */
-.ar-modal-ar-btn {
-  position: absolute;
-  bottom: 20px; left: 50%; transform: translateX(-50%);
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 10px 20px;
-  background: #000;
-  border: 0.5px solid rgba(201,169,110,0.35);
-  color: rgba(201,169,110,0.85);
-  font-family: 'DM Mono', monospace; font-size: 9px;
-  letter-spacing: .14em; text-transform: uppercase;
-  cursor: pointer; white-space: nowrap;
-  transition: border-color .2s, color .2s;
+/* QR code with corner brackets */
+.ar-qr-wrap {
+  position: relative; flex-shrink: 0;
+  width: 180px; height: 180px;
+  display: flex; align-items: center; justify-content: center;
 }
-.ar-modal-ar-btn:hover { border-color: #c9a96e; color: #c9a96e; }
+.ar-qr-brackets {
+  position: absolute; inset: -8px; pointer-events: none;
+}
+.ar-qr-brackets span {
+  position: absolute; width: 16px; height: 16px;
+  border-color: rgba(201,169,110,0.5); border-style: solid;
+}
+.ar-qr-brackets span:nth-child(1) { top: 0; left: 0; border-width: 1px 0 0 1px; }
+.ar-qr-brackets span:nth-child(2) { top: 0; right: 0; border-width: 1px 1px 0 0; }
+.ar-qr-brackets span:nth-child(3) { bottom: 0; left: 0; border-width: 0 0 1px 1px; }
+.ar-qr-brackets span:nth-child(4) { bottom: 0; right: 0; border-width: 0 1px 1px 0; }
 
-.ar-modal-loading {
-  position: absolute; inset: 0;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 16px; color: rgba(201,169,110,0.3);
-  font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: .1em;
+.ar-qr-mount { width: 180px; height: 180px; display: flex; align-items: center; justify-content: center; }
+.ar-qr-mount img, .ar-qr-mount canvas { display: block; }
+
+/* Step-by-step instructions */
+.ar-qr-instructions {
+  display: flex; flex-direction: column; gap: 16px; flex: 1;
 }
-.ar-modal-loading-bar {
-  width: 120px; height: 0.5px; background: rgba(201,169,110,0.1);
-  position: relative; overflow: hidden;
+.ar-qr-step {
+  display: flex; align-items: flex-start; gap: 14px;
+  font-size: 12px; color: rgba(238,235,229,0.55); line-height: 1.5;
 }
-.ar-modal-loading-bar::after {
-  content: ''; position: absolute; top: 0; left: -50%;
-  width: 50%; height: 100%; background: #c9a96e;
-  animation: arLoadBar 1.2s ease-in-out infinite;
+.ar-qr-num {
+  font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: .14em;
+  color: rgba(201,169,110,0.5); flex-shrink: 0; padding-top: 2px;
 }
-@keyframes arLoadBar {
-  0%   { left: -50%; }
-  100% { left: 150%; }
+.ar-qr-compat {
+  margin-top: 8px; padding-top: 16px;
+  border-top: 0.5px solid rgba(201,169,110,0.08);
+  font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: .1em;
+  color: rgba(201,169,110,0.25);
 }
 
 .ar-modal-footer {
   padding: 10px 24px;
   border-top: 0.5px solid rgba(201,169,110,0.06);
-  font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: .1em;
-  color: rgba(201,169,110,0.2); flex-shrink: 0; text-align: center;
+  font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: .08em;
+  color: rgba(201,169,110,0.18); flex-shrink: 0; text-align: center;
 }
 
 /* ── HERO DESC + SKU ─────────────────────────────────────────── */

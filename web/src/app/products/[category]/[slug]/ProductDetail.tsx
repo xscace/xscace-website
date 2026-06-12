@@ -502,72 +502,90 @@ function ModelViewer({ modelUrl, productName, arUrl }: { modelUrl: string; produ
 
 
 // ── AR WALL BUTTON ────────────────────────────────────────────────────────────
-// On mobile: triggers AR directly. On desktop: opens fullscreen model viewer.
+// Mobile: triggers AR directly via model-viewer hidden element
+// Desktop: shows QR code modal — scan with phone to open AR
 function ARWallBtn({ modelUrl, productName }: { modelUrl: string; productName: string }) {
   const [open, setOpen] = useState(false)
-  const [mvReady, setMvReady] = useState(false)
-  const scanRef = useRef<HTMLSpanElement>(null)
+  const [qrUrl, setQrUrl] = useState('')
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null)
 
-  // Load model-viewer script once
-  useEffect(() => {
-    if (!open) return
-    if (document.querySelector('script[data-mv]')) { setMvReady(true); return }
-    const s = document.createElement('script')
-    s.type = 'module'
-    s.src = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js'
-    s.dataset.mv = '1'
-    s.onload = () => setMvReady(true)
-    document.head.appendChild(s)
-  }, [open])
-
-  // On mobile tap — go straight to AR, skip modal
   const handleClick = () => {
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
     if (isMobile) {
-      // Create a hidden model-viewer and immediately activate AR
-      const mv = document.createElement('model-viewer') as any
-      mv.src = modelUrl.startsWith('http') ? modelUrl : window.location.origin + modelUrl
-      mv.setAttribute('ar', '')
-      mv.setAttribute('ar-modes', 'webxr scene-viewer quick-look')
-      mv.setAttribute('ar-scale', 'fixed')
-      mv.style.cssText = 'position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;'
-      document.body.appendChild(mv)
-      setTimeout(() => { mv.activateAR(); }, 800)
-      setTimeout(() => { document.body.removeChild(mv) }, 5000)
+      // Load model-viewer and trigger AR immediately
+      const load = () => {
+        const mv = document.createElement('model-viewer') as any
+        mv.src = modelUrl.startsWith('http') ? modelUrl : window.location.origin + modelUrl
+        mv.setAttribute('ar', '')
+        mv.setAttribute('ar-modes', 'webxr scene-viewer quick-look')
+        mv.setAttribute('ar-scale', 'fixed')
+        mv.style.cssText = 'position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;top:0;left:0;'
+        document.body.appendChild(mv)
+        mv.addEventListener('load', () => { setTimeout(() => mv.activateAR(), 100) }, { once: true })
+        setTimeout(() => { try { document.body.removeChild(mv) } catch(e){} }, 8000)
+      }
+      if (document.querySelector('script[data-mv]')) { load(); return }
+      const s = document.createElement('script')
+      s.type = 'module'
+      s.src = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js'
+      s.dataset.mv = '1'
+      s.onload = load
+      document.head.appendChild(s)
     } else {
+      // Desktop — show QR code
+      const url = window.location.href
+      setQrUrl(url)
       setOpen(true)
       document.body.style.overflow = 'hidden'
     }
   }
 
+  // Generate QR using qrcode.js via CDN
+  useEffect(() => {
+    if (!open || !qrUrl || !qrCanvasRef.current) return
+    const canvas = qrCanvasRef.current
+    const load = () => {
+      const QRCode = (window as any).QRCode
+      if (!QRCode) return
+      new QRCode(canvas.parentElement, {
+        text: qrUrl,
+        width: 180,
+        height: 180,
+        colorDark: '#c9a96e',
+        colorLight: '#000000',
+        correctLevel: QRCode.CorrectLevel.M,
+      })
+    }
+    if ((window as any).QRCode) { load(); return }
+    const s = document.createElement('script')
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'
+    s.onload = load
+    document.head.appendChild(s)
+  }, [open, qrUrl])
+
   const handleClose = () => {
     setOpen(false)
     document.body.style.overflow = ''
+    // Clear QR canvas
+    const el = document.getElementById('ar-qr-mount')
+    if (el) el.innerHTML = ''
   }
-
-  const fullUrl = modelUrl.startsWith('http') ? modelUrl : (typeof window !== 'undefined' ? window.location.origin : '') + modelUrl
 
   return (
     <>
       {/* The button */}
       <button className="ar-wall-btn" onClick={handleClick} aria-label="View it on your wall in AR">
-        <span className="ar-wall-scan" ref={scanRef} aria-hidden="true"/>
+        <span className="ar-wall-scan" aria-hidden="true"/>
         <span className="ar-wall-border-glow" aria-hidden="true"/>
         <span className="ar-wall-icon" aria-hidden="true">
-          {/* Room corner perspective — wall meeting floor */}
-          <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
-            {/* Floor plane */}
+          <svg width="16" height="16" viewBox="0 0 22 22" fill="none">
             <path d="M1 16 L11 12 L21 16 L21 21 L1 21 Z"
               stroke="currentColor" strokeWidth="0.7" fill="rgba(201,169,110,0.04)" strokeLinejoin="round"/>
-            {/* Back wall */}
             <path d="M1 16 L1 4 L11 1 L11 12 Z"
               stroke="currentColor" strokeWidth="0.7" fill="rgba(201,169,110,0.06)" strokeLinejoin="round"/>
-            {/* Right wall */}
             <path d="M21 16 L21 4 L11 1 L11 12 Z"
               stroke="currentColor" strokeWidth="0.7" fill="rgba(201,169,110,0.03)" strokeLinejoin="round"/>
-            {/* Vertical corner line */}
             <line x1="11" y1="1" x2="11" y2="12" stroke="currentColor" strokeWidth="0.9" opacity="0.6"/>
-            {/* Small speaker rect on wall */}
             <rect x="4.5" y="6" width="3.5" height="8" rx="0.4"
               stroke="currentColor" strokeWidth="0.6" opacity="0.5"/>
           </svg>
@@ -576,57 +594,52 @@ function ARWallBtn({ modelUrl, productName }: { modelUrl: string; productName: s
         <span className="ar-wall-tag">AR</span>
       </button>
 
-      {/* Desktop fullscreen modal */}
+      {/* Desktop QR modal */}
       {open && (
         <div className="ar-modal-backdrop" onClick={handleClose}>
-          <div className="ar-modal" onClick={e => e.stopPropagation()}>
+          <div className="ar-modal ar-qr-modal" onClick={e => e.stopPropagation()}>
             <div className="ar-modal-header">
               <div className="ar-modal-title">
-                <span className="ar-modal-ey">Spatial Preview</span>
+                <span className="ar-modal-ey">Augmented Reality</span>
                 <span className="ar-modal-name">{productName}</span>
               </div>
               <button className="ar-modal-close" onClick={handleClose} aria-label="Close">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
                   <line x1="1" y1="1" x2="13" y2="13" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
                   <line x1="13" y1="1" x2="1" y2="13" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
                 </svg>
               </button>
             </div>
-            <div className="ar-modal-stage">
-              {mvReady ? (
-                <model-viewer
-                  src={fullUrl}
-                  alt={`3D model of ${productName}`}
-                  auto-rotate
-                  auto-rotate-delay="500"
-                  rotation-per-second="12deg"
-                  camera-controls
-                  touch-action="pan-y"
-                  ar=""
-                  ar-modes="webxr scene-viewer quick-look"
-                  ar-scale="fixed"
-                  shadow-intensity="0"
-                  exposure="0.9"
-                  style={{ width:'100%', height:'100%', background:'#000', '--progress-bar-color':'#c9a96e' } as any}
-                >
-                  <button slot="ar-button" className="ar-modal-ar-btn">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
-                      <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                      <path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
-                    </svg>
-                    Place in room
-                  </button>
-                </model-viewer>
-              ) : (
-                <div className="ar-modal-loading">
-                  <div className="ar-modal-loading-bar"/>
-                  <span>Loading 3D model…</span>
+            <div className="ar-qr-body">
+              {/* QR code */}
+              <div className="ar-qr-wrap">
+                <div className="ar-qr-brackets">
+                  <span/><span/><span/><span/>
                 </div>
-              )}
+                <canvas ref={qrCanvasRef} style={{display:'none'}}/>
+                <div id="ar-qr-mount" className="ar-qr-mount"/>
+              </div>
+              {/* Instructions */}
+              <div className="ar-qr-instructions">
+                <div className="ar-qr-step">
+                  <span className="ar-qr-num">01</span>
+                  <span>Open your phone camera</span>
+                </div>
+                <div className="ar-qr-step">
+                  <span className="ar-qr-num">02</span>
+                  <span>Point it at the QR code</span>
+                </div>
+                <div className="ar-qr-step">
+                  <span className="ar-qr-num">03</span>
+                  <span>Tap the link — tap "AR" to place in your room</span>
+                </div>
+                <div className="ar-qr-compat">
+                  <span>iOS 12+ · Android 8+ · No app required</span>
+                </div>
+              </div>
             </div>
             <div className="ar-modal-footer">
-              Drag to rotate · Pinch to zoom · Tap "Place in room" to activate AR
+              AR Quick Look on iOS · Scene Viewer on Android · WebXR on supported browsers
             </div>
           </div>
         </div>
