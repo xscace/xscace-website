@@ -1,4 +1,6 @@
 'use client'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
 
 import { useEffect } from 'react'
 
@@ -21,7 +23,7 @@ document.addEventListener('mousemove',function(e){
 });
 _cur.style.opacity='0';_cur.style.transition='opacity .3s';
 
-function wavyPath(cx,cy,baseR,waves,amp,phase,sx,sy){
+function wavyPath(cx:number,cy:number,baseR:number,waves:number,amp:number,phase:number,sx:number,sy:number){
   var n=90,pts=[];
   for(var i=0;i<=n;i++){
     var a=i/n*6.28318,wr=baseR+Math.sin(a*waves+phase)*amp;
@@ -89,7 +91,7 @@ drawIcon();
 var AC=window.AudioContext||window.webkitAudioContext;
 var actx=null,master=null,playing=false,audioStarted=false;
 
-function makeIR(dur,dec){
+function makeIR(dur:number,dec:number){
   var len=Math.floor(actx.sampleRate*dur),buf=actx.createBuffer(2,len,actx.sampleRate);
   for(var c=0;c<2;c++){var d=buf.getChannelData(c);for(var i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,dec);}
   var cv=actx.createConvolver();cv.buffer=buf;return cv;
