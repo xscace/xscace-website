@@ -2910,6 +2910,21 @@ a.p-card, a.p-card:hover {
   font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: .12em;
   text-transform: uppercase; color: rgba(201,169,110,0.4); margin-top: 2px;
 }
+.ar-ral-row {
+  display: flex; align-items: center; gap: 8px; margin-top: 10px;
+}
+.ar-ral-input {
+  flex: 1; background: #0a0908; border: 0.5px solid rgba(201,169,110,0.15);
+  color: rgba(238,235,229,0.7); font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: .1em; padding: 7px 10px; outline: none;
+  transition: border-color .2s;
+}
+.ar-ral-input::placeholder { color: rgba(201,169,110,0.2); }
+.ar-ral-input:focus { border-color: rgba(201,169,110,0.4); }
+.ar-ral-preview {
+  width: 26px; height: 26px; flex-shrink: 0;
+  border: 0.5px solid rgba(201,169,110,0.3);
+}
 
 /* ── HERO DESC + SKU ─────────────────────────────────────────── */
 .pd-hero-desc {
