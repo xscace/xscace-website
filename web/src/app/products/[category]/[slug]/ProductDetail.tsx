@@ -519,6 +519,12 @@ function ARWallBtn({ modelUrl, productName }: { modelUrl: string; productName: s
         mv.setAttribute('ar', '')
         mv.setAttribute('ar-modes', 'webxr scene-viewer quick-look')
         mv.setAttribute('ar-scale', 'fixed')
+        mv.setAttribute('ar-placement', 'wall')
+        // Rotate model so face points outward from wall, top is up
+        // Z=90 rotates the model so the front faces out from the wall
+        mv.setAttribute('orientation', '0deg 0deg 90deg')
+        mv.setAttribute('exposure', '0.4')
+        mv.setAttribute('shadow-intensity', '0')
         mv.style.cssText = 'position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;top:0;left:0;'
         document.body.appendChild(mv)
         mv.addEventListener('load', () => { setTimeout(() => mv.activateAR(), 100) }, { once: true })
