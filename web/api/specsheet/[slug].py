@@ -55,10 +55,12 @@ def spec_hash(p: dict) -> str:
 # ── PDF generation ─────────────────────────────────────────────────────────────
 def generate_pdf(product: dict, tmp_dir: str) -> bytes:
     import subprocess
-    # Scripts live alongside this file in api/specsheet/
+    # On Vercel, cwd = project root. Scripts sit at project root (web/).
+    # Locally __file__ dir also works. Try cwd first, then file dir.
+    cwd        = os.getcwd()
     base       = os.path.dirname(os.path.abspath(__file__))
-    charts_py  = os.path.join(base, 'charts.py')
-    gen_py     = os.path.join(base, 'specsheet_gen.py')
+    charts_py  = os.path.join(cwd, 'charts.py') if os.path.exists(os.path.join(cwd,'charts.py')) else os.path.join(base,'charts.py')
+    gen_py     = os.path.join(cwd, 'specsheet_gen.py') if os.path.exists(os.path.join(cwd,'specsheet_gen.py')) else os.path.join(base,'specsheet_gen.py')
     json_path  = os.path.join(tmp_dir, 'product.json')
     out_path   = os.path.join(tmp_dir, 'specsheet.pdf')
 
