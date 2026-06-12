@@ -530,7 +530,7 @@ function ARWallBtn({ modelUrl, productName }: { modelUrl: string; productName: s
       mv.setAttribute('ar-scale', 'fixed')
       mv.setAttribute('ar-placement', 'wall')
       mv.setAttribute('orientation', '-90deg 0deg -90deg')
-      mv.setAttribute('exposure', '0.15')
+      mv.setAttribute('exposure', '0.05')
       mv.setAttribute('shadow-intensity', '0')
       mv.style.cssText = 'position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;top:0;left:0;'
       document.body.appendChild(mv)
