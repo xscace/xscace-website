@@ -2851,6 +2851,66 @@ a.p-card, a.p-card:hover {
   color: rgba(201,169,110,0.18); flex-shrink: 0; text-align: center;
 }
 
+
+/* AR config row — orientation + color */
+.ar-config-row {
+  display: flex; align-items: stretch; gap: 0;
+  border-bottom: 0.5px solid rgba(201,169,110,0.08);
+}
+.ar-config-panel {
+  flex: 1; padding: 20px 28px; display: flex; flex-direction: column; gap: 12px;
+}
+.ar-config-divider {
+  width: 0.5px; background: rgba(201,169,110,0.08); flex-shrink: 0;
+}
+.ar-config-label {
+  font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: .18em;
+  text-transform: uppercase; color: rgba(201,169,110,0.35);
+}
+
+/* Orientation buttons */
+.ar-orient-group {
+  display: flex; gap: 8px;
+}
+.ar-orient-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 12px 8px;
+  background: none; border: 0.5px solid rgba(201,169,110,0.1);
+  color: rgba(201,169,110,0.35); cursor: pointer;
+  transition: border-color .2s, color .2s, background .2s;
+}
+.ar-orient-btn:hover {
+  border-color: rgba(201,169,110,0.3); color: rgba(201,169,110,0.7);
+}
+.ar-orient-btn.active {
+  border-color: rgba(201,169,110,0.55); color: rgba(201,169,110,0.9);
+  background: rgba(201,169,110,0.04);
+}
+.ar-orient-icon { display: flex; align-items: center; justify-content: center; }
+.ar-orient-label {
+  font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+/* Color swatches */
+.ar-color-group { display: flex; gap: 8px; align-items: center; }
+.ar-color-swatch {
+  width: 28px; height: 28px;
+  border: 0.5px solid rgba(201,169,110,0.15);
+  cursor: pointer; position: relative;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color .15s, transform .15s;
+}
+.ar-color-swatch:hover { border-color: rgba(201,169,110,0.5); transform: scale(1.1); }
+.ar-color-swatch.active {
+  border-color: #c9a96e;
+  box-shadow: 0 0 0 1px rgba(201,169,110,0.2);
+}
+.ar-color-name {
+  font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: .12em;
+  text-transform: uppercase; color: rgba(201,169,110,0.4); margin-top: 2px;
+}
+
 /* ── HERO DESC + SKU ─────────────────────────────────────────── */
 .pd-hero-desc {
   font-size: 13px; color: rgba(238,235,229,0.45); line-height: 1.7;

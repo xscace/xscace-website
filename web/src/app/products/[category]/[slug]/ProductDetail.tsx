@@ -502,43 +502,96 @@ function ModelViewer({ modelUrl, productName, arUrl }: { modelUrl: string; produ
 
 
 // ── AR WALL BUTTON ────────────────────────────────────────────────────────────
-// Mobile: triggers AR directly via model-viewer hidden element
-// Desktop: shows QR code modal — scan with phone to open AR
+const AR_COLORS = [
+  { name: 'Black',     hex: '#0A0A0A' },
+  { name: 'White',     hex: '#F2F0EC' },
+  { name: 'Champagne', hex: '#C9A96E' },
+  { name: 'Slate',     hex: '#3C3F41' },
+  { name: 'Steel',     hex: '#8A9BA8' },
+]
+
+const AR_ORIENTATIONS = [
+  { id: 'wall',    label: 'Wall',    orientation: '-90deg 0deg 0deg', placement: 'wall',
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <rect x="1" y="1" width="20" height="16" rx="1" stroke="currentColor" strokeWidth="0.8"/>
+        <rect x="7" y="4" width="8" height="10" rx="0.5" stroke="currentColor" strokeWidth="0.7" opacity="0.7"/>
+        <line x1="1" y1="17" x2="21" y2="17" stroke="currentColor" strokeWidth="0.6" opacity="0.4"/>
+        <path d="M4 19 L4 21 M11 19 L11 21 M18 19 L18 21" stroke="currentColor" strokeWidth="0.6" opacity="0.4"/>
+      </svg>
+    )
+  },
+  { id: 'floor',   label: 'Floor',   orientation: '0deg 0deg 0deg',  placement: 'floor',
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <ellipse cx="11" cy="18" rx="9" ry="2.5" stroke="currentColor" strokeWidth="0.7" opacity="0.5"/>
+        <rect x="8" y="4" width="6" height="14" rx="0.5" stroke="currentColor" strokeWidth="0.8"/>
+      </svg>
+    )
+  },
+  { id: 'ceiling', label: 'Ceiling', orientation: '90deg 0deg 0deg', placement: 'floor',
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <line x1="1" y1="4" x2="21" y2="4" stroke="currentColor" strokeWidth="0.8"/>
+        <rect x="8" y="4" width="6" height="14" rx="0.5" stroke="currentColor" strokeWidth="0.8"/>
+        <ellipse cx="11" cy="18" rx="4" ry="1.5" stroke="currentColor" strokeWidth="0.6" opacity="0.4"/>
+      </svg>
+    )
+  },
+]
+
 function ARWallBtn({ modelUrl, productName }: { modelUrl: string; productName: string }) {
-  const [open, setOpen] = useState(false)
-  const [qrUrl, setQrUrl] = useState('')
-  const qrCanvasRef = useRef<HTMLCanvasElement>(null)
+  const [open, setOpen]               = useState(false)
+  const [qrUrl, setQrUrl]             = useState('')
+  const [activeColor, setActiveColor] = useState(AR_COLORS[0])
+  const [activeOrient, setActiveOrient] = useState(AR_ORIENTATIONS[0])
+  const qrMountRef = useRef<HTMLDivElement>(null)
+
+  const loadMV = (cb: () => void) => {
+    if (document.querySelector('script[data-mv]')) { cb(); return }
+    const s = document.createElement('script')
+    s.type = 'module'
+    s.src = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js'
+    s.dataset.mv = '1'
+    s.onload = cb
+    document.head.appendChild(s)
+  }
+
+  const triggerAR = () => {
+    loadMV(() => {
+      const mv = document.createElement('model-viewer') as any
+      mv.src = modelUrl.startsWith('http') ? modelUrl : window.location.origin + modelUrl
+      mv.setAttribute('ar', '')
+      mv.setAttribute('ar-modes', 'webxr scene-viewer quick-look')
+      mv.setAttribute('ar-scale', 'fixed')
+      mv.setAttribute('ar-placement', activeOrient.placement)
+      mv.setAttribute('orientation', activeOrient.orientation)
+      mv.setAttribute('exposure', '0.4')
+      mv.setAttribute('shadow-intensity', '0')
+      mv.style.cssText = 'position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;top:0;left:0;'
+      document.body.appendChild(mv)
+      // Apply color tint via variant/material when loaded
+      mv.addEventListener('load', () => {
+        try {
+          const mat = mv.model?.materials?.[0]
+          if (mat) {
+            const r = parseInt(activeColor.hex.slice(1,3),16)/255
+            const g = parseInt(activeColor.hex.slice(3,5),16)/255
+            const b = parseInt(activeColor.hex.slice(5,7),16)/255
+            mat.pbrMetallicRoughness.setBaseColorFactor([r,g,b,1])
+          }
+        } catch(e) {}
+        setTimeout(() => mv.activateAR(), 100)
+      }, { once: true })
+      setTimeout(() => { try { document.body.removeChild(mv) } catch(e){} }, 10000)
+    })
+  }
 
   const handleClick = () => {
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
     if (isMobile) {
-      // Load model-viewer and trigger AR immediately
-      const load = () => {
-        const mv = document.createElement('model-viewer') as any
-        mv.src = modelUrl.startsWith('http') ? modelUrl : window.location.origin + modelUrl
-        mv.setAttribute('ar', '')
-        mv.setAttribute('ar-modes', 'webxr scene-viewer quick-look')
-        mv.setAttribute('ar-scale', 'fixed')
-        mv.setAttribute('ar-placement', 'wall')
-        // Rotate model so face points outward from wall, top is up
-        // Z=90 rotates the model so the front faces out from the wall
-        mv.setAttribute('orientation', '0deg 0deg 90deg')
-        mv.setAttribute('exposure', '0.4')
-        mv.setAttribute('shadow-intensity', '0')
-        mv.style.cssText = 'position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;top:0;left:0;'
-        document.body.appendChild(mv)
-        mv.addEventListener('load', () => { setTimeout(() => mv.activateAR(), 100) }, { once: true })
-        setTimeout(() => { try { document.body.removeChild(mv) } catch(e){} }, 8000)
-      }
-      if (document.querySelector('script[data-mv]')) { load(); return }
-      const s = document.createElement('script')
-      s.type = 'module'
-      s.src = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js'
-      s.dataset.mv = '1'
-      s.onload = load
-      document.head.appendChild(s)
+      triggerAR()
     } else {
-      // Desktop — show QR code
       const url = window.location.href
       setQrUrl(url)
       setOpen(true)
@@ -546,64 +599,54 @@ function ARWallBtn({ modelUrl, productName }: { modelUrl: string; productName: s
     }
   }
 
-  // Generate QR using qrcode.js via CDN
+  // Generate QR
   useEffect(() => {
-    if (!open || !qrUrl || !qrCanvasRef.current) return
-    const canvas = qrCanvasRef.current
-    const load = () => {
+    if (!open || !qrUrl || !qrMountRef.current) return
+    qrMountRef.current.innerHTML = ''
+    const doQR = () => {
       const QRCode = (window as any).QRCode
-      if (!QRCode) return
-      new QRCode(canvas.parentElement, {
-        text: qrUrl,
-        width: 180,
-        height: 180,
-        colorDark: '#c9a96e',
-        colorLight: '#000000',
+      if (!QRCode || !qrMountRef.current) return
+      new QRCode(qrMountRef.current, {
+        text: qrUrl, width: 180, height: 180,
+        colorDark: '#c9a96e', colorLight: '#000000',
         correctLevel: QRCode.CorrectLevel.M,
       })
     }
-    if ((window as any).QRCode) { load(); return }
+    if ((window as any).QRCode) { doQR(); return }
     const s = document.createElement('script')
     s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'
-    s.onload = load
+    s.onload = doQR
     document.head.appendChild(s)
   }, [open, qrUrl])
 
   const handleClose = () => {
     setOpen(false)
     document.body.style.overflow = ''
-    // Clear QR canvas
-    const el = document.getElementById('ar-qr-mount')
-    if (el) el.innerHTML = ''
   }
 
   return (
     <>
-      {/* The button */}
       <button className="ar-wall-btn" onClick={handleClick} aria-label="View it on your wall in AR">
         <span className="ar-wall-scan" aria-hidden="true"/>
         <span className="ar-wall-border-glow" aria-hidden="true"/>
         <span className="ar-wall-icon" aria-hidden="true">
           <svg width="16" height="16" viewBox="0 0 22 22" fill="none">
-            <path d="M1 16 L11 12 L21 16 L21 21 L1 21 Z"
-              stroke="currentColor" strokeWidth="0.7" fill="rgba(201,169,110,0.04)" strokeLinejoin="round"/>
-            <path d="M1 16 L1 4 L11 1 L11 12 Z"
-              stroke="currentColor" strokeWidth="0.7" fill="rgba(201,169,110,0.06)" strokeLinejoin="round"/>
-            <path d="M21 16 L21 4 L11 1 L11 12 Z"
-              stroke="currentColor" strokeWidth="0.7" fill="rgba(201,169,110,0.03)" strokeLinejoin="round"/>
+            <path d="M1 16 L11 12 L21 16 L21 21 L1 21 Z" stroke="currentColor" strokeWidth="0.7" fill="rgba(201,169,110,0.04)" strokeLinejoin="round"/>
+            <path d="M1 16 L1 4 L11 1 L11 12 Z" stroke="currentColor" strokeWidth="0.7" fill="rgba(201,169,110,0.06)" strokeLinejoin="round"/>
+            <path d="M21 16 L21 4 L11 1 L11 12 Z" stroke="currentColor" strokeWidth="0.7" fill="rgba(201,169,110,0.03)" strokeLinejoin="round"/>
             <line x1="11" y1="1" x2="11" y2="12" stroke="currentColor" strokeWidth="0.9" opacity="0.6"/>
-            <rect x="4.5" y="6" width="3.5" height="8" rx="0.4"
-              stroke="currentColor" strokeWidth="0.6" opacity="0.5"/>
+            <rect x="4.5" y="6" width="3.5" height="8" rx="0.4" stroke="currentColor" strokeWidth="0.6" opacity="0.5"/>
           </svg>
         </span>
         <span className="ar-wall-label">View it on your wall</span>
         <span className="ar-wall-tag">AR</span>
       </button>
 
-      {/* Desktop QR modal */}
       {open && (
         <div className="ar-modal-backdrop" onClick={handleClose}>
           <div className="ar-modal ar-qr-modal" onClick={e => e.stopPropagation()}>
+
+            {/* Header */}
             <div className="ar-modal-header">
               <div className="ar-modal-title">
                 <span className="ar-modal-ey">Augmented Reality</span>
@@ -616,34 +659,68 @@ function ARWallBtn({ modelUrl, productName }: { modelUrl: string; productName: s
                 </svg>
               </button>
             </div>
+
+            {/* Config panels */}
+            <div className="ar-config-row">
+
+              {/* Orientation */}
+              <div className="ar-config-panel">
+                <div className="ar-config-label">Placement</div>
+                <div className="ar-orient-group">
+                  {AR_ORIENTATIONS.map(o => (
+                    <button key={o.id}
+                      className={`ar-orient-btn${activeOrient.id === o.id ? ' active' : ''}`}
+                      onClick={() => setActiveOrient(o)}>
+                      <span className="ar-orient-icon">{o.icon}</span>
+                      <span className="ar-orient-label">{o.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="ar-config-divider"/>
+
+              {/* Color */}
+              <div className="ar-config-panel">
+                <div className="ar-config-label">Finish</div>
+                <div className="ar-color-group">
+                  {AR_COLORS.map(c => (
+                    <button key={c.name}
+                      className={`ar-color-swatch${activeColor.name === c.name ? ' active' : ''}`}
+                      style={{ background: c.hex }}
+                      onClick={() => setActiveColor(c)}
+                      title={c.name}
+                      aria-label={c.name}>
+                      {activeColor.name === c.name && (
+                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                          <path d="M2 5l2.5 2.5L8 3" stroke={c.hex === '#F2F0EC' ? '#000' : '#fff'} strokeWidth="1.2" strokeLinecap="round"/>
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                <div className="ar-color-name">{activeColor.name}</div>
+              </div>
+
+            </div>
+
+            {/* QR + instructions */}
             <div className="ar-qr-body">
-              {/* QR code */}
               <div className="ar-qr-wrap">
                 <div className="ar-qr-brackets">
                   <span/><span/><span/><span/>
                 </div>
-                <canvas ref={qrCanvasRef} style={{display:'none'}}/>
-                <div id="ar-qr-mount" className="ar-qr-mount"/>
+                <div ref={qrMountRef} className="ar-qr-mount"/>
               </div>
-              {/* Instructions */}
               <div className="ar-qr-instructions">
-                <div className="ar-qr-step">
-                  <span className="ar-qr-num">01</span>
-                  <span>Open your phone camera</span>
-                </div>
-                <div className="ar-qr-step">
-                  <span className="ar-qr-num">02</span>
-                  <span>Point it at the QR code</span>
-                </div>
-                <div className="ar-qr-step">
-                  <span className="ar-qr-num">03</span>
-                  <span>Tap the link — tap "AR" to place in your room</span>
-                </div>
-                <div className="ar-qr-compat">
-                  <span>iOS 12+ · Android 8+ · No app required</span>
-                </div>
+                <div className="ar-qr-step"><span className="ar-qr-num">01</span><span>Open your phone camera</span></div>
+                <div className="ar-qr-step"><span className="ar-qr-num">02</span><span>Point it at the QR code</span></div>
+                <div className="ar-qr-step"><span className="ar-qr-num">03</span><span>Tap the link — then tap <strong>"View it on your wall"</strong> to place in AR</span></div>
+                <div className="ar-qr-compat"><span>iOS 12+ · Android 8+ · No app required</span></div>
               </div>
             </div>
+
             <div className="ar-modal-footer">
               AR Quick Look on iOS · Scene Viewer on Android · WebXR on supported browsers
             </div>
@@ -653,6 +730,7 @@ function ARWallBtn({ modelUrl, productName }: { modelUrl: string; productName: s
     </>
   )
 }
+
 
 // ── FREQUENCY RESPONSE CHART ─────────────────────────────────────────────────
 // Matches the spec sheet PDF exactly: sealed-box HP rolloff + acoustic shaping
