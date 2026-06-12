@@ -502,48 +502,49 @@ function ModelViewer({ modelUrl, productName, arUrl }: { modelUrl: string; produ
 
 
 // ── AR WALL BUTTON ────────────────────────────────────────────────────────────
-const AR_FINISHES = [
-  { name: 'Black',     hex: '#0A0A0A' },
-  { name: 'White',     hex: '#F2F0EC' },
-  { name: 'Champagne', hex: '#C9A96E' },
-  { name: 'Slate',     hex: '#3C3F41' },
-  { name: 'Steel',     hex: '#8A9BA8' },
-]
-
+// Mobile: model-viewer hidden element → activateAR() (requires user gesture ✓)
+// Desktop: QR code pointing to this page → user taps button on phone
 function ARWallBtn({ modelUrl, productName }: { modelUrl: string; productName: string }) {
-  const [open, setOpen]             = useState(false)
-  const [vertical, setVertical]     = useState(true)
-  const [finish, setFinish]         = useState<{ name: string; hex: string } | null>(null)
-  const [ralInput, setRalInput]     = useState('')
-  const qrMountRef = useRef<HTMLDivElement>(null)
-  const qrGenerated = useRef(false)
+  const [open, setOpen]       = useState(false)
+  const [mvLoaded, setMvLoaded] = useState(false)
+  const qrMountRef            = useRef<HTMLDivElement>(null)
+  const qrDone                = useRef(false)
 
-  // Full GLB URL — served from Vercel public folder
-  const glbUrl = typeof window !== 'undefined'
-    ? (modelUrl.startsWith('http') ? modelUrl : window.location.origin + modelUrl)
-    : modelUrl
-
-  // iOS AR Quick Look — direct link to GLB, OS handles natively, no JS
-  // Android Scene Viewer intent URL
-  const getARUrl = () => {
-    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : ''
-    const isAndroid = /Android/i.test(ua)
-    if (isAndroid) {
-      // Scene Viewer intent — opens AR directly
-      return `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glbUrl)}&mode=ar_preferred&resizable=false#Intent;scheme=https;package=com.google.ar.core;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(glbUrl)};end;`
-    }
-    // iOS + desktop — direct GLB link (iOS AR Quick Look intercepts it)
-    return glbUrl
+  const loadMV = (cb: () => void) => {
+    if (document.querySelector('script[data-mv]')) { setMvLoaded(true); cb(); return }
+    const s = document.createElement('script')
+    s.type = 'module'
+    s.src = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js'
+    s.dataset.mv = '1'
+    s.onload = () => { setMvLoaded(true); cb() }
+    document.head.appendChild(s)
   }
 
-  // For QR: always use the GLB direct URL — works on both iOS and Android
-  const qrTargetUrl = glbUrl
+  const triggerAR = () => {
+    loadMV(() => {
+      const src = modelUrl.startsWith('http') ? modelUrl : window.location.origin + modelUrl
+      const mv  = document.createElement('model-viewer') as any
+      mv.src    = src
+      mv.setAttribute('ar', '')
+      mv.setAttribute('ar-modes', 'webxr scene-viewer quick-look')
+      mv.setAttribute('ar-scale', 'fixed')
+      mv.setAttribute('ar-placement', 'wall')
+      mv.setAttribute('orientation', '-90deg 0deg 0deg')
+      mv.setAttribute('exposure', '0.15')
+      mv.setAttribute('shadow-intensity', '0')
+      mv.style.cssText = 'position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;top:0;left:0;'
+      document.body.appendChild(mv)
+      mv.addEventListener('load', () => {
+        setTimeout(() => mv.activateAR(), 100)
+      }, { once: true })
+      setTimeout(() => { try { document.body.removeChild(mv) } catch(e){} }, 10000)
+    })
+  }
 
   const handleClick = () => {
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
     if (isMobile) {
-      // Direct link — browser/OS handles AR natively
-      window.location.href = getARUrl()
+      triggerAR()
     } else {
       setOpen(true)
       document.body.style.overflow = 'hidden'
@@ -553,20 +554,21 @@ function ARWallBtn({ modelUrl, productName }: { modelUrl: string; productName: s
   const handleClose = () => {
     setOpen(false)
     document.body.style.overflow = ''
-    qrGenerated.current = false
+    qrDone.current = false
     if (qrMountRef.current) qrMountRef.current.innerHTML = ''
   }
 
-  // Generate QR pointing directly at the GLB file
+  // QR points to this page — user opens it on phone and taps the button
   useEffect(() => {
-    if (!open || qrGenerated.current || !qrMountRef.current) return
-    qrGenerated.current = true
+    if (!open || qrDone.current || !qrMountRef.current) return
+    qrDone.current = true
+    const url = window.location.href
     const doQR = () => {
       const QRCode = (window as any).QRCode
       if (!QRCode || !qrMountRef.current) return
       qrMountRef.current.innerHTML = ''
       new QRCode(qrMountRef.current, {
-        text: qrTargetUrl, width: 176, height: 176,
+        text: url, width: 180, height: 180,
         colorDark: '#c9a96e', colorLight: '#000000',
         correctLevel: QRCode.CorrectLevel.M,
       })
@@ -574,12 +576,9 @@ function ARWallBtn({ modelUrl, productName }: { modelUrl: string; productName: s
     if ((window as any).QRCode) { doQR(); return }
     const s = document.createElement('script')
     s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'
-    s.onload = doQR; document.head.appendChild(s)
-  }, [open, qrTargetUrl])
-
-  const activeColorHex = ralInput.length >= 4
-    ? null // RAL — visual only, can't apply to native AR Quick Look
-    : finish?.hex || null
+    s.onload = doQR
+    document.head.appendChild(s)
+  }, [open])
 
   return (
     <>
@@ -602,7 +601,6 @@ function ARWallBtn({ modelUrl, productName }: { modelUrl: string; productName: s
       {open && (
         <div className="ar-modal-backdrop" onClick={handleClose}>
           <div className="ar-modal ar-qr-modal" onClick={e => e.stopPropagation()}>
-
             <div className="ar-modal-header">
               <div className="ar-modal-title">
                 <span className="ar-modal-ey">Augmented Reality</span>
@@ -615,64 +613,6 @@ function ARWallBtn({ modelUrl, productName }: { modelUrl: string; productName: s
                 </svg>
               </button>
             </div>
-
-            {/* Config — orientation + finish (visual reference only, noted) */}
-            <div className="ar-config-row">
-              <div className="ar-config-panel">
-                <div className="ar-config-label">Orientation</div>
-                <div className="ar-orient-group">
-                  <button className={`ar-orient-btn${vertical ? ' active' : ''}`} onClick={() => setVertical(true)}>
-                    <svg width="20" height="28" viewBox="0 0 20 28" fill="none">
-                      <rect x="2" y="1" width="16" height="26" rx="1.5" stroke="currentColor" strokeWidth="0.9" fill={vertical ? 'rgba(201,169,110,0.08)' : 'none'}/>
-                      <line x1="10" y1="6" x2="10" y2="22" stroke="currentColor" strokeWidth="0.5" opacity="0.4"/>
-                    </svg>
-                    <span className="ar-orient-label">Vertical</span>
-                  </button>
-                  <button className={`ar-orient-btn${!vertical ? ' active' : ''}`} onClick={() => setVertical(false)}>
-                    <svg width="28" height="20" viewBox="0 0 28 20" fill="none">
-                      <rect x="1" y="2" width="26" height="16" rx="1.5" stroke="currentColor" strokeWidth="0.9" fill={!vertical ? 'rgba(201,169,110,0.08)' : 'none'}/>
-                      <line x1="6" y1="10" x2="22" y2="10" stroke="currentColor" strokeWidth="0.5" opacity="0.4"/>
-                    </svg>
-                    <span className="ar-orient-label">Horizontal</span>
-                  </button>
-                </div>
-                <div className="ar-config-note">Select before scanning</div>
-              </div>
-
-              <div className="ar-config-divider"/>
-
-              <div className="ar-config-panel">
-                <div className="ar-config-label">Finish</div>
-                <div className="ar-color-group">
-                  {AR_FINISHES.map(c => (
-                    <button key={c.name}
-                      className={`ar-color-swatch${finish?.name === c.name && !ralInput ? ' active' : ''}`}
-                      style={{ background: c.hex }}
-                      onClick={() => { setFinish(c); setRalInput('') }}
-                      title={c.name} aria-label={c.name}>
-                      {finish?.name === c.name && !ralInput && (
-                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                          <path d="M2 5l2.5 2.5L8 3" stroke={c.hex === '#F2F0EC' ? '#000' : '#c9a96e'} strokeWidth="1.2" strokeLinecap="round"/>
-                        </svg>
-                      )}
-                    </button>
-                  ))}
-                </div>
-                <div className="ar-ral-row">
-                  <input className="ar-ral-input" type="text"
-                    placeholder="Custom RAL e.g. 9005"
-                    value={ralInput}
-                    onChange={e => { setRalInput(e.target.value); setFinish(null) }}
-                    maxLength={6}/>
-                </div>
-                <div className="ar-color-name">
-                  {ralInput ? `RAL ${ralInput} — discuss with XSCACE` : (finish?.name || 'Model default')}
-                </div>
-                <div className="ar-config-note">For reference — contact us to order</div>
-              </div>
-            </div>
-
-            {/* QR */}
             <div className="ar-qr-body">
               <div className="ar-qr-wrap">
                 <div className="ar-qr-brackets"><span/><span/><span/><span/></div>
@@ -681,18 +621,13 @@ function ARWallBtn({ modelUrl, productName }: { modelUrl: string; productName: s
               <div className="ar-qr-instructions">
                 <div className="ar-qr-step"><span className="ar-qr-num">01</span><span>Open your phone camera</span></div>
                 <div className="ar-qr-step"><span className="ar-qr-num">02</span><span>Point it at the QR code</span></div>
-                <div className="ar-qr-step"><span className="ar-qr-num">03</span>
-                  <span>
-                    <strong>iOS</strong> — tap the banner to open AR Quick Look directly<br/>
-                    <strong>Android</strong> — tap the link, then "View in AR"
-                  </span>
-                </div>
+                <div className="ar-qr-step"><span className="ar-qr-num">03</span><span>Tap the link to open this page on your phone</span></div>
+                <div className="ar-qr-step"><span className="ar-qr-num">04</span><span>Tap <em>"View it on your wall"</em> to place in AR</span></div>
                 <div className="ar-qr-compat"><span>iOS 12+ · Android 8+ · No app required</span></div>
               </div>
             </div>
-
             <div className="ar-modal-footer">
-              Scanning opens the 3D model directly — OS handles AR natively
+              AR Quick Look on iOS · Scene Viewer on Android · WebXR on supported browsers
             </div>
           </div>
         </div>
