@@ -121,14 +121,24 @@ class handler(BaseHTTPRequestHandler):
         if not product:
             return self._json(404, {'error': 'Product not found', 'slug': slug})
 
-        # ── 2. Check cache — redirect if hash matches ──────────────────────────
+        # ── 2. Check cache — redirect if hash matches and file exists ────────────
         current_hash = spec_hash(product)
-        if product.get('specSheetRef') and product.get('specSheetHash') == current_hash:
-            self.send_response(302)
-            self.send_header('Location', cdn_url(product['specSheetRef']))
-            self.send_header('Cache-Control', 'public, max-age=3600')
-            self.end_headers()
-            return
+        ref = product.get('specSheetRef')
+        if ref and product.get('specSheetHash') == current_hash:
+            # Verify the file actually exists on Sanity CDN before redirecting
+            url = cdn_url(ref)
+            try:
+                req = urllib.request.Request(url, method='HEAD')
+                urllib.request.urlopen(req, timeout=5)
+                # File exists — redirect
+                self.send_response(302)
+                self.send_header('Location', url)
+                self.send_header('Cache-Control', 'public, max-age=3600')
+                self.end_headers()
+                return
+            except Exception:
+                # File missing — fall through to regenerate
+                print(f'[specsheet] cached file missing, regenerating', file=sys.stderr)
 
         if product.get('specSheetRef') and product.get('specSheetHash') != current_hash:
             print(f'[specsheet] Specs changed for {product["productName"]} — regenerating', flush=True)
