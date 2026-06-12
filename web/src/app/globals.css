@@ -3144,20 +3144,85 @@ a.p-card, a.p-card:hover {
 .dd-svg {
   width: 380px; height: auto; overflow: visible; display: block;
 }
-.dd-stats { display: flex; gap: 32px; flex-wrap: wrap; }
-.dd-stat { display: flex; flex-direction: column; gap: 4px; }
-.dd-stat-label {
-  font-size: 8px; letter-spacing: .2em; text-transform: uppercase;
-  color: rgba(201,169,110,0.3); font-family: 'DM Mono', monospace;
+.dd-actions {
+  display: flex; flex-direction: column; gap: 10px;
 }
-.dd-stat-value {
-  font-family: 'Cormorant', serif; font-weight: 300;
-  font-size: 28px; color: rgba(238,235,229,0.75);
-  line-height: 1; letter-spacing: -.01em;
+.dd-download-btn {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-size: 9px; letter-spacing: .18em; text-transform: uppercase;
+  font-family: 'DM Mono', monospace;
+  color: rgba(201,169,110,0.8);
+  border: 1px solid rgba(201,169,110,0.25);
+  padding: 10px 20px;
+  text-decoration: none;
+  transition: border-color .2s, color .2s, background .2s;
+  white-space: nowrap;
+}
+.dd-download-btn:hover {
+  border-color: rgba(201,169,110,0.6);
+  color: #c9a96e;
+  background: rgba(201,169,110,0.05);
+}
+.dd-download-btn--secondary {
+  color: rgba(238,235,229,0.35);
+  border-color: rgba(255,255,255,0.08);
+}
+.dd-download-btn--secondary:hover {
+  color: rgba(238,235,229,0.65);
+  border-color: rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.03);
 }
 @media (max-width: 900px) {
   .dd-section { padding: 24px; }
   .dd-body { flex-direction: column; gap: 24px; }
   .dd-svg { width: 100%; }
   .dd-stats { gap: 20px; }
+}
+
+/* ── ACOUSTIC CHARTS SECTION ──────────────────────────────────────── */
+.pd-charts-section {
+  background: #000;
+  border-top: 1.5px solid rgba(201,169,110,0.12);
+  padding: 40px 0 48px;
+}
+.pd-charts-header {
+  padding: 0 56px 28px;
+}
+.pd-charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-top: 0.5px solid rgba(201,169,110,0.08);
+}
+@media (max-width: 860px) {
+  .pd-charts-grid { grid-template-columns: 1fr; }
+}
+.pd-chart-panel {
+  padding: 20px 32px 20px;
+  border-right: 0.5px solid rgba(201,169,110,0.08);
+}
+.pd-chart-panel:last-child { border-right: none; }
+.pd-chart-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: rgba(201,169,110,0.45);
+  margin-bottom: 12px;
+}
+.pd-fr-canvas, .pd-polar-canvas {
+  background: #0e0e0d;
+  display: block;
+}
+.pd-fr-wrap, .pd-polar-wrap {
+  border: 0.5px solid rgba(201,169,110,0.1);
+}
+.pd-fr-note {
+  font-family: 'DM Mono', monospace;
+  font-size: 7.5px;
+  letter-spacing: .1em;
+  color: rgba(201,169,110,0.28);
+  padding: 8px 12px 6px;
+  border-top: 0.5px solid rgba(201,169,110,0.07);
+  background: #0e0e0d;
 }

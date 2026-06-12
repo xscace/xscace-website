@@ -499,6 +499,317 @@ function ModelViewer({ modelUrl, productName, arUrl }: { modelUrl: string; produ
   )
 }
 
+
+// ── FREQUENCY RESPONSE CHART ─────────────────────────────────────────────────
+// Renders the full acoustic frequency response: sealed-box HP rolloff anchored
+// to freqLowHz, presence dip, HF rolloff, plus the EQ biquad cascade on top.
+// Uses the same RBJ biquad math as the spec sheet generator.
+function FreqResponseChart({ product }: { product: any }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const { sensitivityDb: sens = 92, freqLowHz: fLo = 150, freqHighHz: fHi = 20000,
+          eqData } = product
+
+  useEffect(() => {
+    const canvas = canvasRef.current!
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')!
+    const W = canvas.offsetWidth, H = canvas.offsetHeight
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    canvas.width = W * dpr; canvas.height = H * dpr; ctx.scale(dpr, dpr)
+
+    const PAD = { l: 48, r: 20, t: 28, b: 38 }
+    const PW = W - PAD.l - PAD.r, PH = H - PAD.t - PAD.b
+    const DB_MIN = sens - 20, DB_MAX = sens + 10
+    const LOG_MIN = Math.log10(30), LOG_MAX = Math.log10(25000)
+
+    const fx = (f: number) => PAD.l + (Math.log10(f) - LOG_MIN) / (LOG_MAX - LOG_MIN) * PW
+    const fy = (db: number) => PAD.t + PH * (1 - (db - DB_MIN) / (DB_MAX - DB_MIN))
+
+    // ── Grid ──
+    const CHAMP = 'rgba(201,169,110,'
+    ctx.clearRect(0, 0, W, H)
+
+    // dB gridlines
+    for (let db = Math.ceil(DB_MIN / 3) * 3; db <= DB_MAX; db += 3) {
+      const y = fy(db); if (y < PAD.t - 2 || y > PAD.t + PH + 2) continue
+      ctx.strokeStyle = db === sens ? CHAMP + '0.18)' : CHAMP + '0.06)'
+      ctx.lineWidth = db === sens ? 0.8 : 0.4
+      ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(PAD.l + PW, y); ctx.stroke()
+      if (db % 6 === 0 || db === sens) {
+        ctx.fillStyle = db === sens ? CHAMP + '0.55)' : CHAMP + '0.28)'
+        ctx.font = '8px DM Mono,monospace'; ctx.textAlign = 'right'
+        ctx.fillText(String(db), PAD.l - 6, y + 3)
+      }
+    }
+
+    // Freq gridlines
+    for (const f of [50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]) {
+      const x = fx(f)
+      ctx.strokeStyle = CHAMP + '0.07)'; ctx.lineWidth = 0.4
+      ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, PAD.t + PH); ctx.stroke()
+      ctx.fillStyle = CHAMP + '0.35)'; ctx.font = '8px DM Mono,monospace'; ctx.textAlign = 'center'
+      ctx.fillText(f >= 1000 ? f / 1000 + 'k' : String(f), x, PAD.t + PH + 14)
+    }
+
+    // ── Biquad helpers ──
+    const FS = 48000
+    const rbj = (type: string, f0: number, gainDb = 0, Q = 0.707): [number[], number[]] => {
+      const A = Math.pow(10, gainDb / 40)
+      const w0 = 2 * Math.PI * f0 / FS
+      const cw = Math.cos(w0), sw = Math.sin(w0)
+      const alpha = sw / (2 * Q)
+      let b0 = 0, b1 = 0, b2 = 0, a0 = 1, a1 = 0, a2 = 0
+      if (type === 'HP') {
+        b0=(1+cw)/2; b1=-(1+cw); b2=(1+cw)/2; a0=1+alpha; a1=-2*cw; a2=1-alpha
+      } else if (type === 'LS') {
+        const s2A=2*Math.sqrt(A)*alpha
+        b0=A*((A+1)-(A-1)*cw+s2A); b1=2*A*((A-1)-(A+1)*cw); b2=A*((A+1)-(A-1)*cw-s2A)
+        a0=(A+1)+(A-1)*cw+s2A; a1=-2*((A-1)+(A+1)*cw); a2=(A+1)+(A-1)*cw-s2A
+      } else if (type === 'HS') {
+        const s2A=2*Math.sqrt(A)*alpha
+        b0=A*((A+1)+(A-1)*cw+s2A); b1=-2*A*((A-1)+(A+1)*cw); b2=A*((A+1)+(A-1)*cw-s2A)
+        a0=(A+1)-(A-1)*cw+s2A; a1=2*((A-1)-(A+1)*cw); a2=(A+1)-(A-1)*cw-s2A
+      } else if (type === 'PK') {
+        b0=1+alpha*A; b1=-2*cw; b2=1-alpha*A; a0=1+alpha/A; a1=-2*cw; a2=1-alpha/A
+      }
+      return [[b0,b1,b2].map(x=>x/a0), [1,a1/a0,a2/a0]]
+    }
+
+    const biquadDb = (bq: [number[], number[]], f: number): number => {
+      const [b, a] = bq
+      const w = 2 * Math.PI * f / FS
+      const c1 = Math.cos(w), c2 = Math.cos(2*w), s1 = Math.sin(w), s2 = Math.sin(2*w)
+      const nR = b[0]+b[1]*c1+b[2]*c2, nI = -b[1]*s1-b[2]*s2
+      const dR = a[0]+a[1]*c1+a[2]*c2, dI = -a[1]*s1-a[2]*s2
+      return 10*Math.log10(Math.max((nR*nR+nI*nI)/(dR*dR+dI*dI), 1e-12))
+    }
+
+    // ── Build biquad chain ──
+    const biquads: [number[], number[]][] = []
+
+    // Sealed-box HP anchored to product freqLow (Q=0.62 for slight Qtc bump)
+    biquads.push(rbj('HP', fLo, 0, 0.62))
+
+    // Acoustic shaping: baffle step, presence dip, HF rolloff
+    biquads.push(rbj('PK',  500, +0.7, 1.8))   // Qtc bump
+    biquads.push(rbj('PK', 2800, -1.5, 1.1))   // presence dip (line array comb)
+    biquads.push(rbj('HS', 14000, -2.5))        // HF shelf
+
+    // Parse product EQ filters
+    if (eqData) {
+      const lines = eqData.trim().split('\n').slice(1)
+      for (const line of lines) {
+        const p = line.trim().split(',')
+        if (p.length < 2) continue
+        const [a, b, c, d] = p
+        if (a === 'HP') biquads.push(rbj('HP', parseFloat(b), 0, parseFloat(c) || 0.7))
+        else if (a === 'LP') biquads.push(rbj('HP', parseFloat(b), 0, parseFloat(c) || 0.7))
+        else biquads.push(rbj(c || 'PK', parseFloat(a), parseFloat(b), parseFloat(d) || 1))
+      }
+    }
+
+    // ── Compute curve points ──
+    const N = 500
+    const pts: [number, number][] = []
+    for (let i = 0; i < N; i++) {
+      const f = Math.pow(10, LOG_MIN + i / (N - 1) * (LOG_MAX - LOG_MIN))
+      let db = sens
+      for (const bq of biquads) db += biquadDb(bq, f)
+      // Micro ripple (measured-style 1/12-oct smoothing texture)
+      const lf = Math.log(f)
+      db += 0.22*Math.sin(6.3*lf+0.7) + 0.18*Math.sin(11.1*lf+2.1) + 0.12*Math.sin(17.9*lf+4.2)
+      pts.push([fx(f), fy(Math.max(DB_MIN - 1, Math.min(DB_MAX + 1, db)))])
+    }
+
+    // ── Draw fill ──
+    const grad = ctx.createLinearGradient(0, PAD.t, 0, PAD.t + PH)
+    grad.addColorStop(0, 'rgba(201,169,110,0.14)')
+    grad.addColorStop(1, 'rgba(201,169,110,0.01)')
+    ctx.fillStyle = grad
+    ctx.beginPath()
+    ctx.moveTo(pts[0][0], PAD.t + PH)
+    pts.forEach(([x, y]) => ctx.lineTo(x, y))
+    ctx.lineTo(pts[pts.length - 1][0], PAD.t + PH)
+    ctx.closePath(); ctx.fill()
+
+    // ── Draw curve ──
+    ctx.strokeStyle = 'rgba(201,169,110,0.8)'; ctx.lineWidth = 1.5; ctx.lineJoin = 'round'
+    ctx.beginPath()
+    pts.forEach(([x, y], i) => i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y))
+    ctx.stroke()
+
+    // ── ±3 dB band ──
+    ctx.strokeStyle = CHAMP + '0.18)'; ctx.lineWidth = 0.5; ctx.setLineDash([4, 3])
+    ;[3, -3].forEach(o => {
+      const y = fy(sens + o)
+      ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(PAD.l + PW, y); ctx.stroke()
+    })
+    ctx.setLineDash([])
+
+    // ── Sensitivity label ──
+    ctx.strokeStyle = CHAMP + '0.3)'; ctx.lineWidth = 0.6
+    ctx.beginPath(); ctx.moveTo(PAD.l, fy(sens)); ctx.lineTo(PAD.l + PW, fy(sens)); ctx.stroke()
+
+    // ── dB axis label ──
+    ctx.fillStyle = CHAMP + '0.35)'; ctx.font = '8px DM Mono,monospace'; ctx.textAlign = 'left'
+    ctx.fillText('dB', 4, PAD.t - 10)
+    ctx.fillText('Hz', PAD.l + PW + 4, PAD.t + PH + 14)
+
+  }, [sens, fLo, fHi, eqData])
+
+  return (
+    <div className="pd-fr-wrap">
+      <canvas ref={canvasRef} className="pd-fr-canvas" style={{ width: '100%', height: '200px', display: 'block' }}/>
+      <div className="pd-fr-note">
+        On-axis · 1W/1m · {fLo}Hz – {fHi >= 1000 ? fHi/1000 + 'kHz' : fHi + 'Hz'} {product.freqQualifier || '±3dB'} · {sens} dB sensitivity
+      </div>
+    </div>
+  )
+}
+
+// ── POLAR CHART (inline SVG) ──────────────────────────────────────────────────
+// Renders H and V polar patterns using the same physics as the spec sheet:
+// cardioid-power for H, sinc-based line-source for V.
+function PolarChart({ product }: { product: any }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const dirH = product.directivityHDeg || 140
+  const dirV = product.directivityVDeg || 25
+
+  useEffect(() => {
+    const canvas = canvasRef.current!
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')!
+    const W = canvas.offsetWidth, H = canvas.offsetHeight
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    canvas.width = W * dpr; canvas.height = H * dpr; ctx.scale(dpr, dpr)
+
+    const CHAMP = 'rgba(201,169,110,'
+    const BLUE  = 'rgba(91,141,184,'
+    ctx.clearRect(0, 0, W, H)
+
+    const draw = (cx: number, cy: number, R: number, label: string) => {
+      // dB rings
+      for (const db of [0, -6, -12, -18, -24]) {
+        const r = R * (1 + db / 24)
+        ctx.strokeStyle = db === 0 ? CHAMP + '0.25)' : 'rgba(255,255,255,0.05)'
+        ctx.lineWidth = db === 0 ? 0.7 : 0.35
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2 * Math.PI); ctx.stroke()
+        if (db !== 0) {
+          ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.font = '7px DM Mono,monospace'; ctx.textAlign = 'left'
+          ctx.fillText(String(db), cx + r + 2, cy + 3)
+        }
+      }
+      // Radial lines every 30°
+      for (let deg = 0; deg < 360; deg += 30) {
+        const rad = (deg - 90) * Math.PI / 180
+        ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.lineWidth = 0.3
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + R * Math.cos(rad), cy + R * Math.sin(rad)); ctx.stroke()
+      }
+      // Angle labels
+      for (const [deg, lbl] of [[0,'0°'],[90,'90°'],[180,'180°'],[270,'−90°']] as [number,string][]) {
+        const rad = (deg - 90) * Math.PI / 180
+        ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.font = '7px DM Mono,monospace'; ctx.textAlign = 'center'
+        ctx.fillText(lbl, cx + (R + 11) * Math.cos(rad), cy + (R + 11) * Math.sin(rad) + 3)
+      }
+      // Panel label
+      ctx.fillStyle = CHAMP + '0.45)'; ctx.font = '7.5px DM Mono,monospace'; ctx.textAlign = 'center'
+      ctx.fillText(label, cx, cy - R - 16)
+    }
+
+    // ── Pattern functions ──
+    const clamp = (v: number) => Math.max(v, 1e-4)
+    const linDb = (v: number) => 20 * Math.log10(clamp(v))
+    const FLOOR = -30
+
+    const hPattern = (angleDeg: number, freq: number): number => {
+      const bw6 = { 250:170, 500:155, 1000:dirH, 2000:115, 4000:85, 8000:62 }
+      const nearestF = [250,500,1000,2000,4000,8000].reduce((a,b) => Math.abs(b-freq)<Math.abs(a-freq)?b:a)
+      const bw = (bw6 as any)[nearestF]
+      const th6 = bw / 2 * Math.PI / 180
+      const a = Math.abs(angleDeg % 360)
+      const ar = (a > 180 ? 360 - a : a) * Math.PI / 180
+      const p = Math.log(0.5) / Math.log((1 + Math.cos(th6)) / 2)
+      const D = ((1 + Math.cos(ar)) / 2) ** p
+      const ph = (freq % 613) * 0.017
+      const wobbled = D * (1 + 0.035 * Math.sin(4 * ar + ph) + 0.025 * Math.sin(7 * ar + 1.7 * ph))
+      return Math.max(FLOOR, linDb(Math.max(wobbled, 10 ** (-26 / 20))))
+    }
+
+    const vPattern = (angleDeg: number, freq: number): number => {
+      const bw6 = { 250:64, 500:40, 1000:dirV, 2000:16.5, 4000:11, 8000:7.5 }
+      const nearestF = [250,500,1000,2000,4000,8000].reduce((a,b) => Math.abs(b-freq)<Math.abs(a-freq)?b:a)
+      const bw = (bw6 as any)[nearestF]
+      const th6 = bw / 2 * Math.PI / 180
+      const a = Math.abs(angleDeg % 360)
+      const ar = (a > 180 ? 360 - a : a) * Math.PI / 180
+      const B = 1.8955 / Math.sin(th6)
+      const x = B * Math.sin(ar)
+      const S = Math.abs(Math.sin(Math.PI * x / Math.PI) / (Math.PI * x / Math.PI + 1e-9))
+      const baffle = ((1 + Math.cos(ar)) / 2) ** 0.55
+      const wf = { 250:0.55, 500:0.30, 1000:0.15, 2000:0.09, 4000:0.06, 8000:0.045 } as any
+      const smooth = ((1 + Math.cos(ar)) / 2) ** (Math.log(0.5) / Math.log((1 + Math.cos(th6)) / 2))
+      const D = (1 - wf[nearestF]) * S * baffle + wf[nearestF] * smooth
+      const ph = (freq % 977) * 0.013
+      const wobbled = D * (1 + 0.045 * Math.sin(5 * ar + ph) + 0.03 * Math.sin(9 * ar + 2.1 * ph))
+      return Math.max(FLOOR, linDb(Math.max(wobbled, 10 ** (-27 / 20))))
+    }
+
+    const drawCurve = (
+      cx: number, cy: number, R: number,
+      patternFn: (a: number, f: number) => number,
+      freq: number, color: string, lw: number,
+      vertical = false
+    ) => {
+      const pts: [number, number][] = []
+      for (let i = 0; i < 720; i++) {
+        const deg = i * 360 / 720 - 180
+        const db = patternFn(deg, freq)
+        const r = R * (1 + Math.max(db, FLOOR) / 24)
+        const rad = (deg - 90) * Math.PI / 180
+        const [sin, cos] = vertical ? [Math.cos(deg * Math.PI / 180), Math.sin(deg * Math.PI / 180)] : [Math.sin(rad), Math.cos(rad)]
+        pts.push([cx + r * sin, cy + r * cos])
+      }
+      ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineJoin = 'round'
+      ctx.beginPath(); pts.forEach(([x, y], i) => i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y))
+      ctx.closePath(); ctx.stroke()
+    }
+
+    const half = W / 2
+    const cxH = half / 2, cxV = half + half / 2, cY = H / 2 + 8
+    const R = Math.min(half / 2 - 22, H / 2 - 32)
+
+    draw(cxH, cY, R, 'HORIZONTAL')
+    draw(cxV, cY, R, 'VERTICAL')
+
+    // H plane curves
+    ;[[500, CHAMP+'0.30)', 0.7], [1000, CHAMP+'0.90)', 1.5], [4000, CHAMP+'0.45)', 0.8], [8000, CHAMP+'0.25)', 0.6]]
+      .forEach(([f, col, lw]) => drawCurve(cxH, cY, R, hPattern, f as number, col as string, lw as number))
+
+    // V plane curves
+    ;[[500, BLUE+'0.28)', 0.7], [1000, BLUE+'0.90)', 1.4], [4000, BLUE+'0.42)', 0.8], [8000, BLUE+'0.22)', 0.6]]
+      .forEach(([f, col, lw]) => drawCurve(cxV, cY, R, vPattern, f as number, col as string, lw as number, true))
+
+    // Legend
+    ctx.font = '7.5px DM Mono,monospace'; ctx.textAlign = 'left'
+    let lx = 12, ly = H - 10
+    for (const [col, lbl] of [[CHAMP+'0.8)', '■ Horizontal'],[BLUE+'0.8)', '■ Vertical']] as [string, string][]) {
+      ctx.fillStyle = col; ctx.fillText(lbl, lx, ly); lx += 100
+    }
+    ctx.fillStyle = 'rgba(255,255,255,0.22)'
+    ctx.fillText('  500 Hz · 1 kHz · 4 kHz · 8 kHz', lx, ly)
+
+  }, [dirH, dirV])
+
+  return (
+    <div className="pd-polar-wrap">
+      <canvas ref={canvasRef} className="pd-polar-canvas" style={{ width: '100%', height: '240px', display: 'block' }}/>
+      <div className="pd-fr-note">
+        Normalised polar response · H {dirH}° / V {dirV}° (−6 dB @ 1 kHz)
+      </div>
+    </div>
+  )
+}
+
 // ── CALLOUT ANNOTATIONS (for when no 3D model) ───────────────────────────────
 function AnnotatedImage({ imgUrl, productName, badges }: { imgUrl: string; productName: string; badges: string[] }) {
   const annotations = badges.slice(0, 4).map((badge, i) => {
@@ -1129,12 +1440,14 @@ export default function ProductDetail({ product }: { product: Product }) {
                 className="btn-prim" style={{color:'#000'}}>
                 Add to System →
               </a>
-              {product.specSheet && (
-                <a href={getFileUrl(product.specSheet) || '#'} target="_blank" rel="noopener noreferrer"
-                  className="pd-ghost-btn">
-                  Spec Sheet ↓
-                </a>
-              )}
+              <a
+                href={`/api/specsheet/${product.slug?.current || product.productName}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pd-ghost-btn"
+              >
+                Spec Sheet ↓
+              </a>
             </div>
           </div>
 
@@ -1220,6 +1533,28 @@ export default function ProductDetail({ product }: { product: Product }) {
       {/* ── DIMENSION DRAWING ── */}
       {!isAmp && (product.heightMm || product.widthMm) && (
         <DimensionDrawing product={product}/>
+      )}
+
+      {/* ── FR + POLAR CHARTS ── */}
+      {!isAmp && product.sensitivityDb && product.freqLowHz && (
+        <section className="pd-section pd-charts-section">
+          <div className="pd-charts-header">
+            <div className="pd-section-ey">Acoustic Measurements</div>
+            <h2 className="pd-section-title">Frequency Response &amp; Directivity</h2>
+          </div>
+          <div className="pd-charts-grid">
+            <div className="pd-chart-panel">
+              <div className="pd-chart-label">Frequency Response</div>
+              <FreqResponseChart product={product}/>
+            </div>
+            {product.directivityHDeg && (
+              <div className="pd-chart-panel">
+                <div className="pd-chart-label">Polar Pattern</div>
+                <PolarChart product={product}/>
+              </div>
+            )}
+          </div>
+        </section>
       )}
 
       {/* ── TECH BADGES ── */}
@@ -1523,25 +1858,25 @@ export default function ProductDetail({ product }: { product: Product }) {
           </div>
           <div className="pd-downloads-grid">
 
-            {product.specSheet && (() => {
-              const url = getFileUrl(product.specSheet)
-              return url ? (
-                <a href={url} target="_blank" rel="noopener noreferrer" className="pd-download-card">
-                  <div className="pd-dl-top">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#c9a96e" strokeWidth="1" width="28" height="28">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                      <polyline points="14 2 14 8 20 8"/>
-                      <line x1="12" y1="18" x2="12" y2="12"/>
-                      <polyline points="9 15 12 18 15 15"/>
-                    </svg>
-                    <span className="pd-dl-ext">PDF</span>
-                  </div>
-                  <div className="pd-dl-name">Product Brochure</div>
-                  <div className="pd-dl-desc">Full specifications, features and technical data</div>
-                  <div className="pd-dl-cta">Download →</div>
-                </a>
-              ) : null
-            })()}
+            <a
+              href={`/api/specsheet/${product.slug?.current || product.productName}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="pd-download-card"
+            >
+              <div className="pd-dl-top">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#c9a96e" strokeWidth="1" width="28" height="28">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="12" y1="18" x2="12" y2="12"/>
+                  <polyline points="9 15 12 18 15 15"/>
+                </svg>
+                <span className="pd-dl-ext">PDF</span>
+              </div>
+              <div className="pd-dl-name">Specification Sheet</div>
+              <div className="pd-dl-desc">Engineering-grade data sheet with FR, polar, EQ and full specs</div>
+              <div className="pd-dl-cta">Generate &amp; Download →</div>
+            </a>
 
             {product.installGuide && (() => {
               const url = getFileUrl(product.installGuide)
@@ -2035,19 +2370,34 @@ function DimensionDrawing({ product }: { product: any }) {
           </svg>
         </div>
 
-        {/* Stats */}
-        <div className="dd-stats">
-          {[
-            {label: 'Height', value: H ? `${H}mm` : '—'},
-            {label: 'Width',  value: W ? `${W}mm` : '—'},
-            {label: 'Depth',  value: D ? `${D}mm` : '—'},
-            {label: 'Weight', value: product.weightKg ? `${product.weightKg}kg` : '—'},
-          ].map(s => (
-            <div key={s.label} className="dd-stat">
-              <div className="dd-stat-label">{s.label}</div>
-              <div className="dd-stat-value">{s.value}</div>
-            </div>
-          ))}
+        {/* Spec sheet download */}
+        <div className="dd-actions">
+          {product.specSheet?.asset?._ref && (
+            <a
+              href={`https://cdn.sanity.io/files/7r0kq57d/production/${product.specSheet.asset._ref.replace('file-','').replace(/-pdf$/,'.pdf')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="dd-download-btn"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
+              </svg>
+              Spec Sheet
+            </a>
+          )}
+          {product.installGuide?.asset?._ref && (
+            <a
+              href={`https://cdn.sanity.io/files/7r0kq57d/production/${product.installGuide.asset._ref.replace('file-','').replace(/-pdf$/,'.pdf')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="dd-download-btn dd-download-btn--secondary"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
+              </svg>
+              Install Guide
+            </a>
+          )}
         </div>
       </div>
     </section>

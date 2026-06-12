@@ -205,6 +205,8 @@ export default defineType({
     defineField({name: 'relatedProducts',      title: 'Related Products',      type: 'array', group: 'relations',
       description: 'Alternatives in same category',
       of: [{type: 'reference', to: [{type: 'product'}]}]}),
+    defineField({name: 'specSheet',   title: 'Spec Sheet (PDF)',      type: 'file',  group: 'relations', options: {accept: 'application/pdf'}}),
+    defineField({name: 'installGuide', title: 'Installation Guide (PDF)', type: 'file', group: 'relations', options: {accept: 'application/pdf'}}),
     defineField({name: 'cadFile',              title: 'CAD File (DWG/DXF)',    type: 'file',  group: 'relations'}),
 
     // ── CONTENT & COPY ─────────────────────────────────────────────────────
