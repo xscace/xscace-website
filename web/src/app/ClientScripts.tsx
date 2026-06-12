@@ -8,17 +8,18 @@ export default function ClientScripts() {
     ;(function() {
 
 (function(){
-var cur=document.getElementById('cursor');
+var cur=document.getElementById('cursor') as HTMLElement|null;
 if(!cur) return;
+var _cur=cur as HTMLElement;
 var cring=document.getElementById('c-ring'),
     cwaves=document.getElementById('c-waves'),
     wp1=document.getElementById('wp1'),wp2=document.getElementById('wp2'),wp3=document.getElementById('wp3');
 var mx=0,my=0,rx=0,ry=0,wt=0,ready=false;
 document.addEventListener('mousemove',function(e){
   mx=e.clientX;my=e.clientY;
-  if(!ready){ready=true;rx=mx;ry=my;cur.style.opacity='1';}
+  if(!ready){ready=true;rx=mx;ry=my;_cur.style.opacity='1';}
 });
-cur.style.opacity='0';cur.style.transition='opacity .3s';
+_cur.style.opacity='0';_cur.style.transition='opacity .3s';
 
 function wavyPath(cx,cy,baseR,waves,amp,phase,sx,sy){
   var n=90,pts=[];
@@ -32,7 +33,7 @@ function wavyPath(cx,cy,baseR,waves,amp,phase,sx,sy){
 }
 
 function tick(){
-  cur.style.transform='translate('+mx+'px,'+my+'px)';
+  _cur.style.transform='translate('+mx+'px,'+my+'px)';
   rx+=(mx-rx)*0.09;ry+=(my-ry)*0.09;
   var dx=rx-mx,dy=ry-my;
   cring.style.left=dx+'px';cring.style.top=dy+'px';
