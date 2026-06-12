@@ -52,6 +52,11 @@ export default defineType({
       of: [{type: 'image', options: {hotspot: true}, fields: [{name: 'alt', type: 'string', title: 'Label'}]}],
     }),
     defineField({
+      name: 'heroVideoFile', title: 'Hero Video File', type: 'file', group: 'media',
+      description: 'Upload MP4 directly. Takes priority over Hero Video URL.',
+      options: { accept: 'video/*' },
+    }),
+    defineField({
       name: 'heroVideo', title: 'Hero Video URL', type: 'url', group: 'media',
       description: 'YouTube or Vimeo URL. Autoplays muted in hero section.',
     }),
@@ -62,6 +67,7 @@ export default defineType({
         type: 'object',
         name: 'productVideo',
         fields: [
+          {name: 'videoFile', title: 'Video File (MP4)',   type: 'file', options: { accept: 'video/*' }},
           {name: 'url',       title: 'Video URL',        type: 'url'},
           {name: 'title',     title: 'Title',            type: 'string'},
           {name: 'type',      title: 'Type',             type: 'string', options: {list: ['lifestyle','demo','review']}},
