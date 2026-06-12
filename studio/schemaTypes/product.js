@@ -52,13 +52,8 @@ export default defineType({
       of: [{type: 'image', options: {hotspot: true}, fields: [{name: 'alt', type: 'string', title: 'Label'}]}],
     }),
     defineField({
-      name: 'heroVideoFile', title: 'Hero Video File (upload MP4)', type: 'file', group: 'media',
-      description: 'Upload compressed MP4 — preferred over URL. Autoplays muted in hero.',
-      options: {accept: 'video/*'},
-    }),
-    defineField({
-      name: 'heroVideo', title: 'Hero Video URL (YouTube/external)', type: 'url', group: 'media',
-      description: 'Fallback if no file uploaded above.',
+      name: 'heroVideo', title: 'Hero Video URL', type: 'url', group: 'media',
+      description: 'YouTube or Vimeo URL. Autoplays muted in hero section.',
     }),
     defineField({
       name: 'productVideos', title: 'Product Videos', type: 'array', group: 'media',
@@ -67,10 +62,7 @@ export default defineType({
         type: 'object',
         name: 'productVideo',
         fields: [
-          {name: 'videoFile', title: 'Video File (upload MP4)', type: 'file', options: {accept: 'video/*'},
-            description: 'Upload compressed MP4 — preferred over URL'},
-          {name: 'url',       title: 'OR External URL',  type: 'url',
-            description: 'Fallback if no file uploaded above'},
+          {name: 'url',       title: 'Video URL',        type: 'url'},
           {name: 'title',     title: 'Title',            type: 'string'},
           {name: 'type',      title: 'Type',             type: 'string', options: {list: ['lifestyle','demo','review']}},
           {name: 'thumbnail', title: 'Custom Thumbnail', type: 'image'},
@@ -87,6 +79,7 @@ export default defineType({
     defineField({name: 'powerPeakW',      title: 'Power Peak (W)',           type: 'number', group: 'acoustic'}),
     defineField({name: 'impedanceOhms',   title: 'Impedance (Ohms)',         type: 'number', group: 'acoustic'}),
     defineField({name: 'sensitivityDb',   title: 'Sensitivity (dB)',         type: 'number', group: 'acoustic'}),
+    defineField({name: 'splMaxDb',        title: 'Max SPL (dB)',             type: 'number', group: 'acoustic', description: 'Sensitivity + 10×log10(Peak Power W)' }),
     defineField({name: 'freqLowHz',       title: 'Freq Low (Hz)',            type: 'number', group: 'acoustic'}),
     defineField({name: 'freqHighHz',      title: 'Freq High (Hz)',           type: 'number', group: 'acoustic'}),
     defineField({name: 'freqQualifier',   title: 'Freq Qualifier',           type: 'string', group: 'acoustic', description: 'e.g. +/-3dB'}),

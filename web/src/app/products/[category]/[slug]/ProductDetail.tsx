@@ -849,6 +849,11 @@ function RainbowPill() {
 
   return (
     <span className="pd-pill-ral-rainbow" ref={pillRef}>
+      {/* Spinning conic gradient border */}
+      <span className="pd-rainbow-border" aria-hidden="true"/>
+      {/* Inner black fill */}
+      <span className="pd-rainbow-inner" aria-hidden="true"/>
+      {/* Liquid drops canvas */}
       <canvas ref={canvasRef} className="pd-rainbow-canvas" aria-hidden="true"/>
       <span className="pd-rainbow-text">Custom RAL</span>
     </span>
@@ -970,7 +975,7 @@ export default function ProductDetail({ product }: { product: Product }) {
     product.customRalAvailable ? { label: 'Custom RAL', value: 'Available' } : null,
     specRow('Power Type', product.powerType),
     specRow('IP Rating', product.ipRating),
-    specRow('Mounting', product.mountingMethod),
+    specRow('Mounting', product.mountingMethods),
     product.cutoutHeightMm && product.cutoutWidthMm
       ? { label: 'Cutout', value: `${product.cutoutHeightMm} × ${product.cutoutWidthMm} mm` }
       : null,
@@ -982,9 +987,21 @@ export default function ProductDetail({ product }: { product: Product }) {
       ? { label: 'Paintable Grille', value: product.paintableGrille ? 'Yes' : 'No' }
       : null,
     specRow('Grille Material', product.grilleMaterial),
+    product.paintableGrille !== null && product.paintableGrille !== undefined
+      ? specRow('Paintable Grille', product.paintableGrille ? 'Yes' : 'No')
+      : null,
     specRow('Fire Rating', product.fireRating),
     product.tweeterAimable ? { label: 'Aimable Tweeter', value: 'Yes' } : null,
     specRow('Crossover', product.crossoverType),
+    // SPL Max — use stored value if available, else calculate
+    (() => {
+      const stored = product.splMaxDb
+      if (stored) return specRow('Max SPL', `${stored}dB`)
+      if (!product.sensitivityDb || !product.powerPeakW) return null
+      const spl = Math.round(product.sensitivityDb + 10 * Math.log10(product.powerPeakW))
+      return specRow('Max SPL', `${spl}dB`)
+    })(),
+    specRow('THD+N', product.thdN),
   ].filter(Boolean) as { label: string; value: string }[]
 
   // Electronics / connectivity specs (amplifiers)
@@ -1032,7 +1049,7 @@ export default function ProductDetail({ product }: { product: Product }) {
               <div className="pd-hero-sku">{product.skuBase}</div>
             )}
 
-            {/* Key specs pills */}
+            {/* Key specs pills — row 1 */}
             <div className="pd-hero-pills">
               {product.powerRmsW && <span className="pd-pill">{product.powerRmsW}W</span>}
               {product.totalPowerW && <span className="pd-pill">{product.totalPowerW}W</span>}
@@ -1043,52 +1060,67 @@ export default function ProductDetail({ product }: { product: Product }) {
                 </span>
               )}
               {product.powerType && <span className="pd-pill">{product.powerType}</span>}
+            </div>
 
-              {/* Standard colors */}
+            {/* Feature tags — row 2: colors + marine + ral */}
+            <div className="pd-hero-feature-row">
+
+              {/* Standard Colors */}
               {product.colorsStandard && (
-                <>
-                  <span className="pd-pill-sep"/>
-                  <span className="pd-pill pd-pill-colors">
-                    {(product.colorsStandard as string).split(',').map((c: string) => {
-                      const col = c.trim()
-                      const hex: Record<string,string> = {
-                        'Matte Champagne':'#C9A96E','Champagne':'#C9A96E',
-                        'Anthracite':'#3C3F41','Anthracite Grey':'#3C3F41',
-                        'White':'#F2F0EC','Matte White':'#F2F0EC','Pure White':'#F4F4F4',
-                        'Black':'#0A0A0A','Jet Black':'#0A0A0A','Matte Black':'#111',
+                <span className="pd-std-tag">
+                  {(product.colorsStandard as string).split(',').map((c: string) => {
+                    const col = c.trim()
+                    const hexMap: Record<string,string> = {
+                      'Matte Champagne':'#C9A96E','Champagne':'#C9A96E',
+                      'Anthracite':'#3C3F41','Anthracite Grey':'#3C3F41',
+                      'White':'#F2F0EC','Matte White':'#F2F0EC','Pure White':'#F4F4F4',
+                      'Black':'#0A0A0A','Jet Black':'#0A0A0A','Matte Black':'#111',
+                    }
+                    return <span key={col} className="pd-color-dot"
+                      style={{background: hexMap[col] || '#888',
+                        border: col.toLowerCase().includes('white') ? '1px solid rgba(255,255,255,0.25)' : 'none'}}
+                      title={col}/>
+                  })}
+                  <span className="pd-std-names">
+                    {(product.colorsStandard as string).split(',').map((c:string) => {
+                      const name = c.trim()
+                      const alias: Record<string,string> = {
+                        'Matte Champagne':'Champagne','Matte White':'White','Matte Black':'Black',
+                        'Anthracite':'Black','Anthracite Grey':'Black','Jet Black':'Black',
+                        'Pure White':'White',
                       }
-                      return <span key={col} className="pd-color-dot"
-                        style={{background: hex[col] || '#888',
-                          border: col.toLowerCase().includes('white') ? '1px solid rgba(255,255,255,0.25)' : 'none'}}
-                        title={col}/>
-                    })}
+                      return alias[name] || name
+                    }).filter((v,i,a)=>a.indexOf(v)===i).join(' · ')}
                   </span>
-                </>
+                </span>
               )}
 
-              {/* Marine Treatable — wet animated */}
+              {/* Marine Treatable — shimmer border + water drops inside→out */}
               {(product.marineTreatable || product.ipRating) && (
-                <>
-                  <span className="pd-pill-sep"/>
-                  <span className="pd-pill-marine-wet">
-                    <span className="pd-marine-drops" aria-hidden="true">
-                      <span className="pd-drop pd-drop-1"/>
-                      <span className="pd-drop pd-drop-2"/>
-                      <span className="pd-drop pd-drop-3"/>
-                    </span>
-                    Marine Treatable
-                    {product.ipRating && <span className="pd-marine-ip">{product.ipRating}</span>}
+                <span className="pd-marine-tag">
+                  {/* Sweeping shimmer border */}
+                  <span className="pd-marine-border-shimmer" aria-hidden="true"/>
+                  {/* Wet sheen */}
+                  <span className="pd-marine-sheen" aria-hidden="true"/>
+                  {/* Drops */}
+                  <span className="pd-marine-drops" aria-hidden="true">
+                    <span className="pd-drop pd-drop-1"/>
+                    <span className="pd-drop pd-drop-2"/>
+                    <span className="pd-drop pd-drop-3"/>
+                    <span className="pd-drop pd-drop-4"/>
                   </span>
-                </>
+                  <svg className="pd-marine-icon" width="10" height="13" viewBox="0 0 10 13" fill="none" aria-hidden="true">
+                    <path d="M5 0C5 0 0.5 4.5 0.5 7.5a4.5 4.5 0 009 0C9.5 4.5 5 0 5 0z"
+                      fill="rgba(120,200,240,0.2)" stroke="rgba(140,210,255,0.8)" strokeWidth="0.7"/>
+                  </svg>
+                  <span className="pd-marine-text">Marine Treatable</span>
+                  {product.ipRating && <span className="pd-marine-ip">{product.ipRating}</span>}
+                </span>
               )}
 
-              {/* Custom RAL — liquid rainbow */}
-              {product.customRalAvailable && (
-                <>
-                  <span className="pd-pill-sep"/>
-                  <RainbowPill/>
-                </>
-              )}
+              {/* Custom RAL — spinning prism border + liquid drops */}
+              {product.customRalAvailable && <RainbowPill/>}
+
             </div>
 
             {/* CTAs */}
@@ -1184,6 +1216,11 @@ export default function ProductDetail({ product }: { product: Product }) {
       <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
 {/* ── SPECS ── */}
       <SpecsTicker product={product} acousticSpecs={acousticSpecs} physicalSpecs={physicalSpecs} connectivitySpecs={connectivitySpecs} isAmp={isAmp}/>
+
+      {/* ── DIMENSION DRAWING ── */}
+      {!isAmp && (product.heightMm || product.widthMm) && (
+        <DimensionDrawing product={product}/>
+      )}
 
       {/* ── TECH BADGES ── */}
       {badges.length > 0 && (
@@ -1888,3 +1925,133 @@ function SpecsTicker({ product, acousticSpecs, physicalSpecs, connectivitySpecs,
     </section>
   )
 }
+
+// ── DIMENSION DRAWING ─────────────────────────────────────────────────────────
+function DimensionDrawing({ product }: { product: any }) {
+  const H = product.heightMm || 0
+  const W = product.widthMm || 0
+  const D = product.depthMm || 0
+  if (!H && !W) return null
+
+  // Rotate so the longest physical dimension is always drawn horizontally
+  // For tall speakers (H > W): rotate 90° so height runs left-right
+  const isPortrait = H > W
+  const drawW = isPortrait ? H : W  // the horizontal extent in the drawing
+  const drawH = isPortrait ? W : H  // the vertical extent in the drawing
+
+  // Scale to fill 280px wide, max 120px tall
+  const scaleX = 280 / drawW
+  const scaleY = 120 / drawH
+  const scale = Math.min(scaleX, scaleY)
+
+  const pW = drawW * scale   // pixel width (horizontal in drawing)
+  const pH = drawH * scale   // pixel height (vertical in drawing)
+  const pD = D ? Math.min(D * scale * 0.6, 28) : 0
+  const iso = pD * 0.5
+
+  const C = '#c9a96e'
+  const CA = 'rgba(201,169,110,0.3)'
+  const CT = 'rgba(201,169,110,0.5)'
+  const CF = 'rgba(201,169,110,0.06)'
+
+  const svgW = pW + iso + 80
+  const svgH = pH + iso + 64
+  const ox = 48, oy = svgH - 36  // origin: bottom-left of front face
+
+  // Labels
+  const hLabel = isPortrait ? `${H}mm` : `${W}mm`  // horizontal label
+  const vLabel = isPortrait ? `${W}mm` : `${H}mm`  // vertical label
+  const hNote  = isPortrait ? 'H' : 'W'
+  const vNote  = isPortrait ? 'W' : 'H'
+
+  return (
+    <section className="dd-section">
+      <div className="dd-body">
+        <div className="dd-svg-wrap">
+          <svg viewBox={`0 0 ${svgW} ${svgH}`} className="dd-svg" xmlns="http://www.w3.org/2000/svg">
+            {/* Front face */}
+            <rect x={ox} y={oy - pH} width={pW} height={pH} fill={CF} stroke={C} strokeWidth="0.8"/>
+
+            {/* Grille dot pattern */}
+            {Array.from({length: Math.floor(pH / 5)}, (_, ri) =>
+              Array.from({length: Math.floor(pW / 5)}, (_, ci) => (
+                <circle key={`${ri}-${ci}`}
+                  cx={ox + 3 + ci * 5} cy={oy - pH + 4 + ri * 5}
+                  r="0.55" fill={C} opacity="0.28"/>
+              ))
+            )}
+
+            {/* Top face (isometric) */}
+            {pD > 0 && <polygon
+              points={`${ox},${oy-pH} ${ox+iso},${oy-pH-iso} ${ox+pW+iso},${oy-pH-iso} ${ox+pW},${oy-pH}`}
+              fill={CF} stroke={C} strokeWidth="0.8"/>}
+
+            {/* Right face (isometric) */}
+            {pD > 0 && <polygon
+              points={`${ox+pW},${oy-pH} ${ox+pW+iso},${oy-pH-iso} ${ox+pW+iso},${oy-iso} ${ox+pW},${oy}`}
+              fill="rgba(201,169,110,0.03)" stroke={C} strokeWidth="0.8"/>}
+
+            {/* Horizontal dimension (bottom) */}
+            <line x1={ox} y1={oy+10} x2={ox+pW} y2={oy+10} stroke={CA} strokeWidth="0.5"/>
+            <line x1={ox} y1={oy+5} x2={ox} y2={oy+15} stroke={CA} strokeWidth="0.5"/>
+            <line x1={ox+pW} y1={oy+5} x2={ox+pW} y2={oy+15} stroke={CA} strokeWidth="0.5"/>
+            <text x={ox+pW/2} y={oy+26} fill={CT} fontSize="8"
+              fontFamily="DM Mono,monospace" textAnchor="middle">{hNote} {hLabel}</text>
+
+            {/* Vertical dimension (left) */}
+            <line x1={ox-10} y1={oy} x2={ox-10} y2={oy-pH} stroke={CA} strokeWidth="0.5"/>
+            <line x1={ox-15} y1={oy} x2={ox-5} y2={oy} stroke={CA} strokeWidth="0.5"/>
+            <line x1={ox-15} y1={oy-pH} x2={ox-5} y2={oy-pH} stroke={CA} strokeWidth="0.5"/>
+            <text x={ox-20} y={oy-pH/2} fill={CT} fontSize="8"
+              fontFamily="DM Mono,monospace" textAnchor="middle"
+              transform={`rotate(-90,${ox-20},${oy-pH/2})`}>{vNote} {vLabel}</text>
+
+            {/* Depth (diagonal) */}
+            {pD > 0 && <>
+              <line x1={ox+pW+3} y1={oy-3} x2={ox+pW+iso+3} y2={oy-iso-3} stroke={CA} strokeWidth="0.5"/>
+              <text x={ox+pW+iso/2+10} y={oy-iso/2} fill={CT} fontSize="8"
+                fontFamily="DM Mono,monospace">D {D}mm</text>
+            </>}
+
+            {/* Keyhole mount markers */}
+            {!isPortrait && <>
+              <circle cx={ox+pW*0.25} cy={oy-pH/2} r="2" fill="none" stroke={CA}
+                strokeWidth="0.5" strokeDasharray="2 1.5"/>
+              <circle cx={ox+pW*0.75} cy={oy-pH/2} r="2" fill="none" stroke={CA}
+                strokeWidth="0.5" strokeDasharray="2 1.5"/>
+            </>}
+            {isPortrait && <>
+              <circle cx={ox+pW/2} cy={oy-pH*0.25} r="2" fill="none" stroke={CA}
+                strokeWidth="0.5" strokeDasharray="2 1.5"/>
+              <circle cx={ox+pW/2} cy={oy-pH*0.75} r="2" fill="none" stroke={CA}
+                strokeWidth="0.5" strokeDasharray="2 1.5"/>
+            </>}
+
+            {/* Orientation note */}
+            {isPortrait && (
+              <text x={ox} y={svgH - 6} fill={CA} fontSize="7"
+                fontFamily="DM Mono,monospace" opacity="0.6">rotated 90° for display</text>
+            )}
+          </svg>
+        </div>
+
+        {/* Stats */}
+        <div className="dd-stats">
+          {[
+            {label: 'Height', value: H ? `${H}mm` : '—'},
+            {label: 'Width',  value: W ? `${W}mm` : '—'},
+            {label: 'Depth',  value: D ? `${D}mm` : '—'},
+            {label: 'Weight', value: product.weightKg ? `${product.weightKg}kg` : '—'},
+          ].map(s => (
+            <div key={s.label} className="dd-stat">
+              <div className="dd-stat-label">{s.label}</div>
+              <div className="dd-stat-value">{s.value}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+
