@@ -992,6 +992,70 @@ function AnnotatedImage({ imgUrl, productName, badges }: { imgUrl: string; produ
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────────
 
 // ── VIDEO GRID GALLERY ───────────────────────────────────────────────────────
+// ── FLOATING GALLERY ─────────────────────────────────────────────────────────
+// Masonry-style drifting images on pure black — click to lightbox
+function FloatingGallery({ images, productName, getImageUrl }: {
+  images: any[]
+  productName: string
+  getImageUrl: (img: any, w?: number) => string | null
+}) {
+  const [lightbox, setLightbox] = useState<string | null>(null)
+  const [hovered, setHovered]   = useState<number | null>(null)
+
+  // Build grid items with varying sizes
+  const items = images.map((img, i) => {
+    const url = getImageUrl(img, 1200)
+    if (!url) return null
+    // Alternate large/small in a pattern
+    const size = [2,1,1,2,1,2,1,1][i % 8] // 2=large, 1=small
+    return { url, size, i }
+  }).filter(Boolean) as { url: string; size: number; i: number }[]
+
+  if (items.length === 0) return null
+
+  return (
+    <section className="fg-section">
+      <div className="fg-header">
+        <div className="pd-section-ey">Gallery</div>
+        <h2 className="pd-section-title">{productName} <em>in context</em></h2>
+      </div>
+
+      <div className="fg-grid">
+        {items.map(({ url, size, i }) => (
+          <div
+            key={i}
+            className={`fg-item fg-item-${size}${hovered === i ? ' fg-hovered' : ''}`}
+            onClick={() => setLightbox(url)}
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(null)}
+          >
+            <img src={url} alt={`${productName} ${i + 1}`} className="fg-img"/>
+            <div className="fg-overlay">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M3 3h5M3 3v5M17 3h-5M17 3v5M3 17h5M3 17v-5M17 17h-5M17 17v-5"
+                  stroke="#c9a96e" strokeWidth="1.2" strokeLinecap="round"/>
+              </svg>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Lightbox */}
+      {lightbox && (
+        <div className="fg-lightbox" onClick={() => setLightbox(null)}>
+          <img src={lightbox} alt={productName} className="fg-lb-img"/>
+          <button className="fg-lb-close" onClick={() => setLightbox(null)} aria-label="Close">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <line x1="1" y1="1" x2="15" y2="15" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+              <line x1="15" y1="1" x2="1" y2="15" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
+      )}
+    </section>
+  )
+}
+
 function VideoGallery({ images, videos, productName, getImageUrl }: {
   images: any[]
   videos: any[]
@@ -1095,8 +1159,6 @@ function VideoGallery({ images, videos, productName, getImageUrl }: {
                 )
               })()}
             </div>
-          ) : allImages[0] && getImageUrl(allImages[0], 900) ? (
-            <img src={getImageUrl(allImages[0], 900)!} alt={productName} className="vg-fallback"/>
           ) : null}
 
           {/* Vignette */}
@@ -1143,8 +1205,6 @@ function VideoGallery({ images, videos, productName, getImageUrl }: {
                 )
               })()}
             </div>
-          ) : allImages[1] && getImageUrl(allImages[1], 900) ? (
-            <img src={getImageUrl(allImages[1], 900)!} alt={productName} className="vg-fallback"/>
           ) : null}
 
           <div className="vg-vignette"/>
@@ -1634,13 +1694,21 @@ export default function ProductDetail({ product }: { product: Product }) {
       {/* wave divider */}
       <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
       {/* ── RESOURCES & MEDIA ── */}
-      {(galleryAll.length > 0 || (product.productVideos && product.productVideos.length > 0)) && (
+      {(product.productVideos && product.productVideos.length > 0) && (
         <VideoGallery
-          images={galleryAll}
+          images={[]}
           videos={product.productVideos || []}
           productName={product.productName}
           getImageUrl={getImageUrl}
         />
+      )}
+
+      {/* ── FLOATING GALLERY ── */}
+      {galleryAll.length > 0 && (
+        <>
+          <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
+          <FloatingGallery images={galleryAll} productName={product.productName} getImageUrl={getImageUrl}/>
+        </>
       )}
 
 
