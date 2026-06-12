@@ -1,8 +1,1 @@
-{
-  "functions": {
-    "api/specsheet/[slug].py": {
-      "maxDuration": 60,
-      "memory": 1024
-    }
-  }
-}
+{}
