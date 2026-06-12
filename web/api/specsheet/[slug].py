@@ -59,7 +59,7 @@ def generate_pdf(product: dict, tmp_dir: str) -> bytes:
     # Locally __file__ dir also works. Try cwd first, then file dir.
     cwd        = os.getcwd()
     base       = os.path.dirname(os.path.abspath(__file__))
-    charts_py  = os.path.join(cwd, 'charts.py') if os.path.exists(os.path.join(cwd,'charts.py')) else os.path.join(base,'charts.py')
+    charts_py  = os.path.join(cwd, 'charts_slim.py') if os.path.exists(os.path.join(cwd,'charts_slim.py')) else os.path.join(base,'charts_slim.py')
     gen_py     = os.path.join(cwd, 'specsheet_gen.py') if os.path.exists(os.path.join(cwd,'specsheet_gen.py')) else os.path.join(base,'specsheet_gen.py')
     json_path  = os.path.join(tmp_dir, 'product.json')
     out_path   = os.path.join(tmp_dir, 'specsheet.pdf')
