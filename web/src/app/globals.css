@@ -2910,6 +2910,10 @@ a.p-card, a.p-card:hover {
   font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: .12em;
   text-transform: uppercase; color: rgba(201,169,110,0.4); margin-top: 2px;
 }
+.ar-config-note {
+  font-family: 'DM Mono', monospace; font-size: 7.5px; letter-spacing: .08em;
+  color: rgba(201,169,110,0.2); margin-top: 4px; font-style: italic;
+}
 .ar-ral-row {
   display: flex; align-items: center; gap: 8px; margin-top: 10px;
 }
