@@ -104,7 +104,8 @@ class handler(BaseHTTPRequestHandler):
                   eqData, eqProfileName, specConfidence,
                   "slug": slug.current,
                   "specSheetRef":  specSheet.asset._ref,
-                  "specSheetHash": specSheetHash
+                  "specSheetHash": specSheetHash,
+                  heroImage
                 }}''',
                 token
             )
@@ -132,7 +133,25 @@ class handler(BaseHTTPRequestHandler):
         if product.get('specSheetRef') and product.get('specSheetHash') != current_hash:
             print(f'[specsheet] Specs changed for {product["productName"]} — regenerating', flush=True)
 
-        # ── 3. Generate PDF ────────────────────────────────────────────────────
+        # ── 3. Fetch hero image ────────────────────────────────────────────────
+        hero = (product.get('heroImage') or {})
+        if isinstance(hero, dict) and isinstance(hero.get('asset'), dict):
+            ref = hero['asset'].get('_ref', '')
+            if ref.startswith('image-'):
+                # ref format: image-<id>-<WxH>-<ext>
+                body = ref[6:]                          # strip 'image-'
+                parts = body.rsplit('-', 1)             # split off extension
+                ext = parts[-1] if len(parts) == 2 else 'jpg'
+                img_id = parts[0].replace('-', '/', 1) # first - becomes /
+                cdn = f'https://cdn.sanity.io/images/{PROJECT_ID}/{DATASET}/{img_id}.{ext}?w=900&auto=format'
+                try:
+                    req = urllib.request.Request(cdn)
+                    with urllib.request.urlopen(req, timeout=10) as r:
+                        product['_hero_img_bytes'] = r.read()
+                except Exception as _e:
+                    print(f'[specsheet] hero fetch failed: {_e}', file=sys.stderr)
+
+        # ── 4. Generate PDF ────────────────────────────────────────────────────
         try:
             with tempfile.TemporaryDirectory() as tmp_dir:
                 pdf_bytes = generate_pdf(product, tmp_dir)
