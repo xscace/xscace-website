@@ -566,7 +566,7 @@ function ARWallBtn({ modelUrl, productName }: { modelUrl: string; productName: s
     document.head.appendChild(s)
   }
 
-  const triggerAR = () => {
+  const triggerAR = (overrideOrient?: string, overrideColor?: string) => {
     loadMV(() => {
       const mv = document.createElement('model-viewer') as any
       mv.src = modelUrl.startsWith('http') ? modelUrl : window.location.origin + modelUrl
@@ -574,18 +574,31 @@ function ARWallBtn({ modelUrl, productName }: { modelUrl: string; productName: s
       mv.setAttribute('ar-modes', 'webxr scene-viewer quick-look')
       mv.setAttribute('ar-scale', 'fixed')
       mv.setAttribute('ar-placement', 'wall')
-      mv.setAttribute('orientation', getOrientation())
-      mv.setAttribute('exposure', '0.4')
+      mv.setAttribute('orientation', overrideOrient || getOrientation())
+      mv.setAttribute('exposure', '0.15')
       mv.setAttribute('shadow-intensity', '0')
       mv.style.cssText = 'position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;top:0;left:0;'
       document.body.appendChild(mv)
       mv.addEventListener('load', () => {
-        applyColor(mv, getColor())
+        applyColor(mv, overrideColor !== undefined ? overrideColor : getColor())
         setTimeout(() => mv.activateAR(), 100)
       }, { once: true })
       setTimeout(() => { try { document.body.removeChild(mv) } catch(e){} }, 10000)
     })
   }
+
+  // On mount — if URL has ar_orient params (phone opened via QR), auto-trigger AR
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const arOrient = params.get('ar_orient')
+    const arColor  = params.get('ar_color')
+    if (!arOrient) return
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+    if (!isMobile) return
+    // Small delay so page renders first
+    setTimeout(() => triggerAR(arOrient, arColor || undefined), 800)
+  }, [])
 
   const handleClick = () => {
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
