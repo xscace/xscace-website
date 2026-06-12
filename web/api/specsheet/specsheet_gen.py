@@ -114,9 +114,11 @@ if _args.product:
 
 
 # ── MAGMAWAVE IMAGES (pre-rendered PNGs) ──────────────────────────────────────
-MW_LARGE  = '/home/claude/mw_cane_large.png'   # 342×121 px
-MW_XSCACE = '/home/claude/mw_xscace.png'       # 151×61 px
-MW_SMALL  = '/home/claude/mw_cane_small.png'   # 128×65 px
+# Logo images — looked up relative to this script's directory
+_IMG_DIR  = os.environ.get('XSCACE_CHART_DIR') or os.path.dirname(os.path.abspath(__file__))
+MW_LARGE  = os.path.join(_IMG_DIR, 'mw_cane_large.png')
+MW_XSCACE = os.path.join(_IMG_DIR, 'mw_xscace.png')
+MW_SMALL  = os.path.join(_IMG_DIR, 'mw_cane_small.png')
 
 def page_bg(c):
     c.setFillColor(BG); c.rect(0,0,W,H,fill=1,stroke=0)
@@ -160,16 +162,24 @@ def page_cover(c):
     # Top champagne bar
     c.setFillColor(CHAMP); c.rect(0,H-1.2*mm,W,1.2*mm,fill=1,stroke=0)
 
-    # XSCACE in MagmaWave
-    c.drawImage(MW_XSCACE, MARGIN, H-22*mm, width=28*mm, height=11*mm,
-                mask='auto', preserveAspectRatio=True)
+    # XSCACE logo (skip if PNG not present)
+    if os.path.exists(MW_XSCACE):
+        c.drawImage(MW_XSCACE, MARGIN, H-22*mm, width=28*mm, height=11*mm,
+                    mask='auto', preserveAspectRatio=True)
+    else:
+        c.setFillColor(TEXT); c.setFont('Helvetica-Bold', 14)
+        c.drawString(MARGIN, H-22*mm, 'XSCACE')
 
     c.setFillColor(MUTED); c.setFont('Helvetica',7)
     c.drawString(MARGIN, H-27*mm, 'SIZE DEFYING SOUND')
 
-    # CANE in MagmaWave — large
-    c.drawImage(MW_LARGE, MARGIN, H-72*mm, width=64*mm, height=22*mm,
-                mask='auto', preserveAspectRatio=True)
+    # Product name large (skip if PNG not present)
+    if os.path.exists(MW_LARGE):
+        c.drawImage(MW_LARGE, MARGIN, H-72*mm, width=64*mm, height=22*mm,
+                    mask='auto', preserveAspectRatio=True)
+    else:
+        c.setFillColor(CHAMP); c.setFont('Helvetica-Bold', 28)
+        c.drawString(MARGIN, H-72*mm, PRODUCT.get('name','Speaker').upper())
 
     c.setFillColor(MUTED); c.setFont('Helvetica',10)
     c.drawString(MARGIN, H-79*mm, PRODUCT['full_name'])
