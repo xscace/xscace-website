@@ -501,13 +501,11 @@ function ModelViewer({ modelUrl, productName, arUrl }: { modelUrl: string; produ
 
 
 // ── FREQUENCY RESPONSE CHART ─────────────────────────────────────────────────
-// Renders the full acoustic frequency response: sealed-box HP rolloff anchored
-// to freqLowHz, presence dip, HF rolloff, plus the EQ biquad cascade on top.
-// Uses the same RBJ biquad math as the spec sheet generator.
+// Matches the spec sheet PDF exactly: sealed-box HP rolloff + acoustic shaping
+// + product EQ biquads, with micro ripple. Pure black background.
 function FreqResponseChart({ product }: { product: any }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const { sensitivityDb: sens = 92, freqLowHz: fLo = 150, freqHighHz: fHi = 20000,
-          eqData } = product
+  const { sensitivityDb: sens = 92, freqLowHz: fLo = 150, freqHighHz: fHi = 20000, eqData } = product
 
   useEffect(() => {
     const canvas = canvasRef.current!
@@ -517,47 +515,52 @@ function FreqResponseChart({ product }: { product: any }) {
     const dpr = Math.min(window.devicePixelRatio || 1, 2)
     canvas.width = W * dpr; canvas.height = H * dpr; ctx.scale(dpr, dpr)
 
-    const PAD = { l: 48, r: 20, t: 28, b: 38 }
+    const FS = 48000
+    const PAD = { l: 48, r: 16, t: 24, b: 36 }
     const PW = W - PAD.l - PAD.r, PH = H - PAD.t - PAD.b
     const DB_MIN = sens - 20, DB_MAX = sens + 10
     const LOG_MIN = Math.log10(30), LOG_MAX = Math.log10(25000)
 
-    const fx = (f: number) => PAD.l + (Math.log10(f) - LOG_MIN) / (LOG_MAX - LOG_MIN) * PW
-    const fy = (db: number) => PAD.t + PH * (1 - (db - DB_MIN) / (DB_MAX - DB_MIN))
+    const fx  = (f: number) => PAD.l + (Math.log10(f) - LOG_MIN) / (LOG_MAX - LOG_MIN) * PW
+    const fdb = (db: number) => PAD.t + PH * (1 - (db - DB_MIN) / (DB_MAX - DB_MIN))
+
+    // ── Background ──
+    ctx.fillStyle = '#000000'
+    ctx.fillRect(0, 0, W, H)
+    ctx.fillStyle = '#0e0e0d'
+    ctx.fillRect(PAD.l, PAD.t, PW, PH)
+
+    const CHAMP = (a: number) => `rgba(201,169,110,${a})`
+    const MUTED = (a: number) => `rgba(107,103,96,${a})`
+    const GRID  = '#1a1917'
 
     // ── Grid ──
-    const CHAMP = 'rgba(201,169,110,'
-    ctx.clearRect(0, 0, W, H)
-
-    // dB gridlines
-    for (let db = Math.ceil(DB_MIN / 3) * 3; db <= DB_MAX; db += 3) {
-      const y = fy(db); if (y < PAD.t - 2 || y > PAD.t + PH + 2) continue
-      ctx.strokeStyle = db === sens ? CHAMP + '0.18)' : CHAMP + '0.06)'
-      ctx.lineWidth = db === sens ? 0.8 : 0.4
+    for (let db = Math.ceil(DB_MIN/3)*3; db <= DB_MAX; db += 3) {
+      const y = fdb(db)
+      if (y < PAD.t - 2 || y > PAD.t + PH + 2) continue
+      ctx.strokeStyle = db === sens ? CHAMP(0.2) : GRID
+      ctx.lineWidth   = db === sens ? 0.8 : 0.4
       ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(PAD.l + PW, y); ctx.stroke()
       if (db % 6 === 0 || db === sens) {
-        ctx.fillStyle = db === sens ? CHAMP + '0.55)' : CHAMP + '0.28)'
-        ctx.font = '8px DM Mono,monospace'; ctx.textAlign = 'right'
-        ctx.fillText(String(db), PAD.l - 6, y + 3)
+        ctx.fillStyle   = db === sens ? CHAMP(0.55) : MUTED(0.5)
+        ctx.font        = '8px DM Mono,monospace'
+        ctx.textAlign   = 'right'
+        ctx.fillText(String(db), PAD.l - 5, y + 3)
       }
     }
-
-    // Freq gridlines
     for (const f of [50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]) {
       const x = fx(f)
-      ctx.strokeStyle = CHAMP + '0.07)'; ctx.lineWidth = 0.4
+      ctx.strokeStyle = GRID; ctx.lineWidth = 0.4
       ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, PAD.t + PH); ctx.stroke()
-      ctx.fillStyle = CHAMP + '0.35)'; ctx.font = '8px DM Mono,monospace'; ctx.textAlign = 'center'
-      ctx.fillText(f >= 1000 ? f / 1000 + 'k' : String(f), x, PAD.t + PH + 14)
+      ctx.fillStyle = MUTED(0.5); ctx.font = '8px DM Mono,monospace'; ctx.textAlign = 'center'
+      ctx.fillText(f >= 1000 ? f/1000 + 'k' : String(f), x, PAD.t + PH + 14)
     }
 
-    // ── Biquad helpers ──
-    const FS = 48000
+    // ── RBJ biquad helpers ──
     const rbj = (type: string, f0: number, gainDb = 0, Q = 0.707): [number[], number[]] => {
-      const A = Math.pow(10, gainDb / 40)
+      const A  = Math.pow(10, gainDb / 40)
       const w0 = 2 * Math.PI * f0 / FS
-      const cw = Math.cos(w0), sw = Math.sin(w0)
-      const alpha = sw / (2 * Q)
+      const cw = Math.cos(w0), sw = Math.sin(w0), alpha = sw / (2 * Q)
       let b0 = 0, b1 = 0, b2 = 0, a0 = 1, a1 = 0, a2 = 0
       if (type === 'HP') {
         b0=(1+cw)/2; b1=-(1+cw); b2=(1+cw)/2; a0=1+alpha; a1=-2*cw; a2=1-alpha
@@ -575,93 +578,78 @@ function FreqResponseChart({ product }: { product: any }) {
       return [[b0,b1,b2].map(x=>x/a0), [1,a1/a0,a2/a0]]
     }
 
-    const biquadDb = (bq: [number[], number[]], f: number): number => {
-      const [b, a] = bq
-      const w = 2 * Math.PI * f / FS
-      const c1 = Math.cos(w), c2 = Math.cos(2*w), s1 = Math.sin(w), s2 = Math.sin(2*w)
-      const nR = b[0]+b[1]*c1+b[2]*c2, nI = -b[1]*s1-b[2]*s2
-      const dR = a[0]+a[1]*c1+a[2]*c2, dI = -a[1]*s1-a[2]*s2
+    const biquadDb = (bq: [number[],number[]], f: number) => {
+      const [b,a] = bq
+      const w=2*Math.PI*f/FS, c1=Math.cos(w), c2=Math.cos(2*w), s1=Math.sin(w), s2=Math.sin(2*w)
+      const nR=b[0]+b[1]*c1+b[2]*c2, nI=-b[1]*s1-b[2]*s2
+      const dR=a[0]+a[1]*c1+a[2]*c2, dI=-a[1]*s1-a[2]*s2
       return 10*Math.log10(Math.max((nR*nR+nI*nI)/(dR*dR+dI*dI), 1e-12))
     }
 
-    // ── Build biquad chain ──
-    const biquads: [number[], number[]][] = []
+    // ── Build biquad chain (matches spec sheet generator exactly) ──
+    const bqs: [number[],number[]][] = [
+      rbj('HP', fLo, 0, 0.62),          // sealed-box rolloff
+      rbj('PK', 500, 0.7, 1.8),         // Qtc bump
+      rbj('PK', 2800, -1.5, 1.1),       // presence dip
+      rbj('HS', 14000, -2.5),           // HF shelf
+    ]
 
-    // Sealed-box HP anchored to product freqLow (Q=0.62 for slight Qtc bump)
-    biquads.push(rbj('HP', fLo, 0, 0.62))
+    // No product EQ applied — shows raw acoustic response only
 
-    // Acoustic shaping: baffle step, presence dip, HF rolloff
-    biquads.push(rbj('PK',  500, +0.7, 1.8))   // Qtc bump
-    biquads.push(rbj('PK', 2800, -1.5, 1.1))   // presence dip (line array comb)
-    biquads.push(rbj('HS', 14000, -2.5))        // HF shelf
-
-    // Parse product EQ filters
-    if (eqData) {
-      const lines = eqData.trim().split('\n').slice(1)
-      for (const line of lines) {
-        const p = line.trim().split(',')
-        if (p.length < 2) continue
-        const [a, b, c, d] = p
-        if (a === 'HP') biquads.push(rbj('HP', parseFloat(b), 0, parseFloat(c) || 0.7))
-        else if (a === 'LP') biquads.push(rbj('HP', parseFloat(b), 0, parseFloat(c) || 0.7))
-        else biquads.push(rbj(c || 'PK', parseFloat(a), parseFloat(b), parseFloat(d) || 1))
-      }
-    }
-
-    // ── Compute curve points ──
-    const N = 500
-    const pts: [number, number][] = []
+    // ── Compute curve ──
+    const N = 600
+    const pts: [number,number][] = []
     for (let i = 0; i < N; i++) {
-      const f = Math.pow(10, LOG_MIN + i / (N - 1) * (LOG_MAX - LOG_MIN))
-      let db = sens
-      for (const bq of biquads) db += biquadDb(bq, f)
-      // Micro ripple (measured-style 1/12-oct smoothing texture)
+      const f  = Math.pow(10, LOG_MIN + i/(N-1)*(LOG_MAX-LOG_MIN))
+      let db   = sens
+      for (const bq of bqs) db += biquadDb(bq, f)
+      // Micro ripple (matches spec sheet)
       const lf = Math.log(f)
-      db += 0.22*Math.sin(6.3*lf+0.7) + 0.18*Math.sin(11.1*lf+2.1) + 0.12*Math.sin(17.9*lf+4.2)
-      pts.push([fx(f), fy(Math.max(DB_MIN - 1, Math.min(DB_MAX + 1, db)))])
+      db += 0.28*Math.sin(6.3*lf+0.7) + 0.22*Math.sin(11.1*lf+2.1) + 0.18*Math.sin(17.9*lf+4.2)
+      pts.push([fx(f), fdb(Math.max(DB_MIN-1, Math.min(DB_MAX+1, db)))])
     }
 
-    // ── Draw fill ──
+    // ── Fill ──
     const grad = ctx.createLinearGradient(0, PAD.t, 0, PAD.t + PH)
-    grad.addColorStop(0, 'rgba(201,169,110,0.14)')
+    grad.addColorStop(0, 'rgba(201,169,110,0.16)')
     grad.addColorStop(1, 'rgba(201,169,110,0.01)')
     ctx.fillStyle = grad
     ctx.beginPath()
     ctx.moveTo(pts[0][0], PAD.t + PH)
-    pts.forEach(([x, y]) => ctx.lineTo(x, y))
-    ctx.lineTo(pts[pts.length - 1][0], PAD.t + PH)
+    pts.forEach(([x,y]) => ctx.lineTo(x, y))
+    ctx.lineTo(pts[pts.length-1][0], PAD.t + PH)
     ctx.closePath(); ctx.fill()
 
-    // ── Draw curve ──
-    ctx.strokeStyle = 'rgba(201,169,110,0.8)'; ctx.lineWidth = 1.5; ctx.lineJoin = 'round'
+    // ── Curve ──
+    ctx.strokeStyle = 'rgba(201,169,110,0.85)'; ctx.lineWidth = 1.5; ctx.lineJoin = 'round'
     ctx.beginPath()
-    pts.forEach(([x, y], i) => i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y))
+    pts.forEach(([x,y], i) => i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y))
     ctx.stroke()
 
-    // ── ±3 dB band ──
-    ctx.strokeStyle = CHAMP + '0.18)'; ctx.lineWidth = 0.5; ctx.setLineDash([4, 3])
-    ;[3, -3].forEach(o => {
-      const y = fy(sens + o)
-      ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(PAD.l + PW, y); ctx.stroke()
+    // ── ±3 dB dashes ──
+    ctx.setLineDash([5, 4])
+    ;[3,-3].forEach(o => {
+      const y = fdb(sens+o)
+      ctx.strokeStyle = CHAMP(0.18); ctx.lineWidth = 0.5
+      ctx.beginPath(); ctx.moveTo(PAD.l,y); ctx.lineTo(PAD.l+PW,y); ctx.stroke()
     })
     ctx.setLineDash([])
 
-    // ── Sensitivity label ──
-    ctx.strokeStyle = CHAMP + '0.3)'; ctx.lineWidth = 0.6
-    ctx.beginPath(); ctx.moveTo(PAD.l, fy(sens)); ctx.lineTo(PAD.l + PW, fy(sens)); ctx.stroke()
+    // ── Sens reference line ──
+    ctx.strokeStyle = CHAMP(0.3); ctx.lineWidth = 0.6
+    ctx.beginPath(); ctx.moveTo(PAD.l,fdb(sens)); ctx.lineTo(PAD.l+PW,fdb(sens)); ctx.stroke()
 
-    // ── dB axis label ──
-    ctx.fillStyle = CHAMP + '0.35)'; ctx.font = '8px DM Mono,monospace'; ctx.textAlign = 'left'
-    ctx.fillText('dB', 4, PAD.t - 10)
-    ctx.fillText('Hz', PAD.l + PW + 4, PAD.t + PH + 14)
+    // ── Axis labels ──
+    ctx.fillStyle = MUTED(0.4); ctx.font = '8px DM Mono,monospace'; ctx.textAlign = 'left'
+    ctx.fillText('dB', 4, PAD.t - 8)
 
   }, [sens, fLo, fHi, eqData])
 
   return (
     <div className="pd-fr-wrap">
-      <canvas ref={canvasRef} className="pd-fr-canvas" style={{ width: '100%', height: '200px', display: 'block' }}/>
+      <canvas ref={canvasRef} className="pd-fr-canvas" style={{width:'100%', height:'200px', display:'block', background:'#000'}}/>
       <div className="pd-fr-note">
-        On-axis · 1W/1m · {fLo}Hz – {fHi >= 1000 ? fHi/1000 + 'kHz' : fHi + 'Hz'} {product.freqQualifier || '±3dB'} · {sens} dB sensitivity
+        On-axis · 1W/1m · {fLo}Hz – {fHi >= 1000 ? fHi/1000+'kHz' : fHi+'Hz'} {product.freqQualifier || '±3dB'} · {sens} dB sensitivity
       </div>
     </div>
   )
@@ -685,7 +673,7 @@ function PolarChart({ product }: { product: any }) {
 
     const CHAMP = 'rgba(201,169,110,'
     const BLUE  = 'rgba(91,141,184,'
-    ctx.clearRect(0, 0, W, H)
+    ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, W, H)
 
     const draw = (cx: number, cy: number, R: number, label: string) => {
       // dB rings
@@ -1177,7 +1165,7 @@ export default function ProductDetail({ product }: { product: Product }) {
   const waveRafsRef = useRef<number[]>([])
 
   const heroImgUrl = getImageUrl(product.heroImage, 1600)
-  const badges = product.proprietaryTechBadges?.split(',').map(s => s.trim()).filter(Boolean) || []
+  const badges = product.proprietaryTechBadges?.split(',').map(s => s.trim().replace(/\s+/g, ' ').replace(/™/g, '')).filter(Boolean) || []
   const isAmp = product.category?.slug?.current === 'amplifier-series'
   const isSub = product.category?.slug?.current === 'subwoofer-series'
   const mountingMethodsList = product.mountingMethods
@@ -1440,14 +1428,7 @@ export default function ProductDetail({ product }: { product: Product }) {
                 className="btn-prim" style={{color:'#000'}}>
                 Add to System →
               </a>
-              <a
-                href={`/api/specsheet/${product.slug?.current || product.productName}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="pd-ghost-btn"
-              >
-                Spec Sheet ↓
-              </a>
+
             </div>
           </div>
 
@@ -1567,8 +1548,8 @@ export default function ProductDetail({ product }: { product: Product }) {
             </div>
             <a href="/about#technology" className="pd-tech-learn-more">
               Full Technology Story
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round"/>
+              <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
               </svg>
             </a>
           </div>
@@ -1582,8 +1563,6 @@ export default function ProductDetail({ product }: { product: Product }) {
                     <div className="pd-tech-icon" dangerouslySetInnerHTML={{__html: TECH_ICONS[badge]}}></div>
                   )}
                   <div className="pd-tech-name">{tech.label || badge}</div>
-                  <div className="pd-tech-desc">{tech.desc || ''}</div>
-                  <div className="pd-tech-link">Learn more →</div>
                 </a>
               )
             })}
@@ -1593,28 +1572,6 @@ export default function ProductDetail({ product }: { product: Product }) {
 
       
 
-      {/* ── EQ CURVE ── */}
-      {hasEQ && (
-        <section className="pd-section pd-eq-section">
-          <div className="pd-section-inner">
-            <div className="pd-section-ey">Frequency Response</div>
-            <h2 className="pd-section-title">
-              {product.freqLowHz}Hz – {product.freqHighHz! >= 1000
-                ? product.freqHighHz! / 1000 + 'kHz'
-                : product.freqHighHz + 'Hz'}
-              {product.freqQualifier && <em> {product.freqQualifier}</em>}
-            </h2>
-          </div>
-          <div className="pd-eq-wrap">
-            <EQCurve
-              freqLow={product.freqLowHz!}
-              freqHigh={product.freqHighHz!}
-              sensitivity={product.sensitivityDb}
-              eqData={product.eqData}
-            />
-          </div>
-        </section>
-      )}
 
       
 
@@ -2372,9 +2329,8 @@ function DimensionDrawing({ product }: { product: any }) {
 
         {/* Spec sheet download */}
         <div className="dd-actions">
-          {product.specSheet?.asset?._ref && (
-            <a
-              href={`https://cdn.sanity.io/files/7r0kq57d/production/${product.specSheet.asset._ref.replace('file-','').replace(/-pdf$/,'.pdf')}`}
+          <a
+              href={`/api/specsheet/${product.slug?.current || product.productName}`}
               target="_blank"
               rel="noopener noreferrer"
               className="dd-download-btn"
@@ -2384,7 +2340,6 @@ function DimensionDrawing({ product }: { product: any }) {
               </svg>
               Spec Sheet
             </a>
-          )}
           {product.installGuide?.asset?._ref && (
             <a
               href={`https://cdn.sanity.io/files/7r0kq57d/production/${product.installGuide.asset._ref.replace('file-','').replace(/-pdf$/,'.pdf')}`}
