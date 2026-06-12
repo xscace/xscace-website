@@ -68,9 +68,12 @@ def generate_pdf(product: dict, tmp_dir: str) -> bytes:
         json.dump(product, f)
 
     env = {**os.environ, 'XSCACE_CHART_DIR': tmp_dir}
-    subprocess.run([sys.executable, charts_py], env=env, check=True, timeout=60)
-    subprocess.run([sys.executable, gen_py, '--product', json_path, '--out', out_path],
-                   env=env, check=True, timeout=60)
+    r1 = subprocess.run([sys.executable, charts_py], env=env, timeout=60, capture_output=True, text=True)
+    if r1.returncode != 0:
+        raise RuntimeError(f'charts failed: {r1.stdout} {r1.stderr}')
+    r2 = subprocess.run([sys.executable, gen_py, '--product', json_path, '--out', out_path], env=env, timeout=60, capture_output=True, text=True)
+    if r2.returncode != 0:
+        raise RuntimeError(f'gen failed: {r2.stdout} {r2.stderr}')
 
     with open(out_path, 'rb') as f:
         return f.read()
