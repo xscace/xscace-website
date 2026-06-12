@@ -56,7 +56,14 @@ async function getProduct(slug: string) {
       compatibleSubwoofers[]->{ _id, productName, slug, heroImage, series, category->{ name, slug } },
       compatibleSpeakers[]->{ _id, productName, slug, heroImage, series, category->{ name, slug } },
       accessories[]->{ _id, productName, slug, heroImage },
-      relatedProducts[]->{ _id, productName, slug, heroImage },
+      relatedProducts[]->{ _id, productName, slug, heroImage, series, sensitivityDb, powerRmsW, impedanceOhms, "category": category->{ name, "slug": slug } },
+      typicalSetups[]{
+        _key, label, description,
+        products[]{
+          _key, quantity, role,
+          product->{ _id, productName, "slug": slug.current, series, sensitivityDb, powerRmsW, powerPeakW, impedanceOhms, heroImage, "catSlug": category->slug.current }
+        }
+      },
     }
   `, { slug })
 }

@@ -2548,8 +2548,8 @@ a.p-card, a.p-card:hover {
 .pd-tech-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.5px;
-  background: rgba(201,169,110,0.08);
+  gap: 0;
+  background: #000;
   margin: 0;
 }
 @media (max-width: 860px) {
@@ -2600,6 +2600,74 @@ a.p-card, a.p-card:hover {
 @media (max-width: 900px) {
   .pd-tech-header { padding: 32px 24px 20px; flex-direction: column; align-items: flex-start; }
   .pd-media-thumb { width: 80px; height: 52px; }
+}
+
+
+/* ── COMMON INSTALLATIONS ────────────────────────────────────────────────── */
+.pd-setups-section { background: #000; padding: 0; }
+.pd-setups-section .pd-section-inner { padding: 48px 56px 28px; }
+
+.pd-setup-group { margin-bottom: 0; }
+.pd-setup-group-header {
+  padding: 20px 56px 16px;
+  border-top: 0.5px solid rgba(201,169,110,0.08);
+  display: flex; align-items: baseline; gap: 20px;
+}
+.pd-setup-group-label {
+  font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: .18em;
+  text-transform: uppercase; color: rgba(201,169,110,0.6);
+}
+.pd-setup-group-desc {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  color: rgba(201,169,110,0.3); letter-spacing: .08em;
+}
+
+/* Centred card grid — wraps to centre when fewer cards than columns */
+.pd-setups-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0;
+  background: #000;
+  padding: 0;
+}
+
+/* Each setup card reuses prod-card — just needs a fixed width */
+.pd-setup-prod-card {
+  width: 240px;
+  flex: 0 0 240px;
+  cursor: pointer;
+  background: #000 !important;
+}
+.pd-setup-prod-card:hover { background: #0a0908 !important; }
+.pd-setup-prod-card .prod-img { height: 200px; }
+
+/* AVR card — non-clickable, dimmed */
+.pd-setup-avr-card { opacity: 0.6; cursor: default; pointer-events: none; }
+.pd-setup-avr-card::after { display: none; }
+
+/* CTA row */
+.pd-setup-cta-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 40px 56px; gap: 32px;
+  border-top: 0.5px solid rgba(201,169,110,0.08);
+  margin-top: 1px;
+}
+.pd-setup-cta-headline {
+  font-family: 'Cormorant', serif; font-size: 28px; font-weight: 300;
+  color: #eeebe5; margin: 6px 0 8px;
+}
+.pd-setup-cta-sub {
+  font-size: 12px; color: rgba(238,235,229,0.35); line-height: 1.7; max-width: 400px;
+}
+
+@media (max-width: 860px) {
+  .pd-setup-group-header { padding: 16px 24px 12px; }
+  .pd-setup-prod-card { width: calc(50% - 1px); flex: 0 0 calc(50% - 1px); }
+  .pd-setup-cta-row { flex-direction: column; align-items: flex-start; padding: 32px 24px; }
+}
+@media (max-width: 560px) {
+  .pd-setup-prod-card { width: 100%; flex: 0 0 100%; }
 }
 
 /* ── HERO DESC + SKU ─────────────────────────────────────────── */

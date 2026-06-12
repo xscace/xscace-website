@@ -1578,133 +1578,98 @@ export default function ProductDetail({ product }: { product: Product }) {
       
       {/* wave divider */}
       <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
+
+      {/* ── COMMON INSTALLATIONS ── */}
       <section className="pd-section pd-setups-section">
         <div className="pd-section-inner">
           <div className="pd-section-ey">In Use</div>
           <h2 className="pd-section-title">Common <em>installations</em></h2>
         </div>
-        <div className="pd-setups-grid">
 
-          {/* Living Room */}
-          <div className="pd-setup-card">
-            <div className="pd-setup-label">Stereo / Living Room</div>
-            <div className="pd-setup-chain">
-              <div className="pd-setup-product">
-                <div className="pd-setup-product-img">
-                  {heroImgUrl
-                    ? <img src={heroImgUrl} alt={product.productName}/>
-                    : <div className="pd-setup-product-ph">{product.productName[0]}</div>
-                  }
-                </div>
-                <div className="pd-setup-product-name">{product.productName}</div>
-                <div className="pd-setup-product-qty">× 2</div>
-              </div>
-              {product.powerType === 'Passive' && (
-                <>
-                  <div className="pd-setup-arrow">+</div>
-                  <div className="pd-setup-product">
-                    <div className="pd-setup-product-img pd-setup-product-img-dark">
-                      <svg viewBox="0 0 40 28" fill="none" width="32">
-                        <rect x="2" y="2" width="36" height="24" rx="1" stroke="#c9a96e" strokeWidth="0.8"/>
-                        {[0,1,2,3].map(i=><rect key={i} x={6+i*8} y={8} width={5} height={8+i*2} rx="0.5" fill="#c9a96e" opacity={0.2+i*0.1}/>)}
-                      </svg>
-                    </div>
-                    <div className="pd-setup-product-name">Xylem DSP</div>
-                    <div className="pd-setup-product-qty">Amplifier</div>
-                  </div>
-                </>
+        {(product.typicalSetups?.length > 0 ? product.typicalSetups : []).map((setup: any) => {
+          const isCinema = setup.label?.toLowerCase().includes('cinema') || setup.label?.toLowerCase().includes('home')
+          return (
+          <div key={setup._key} className="pd-setup-group">
+            <div className="pd-setup-group-header">
+              <div className="pd-setup-group-label">{setup.label}</div>
+              {setup.description && (
+                <div className="pd-setup-group-desc">{setup.description}</div>
               )}
-              {product.recommendedPairingPrimary && [product.recommendedPairingPrimary].slice(0,1).map((p: any) => {
-                const pImg = getImageUrl(p.heroImage, 200)
+            </div>
+            <div className="pd-setups-grid">
+              {(setup.products || []).map((sp: any) => {
+                const p = sp.product
+                if (!p) return null
+                const img = getImageUrl(p.heroImage, 600)
+                const specs = [
+                  p.powerRmsW && `${p.powerRmsW}W`,
+                  p.sensitivityDb && `${p.sensitivityDb} dB`,
+                  p.impedanceOhms && `${p.impedanceOhms}Ω`,
+                ].filter(Boolean).join(' · ')
                 return (
-                  <div key={p._id} className="pd-setup-arrow-group">
-                    <div className="pd-setup-arrow">+</div>
-                    <a href={`/products/${p.category?.slug?.current}/${p.slug?.current}`}
-                      className="pd-setup-product pd-setup-product-link">
-                      <div className="pd-setup-product-img">
-                        {pImg ? <img src={pImg} alt={p.productName}/> : <div className="pd-setup-product-ph">{p.productName[0]}</div>}
+                  <a key={sp._key}
+                    href={`/products/${p.catSlug || ''}/${p.slug || ''}`}
+                    className="prod-card pd-setup-prod-card">
+                    <div className="prod-img">
+                      {img
+                        ? <img src={img} alt={p.productName} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+                        : null
+                      }
+                      <div className="p-badge" style={{top:'auto',bottom:'12px',left:'12px'}}>×{sp.quantity}</div>
+                    </div>
+                    <div className="p-body">
+                      <div className="p-cat">{sp.role}</div>
+                      <div className="p-name">{p.productName}</div>
+                      {specs && <div className="p-spec">{specs}</div>}
+                      <div className="p-foot">
+                        <span className="p-arr">View →</span>
                       </div>
-                      <div className="pd-setup-product-name">{p.productName}</div>
-                      <div className="pd-setup-product-qty">{p.series || 'Paired product'}</div>
-                    </a>
-                  </div>
+                    </div>
+                  </a>
                 )
               })}
-            </div>
-            <div className="pd-setup-note">
-              {product.powerType === 'Passive' ? 'Requires external amplification · ' : 'Self-powered · '}
-              {product.recommendedCrossoverHz ? `Crossover at ${product.recommendedCrossoverHz}Hz` : 'Full-range'}
-            </div>
-          </div>
 
-          {/* Home Cinema */}
-          <div className="pd-setup-card">
-            <div className="pd-setup-label">Home Cinema · Dolby Atmos 5.1</div>
-            <div className="pd-setup-desc">Architect's reference cinema</div>
-            <div className="pd-setup-chain">
-
-              {/* LCR — QuadCane */}
-              <div className="pd-setup-product">
-                <div className="pd-setup-product-img pd-setup-product-img-dark">
-                  <svg viewBox="0 0 32 80" fill="none" width="18">
-                    <rect x="2" y="2" width="28" height="76" rx="1" stroke="#c9a96e" strokeWidth="0.8"/>
-                    {[16,28,40,52,64].map((y,i) => <circle key={i} cx="16" cy={y} r="3" stroke="#c9a96e" strokeWidth="0.6"/>)}
-                  </svg>
+              {/* AVR card — only on cinema setups */}
+              {isCinema && (
+                <div className="prod-card pd-setup-prod-card pd-setup-avr-card">
+                  <div className="prod-img">
+                    <svg viewBox="0 0 120 60" fill="none" width="80" opacity="0.25">
+                      <rect x="2" y="2" width="116" height="56" rx="3" stroke="#c9a96e" strokeWidth="1"/>
+                      <rect x="10" y="10" width="30" height="8" rx="1" stroke="#c9a96e" strokeWidth="0.6" opacity="0.5"/>
+                      <rect x="10" y="22" width="50" height="8" rx="1" stroke="#c9a96e" strokeWidth="0.6" opacity="0.5"/>
+                      <rect x="10" y="34" width="40" height="8" rx="1" stroke="#c9a96e" strokeWidth="0.6" opacity="0.5"/>
+                      <circle cx="96" cy="30" r="12" stroke="#c9a96e" strokeWidth="0.8" opacity="0.4"/>
+                      <text x="96" y="34" textAnchor="middle" fill="#c9a96e" fontSize="7" fontFamily="DM Mono" opacity="0.5">AVR</text>
+                    </svg>
+                  </div>
+                  <div className="p-body">
+                    <div className="p-cat">AV Receiver</div>
+                    <div className="p-name">Any AVR</div>
+                    <div className="p-spec">Dolby Atmos · DTS:X · 7.2.4+</div>
+                    <div className="p-foot">
+                      <span className="p-arr" style={{color:'rgba(201,169,110,0.3)',fontSize:'9px'}}>Denon · Marantz · Yamaha</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="pd-setup-product-name">QuadCane</div>
-                <div className="pd-setup-product-qty">× 2 · LCR</div>
-              </div>
-
-              <div className="pd-setup-arrow">+</div>
-
-              {/* Surrounds — Cane */}
-              <div className="pd-setup-product">
-                <div className="pd-setup-product-img pd-setup-product-img-dark">
-                  <svg viewBox="0 0 20 60" fill="none" width="14">
-                    <rect x="2" y="2" width="16" height="56" rx="1" stroke="#c9a96e" strokeWidth="0.8"/>
-                    {[14,28,42].map((y,i) => <circle key={i} cx="10" cy={y} r="2.5" stroke="#c9a96e" strokeWidth="0.6"/>)}
-                  </svg>
-                </div>
-                <div className="pd-setup-product-name">Cane</div>
-                <div className="pd-setup-product-qty">× 3 · Surround</div>
-              </div>
-
-              <div className="pd-setup-arrow">+</div>
-
-              {/* Subwoofer — Juniper */}
-              <div className="pd-setup-product">
-                <div className="pd-setup-product-img pd-setup-product-img-dark">
-                  <svg viewBox="0 0 48 40" fill="none" width="28">
-                    <rect x="2" y="2" width="44" height="36" rx="2" stroke="#c9a96e" strokeWidth="0.8"/>
-                    <circle cx="24" cy="20" r="12" stroke="#c9a96e" strokeWidth="0.8"/>
-                    <circle cx="24" cy="20" r="5" stroke="#c9a96e" strokeWidth="0.6"/>
-                  </svg>
-                </div>
-                <div className="pd-setup-product-name">Juniper</div>
-                <div className="pd-setup-product-qty">× 1 · Subwoofer</div>
-              </div>
-
-              <div className="pd-setup-arrow">+</div>
-
-              {/* AVR */}
-              <div className="pd-setup-product">
-                <div className="pd-setup-product-img pd-setup-product-img-dark">
-                  <svg viewBox="0 0 48 28" fill="none" width="32">
-                    <rect x="2" y="2" width="44" height="24" rx="1" stroke="#c9a96e" strokeWidth="0.8"/>
-                    <text x="24" y="16" textAnchor="middle" fill="#c9a96e" fontSize="6" fontFamily="DM Mono">AVR</text>
-                  </svg>
-                </div>
-                <div className="pd-setup-product-name">Any AVR</div>
-                <div className="pd-setup-product-qty">7.1+</div>
-              </div>
-
-            </div>
-            <div className="pd-setup-note">
-              Phantom centre channel · Xylem DSP recommended for room correction
+              )}
             </div>
           </div>
+          )
+        })}
 
+        {/* Build Your System CTA */}
+        <div className="pd-setup-cta-row">
+          <div className="pd-setup-cta-text">
+            <div className="pd-section-ey">AI System Builder</div>
+            <div className="pd-setup-cta-headline">Don't see your setup?</div>
+            <div className="pd-setup-cta-sub">Tell the AI your room, budget and use case — get a complete system in seconds.</div>
+          </div>
+          <a href="https://configurator.xscace.com" target="_blank" rel="noopener noreferrer"
+            className="btn-prim" style={{color:'#000'}}>
+            Build My System →
+          </a>
         </div>
+
       </section>
 
       
