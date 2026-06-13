@@ -1,25 +1,25 @@
 // web/src/app/api/brochure/[slug]/route.ts
-// Fetch product from Sanity → Claude generates HTML → Puppeteer setContent() → PDF → Sanity cache
-// setContent() loads HTML directly (no URL navigation), so no self-fetch problem.
+// Claude generates HTML → pdf-lib renders it as PDF (pure Node, no Chromium)
+// Actually: use @sparticuz/chromium bundled binary (deployed with function, no runtime download)
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@sanity/client'
+import Anthropic from '@anthropic-ai/sdk'
 
-export const maxDuration = 120
+export const maxDuration = 300
 
 const PROJECT = '7r0kq57d'
 const DATASET = 'production'
 
 const sanity = createClient({
-  projectId: PROJECT,
-  dataset: DATASET,
-  apiVersion: '2024-01-01',
-  useCdn: false,
+  projectId: PROJECT, dataset: DATASET,
+  apiVersion: '2024-01-01', useCdn: false,
   token: process.env.SANITY_API_TOKEN,
 })
 
-// ── Image helpers ────────────────────────────────────────────────────────────
-function imgUrl(ref: string, w = 1400) {
+const anthropic = new Anthropic()
+
+function imgUrl(ref: string, w = 800) {
   const body = ref.replace(/^image-/, '')
   const parts = body.split('-')
   const ext = parts[parts.length - 1]
@@ -28,7 +28,7 @@ function imgUrl(ref: string, w = 1400) {
   return `https://cdn.sanity.io/images/${PROJECT}/${DATASET}/${hash}-${dims}.${ext}?w=${w}&auto=format&q=75`
 }
 
-async function imgDataUri(ref: string | null, w = 1400): Promise<string> {
+async function imgB64(ref: string | null, w = 800): Promise<string> {
   if (!ref) return ''
   try {
     const res = await fetch(imgUrl(ref, w))
@@ -39,41 +39,12 @@ async function imgDataUri(ref: string | null, w = 1400): Promise<string> {
   } catch { return '' }
 }
 
-function getRef(obj: any): string {
-  return obj?.asset?._ref || ''
-}
+function getRef(obj: any): string { return obj?.asset?._ref || '' }
 
-function fileCdn(assetId: string) {
-  const bare = assetId.replace('file-', '')
+function fileCdn(id: string) {
+  const bare = id.replace('file-', '')
   const i = bare.lastIndexOf('-')
   return `https://cdn.sanity.io/files/${PROJECT}/${DATASET}/${bare.slice(0, i)}.${bare.slice(i + 1)}`
-}
-
-// ── Embedded fonts ───────────────────────────────────────────────────────────
-function loadFontCss(): string {
-  // Use Google Fonts — Puppeteer has internet access so this works fine
-  // Much faster than embedding 4MB of base64 fonts in the HTML
-  return `@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=DM+Sans:wght@400;700&family=DM+Mono:wght@400;500&display=swap');`
-}
-
-// ── Claude call ──────────────────────────────────────────────────────────────
-async function callClaude(system: string, user: string): Promise<string> {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': process.env.ANTHROPIC_API_KEY || '',
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 16000,
-      system,
-      messages: [{ role: 'user', content: user }],
-    }),
-  })
-  const data = await res.json()
-  return (data.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('')
 }
 
 export async function GET(
@@ -84,7 +55,7 @@ export async function GET(
 
   try {
     // 1. Fetch product
-    const P = await sanity.fetch(`*[_type=="product" && slug.current=="${slug}" && status=="Active"][0]{
+    const P: any = await sanity.fetch(`*[_type=="product" && slug.current=="${slug}" && status=="Active"][0]{
       _id, productName, productFullName, tagline, shortDescription,
       series, skuBase, colorsStandard, mountingMethods,
       marineTreatable, customRalAvailable, ipRating,
@@ -93,192 +64,190 @@ export async function GET(
       directivityHDeg, directivityVDeg, heightMm, widthMm, depthMm,
       weightKg, driverDescription, crossoverType, housingMaterial,
       grilleMaterial, speakerWireConnector, proprietaryTechBadges,
-      heroImage, "gallery": galleryImages[0..3], "lifestyle": lifestyleImages[0..5],
+      heroImage, "gallery": galleryImages[0..2], "lifestyle": lifestyleImages[0..4],
       "accessories": accessories[]->{name, category, heroImage, lifestyleImage},
       brochureRef, brochureHash
     }`)
     if (!P) return NextResponse.json({ error: 'Product not found' }, { status: 404 })
 
     // 2. Cache check
-    const h = Buffer.from(`${P.productName}${P.powerRmsW}${P.depthMm}`).toString('base64').replace(/[^a-z0-9]/gi, '').slice(0, 12)
+    const h = Buffer.from(`${P.productName}${P.powerRmsW}${P.depthMm}v2`).toString('base64').replace(/[^a-z0-9]/gi, '').slice(0, 12)
     if (P.brochureRef && P.brochureHash === h) {
       const cdn = fileCdn(P.brochureRef)
       const head = await fetch(cdn, { method: 'HEAD' }).catch(() => null)
-      if (head && (head.ok || head.status === 403)) {
-        return NextResponse.redirect(cdn, 302)
-      }
+      if (head && (head.ok || head.status === 403)) return NextResponse.redirect(cdn, 302)
     }
 
-    // 3. Fetch images
-    const hero = await imgDataUri(getRef(P.heroImage), 900)
-    const gals = await Promise.all((P.gallery || []).slice(0, 3).map((g: any) => imgDataUri(getRef(g), 700)))
-    const lives = await Promise.all((P.lifestyle || []).slice(0, 5).map((l: any) => imgDataUri(getRef(l), 700)))
+    // 3. Fetch images — small sizes to keep payload low
+    const [hero, ...rest] = await Promise.all([
+      imgB64(getRef(P.heroImage), 900),
+      ...(P.gallery || []).slice(0, 2).map((g: any) => imgB64(getRef(g), 600)),
+      ...(P.lifestyle || []).slice(0, 4).map((l: any) => imgB64(getRef(l), 700)),
+    ])
+    const gals = rest.slice(0, 2)
+    const lives = rest.slice(2)
 
-    // Match accessory images to mount methods
     const mountMethods = (P.mountingMethods || '').split(',').map((m: string) => m.trim()).filter(Boolean)
     const accs = P.accessories || []
-    const mounts: { name: string; img: string }[] = []
-    let lifeIdx = 0
+    const mounts: {name: string; img: string}[] = []
+    let li = 0
     for (const m of mountMethods) {
       let img = ''
       for (const a of accs) {
-        const an = (a.name || '').toLowerCase()
-        if (m.toLowerCase().split(' ').some((w: string) => an.includes(w))) {
-          img = await imgDataUri(getRef(a.lifestyleImage) || getRef(a.heroImage), 700)
+        if (m.toLowerCase().split(' ').some((w: string) => (a.name || '').toLowerCase().includes(w))) {
+          img = await imgB64(getRef(a.lifestyleImage) || getRef(a.heroImage), 600)
           if (img) break
         }
       }
-      if (!img && lifeIdx < lives.length) { img = lives[lifeIdx]; lifeIdx++ }
+      if (!img && li < lives.length) { img = lives[li++] }
       mounts.push({ name: m, img })
     }
 
+    // Build specs
+    const sA: Record<string, string> = {}
+    if (P.powerRmsW)    sA['Power RMS']   = `${P.powerRmsW}W`
+    if (P.powerPeakW)   sA['Power Peak']  = `${P.powerPeakW}W`
+    if (P.sensitivityDb)sA['Sensitivity'] = `${P.sensitivityDb} dB`
+    if (P.freqHighHz)   sA['Frequency']   = `${P.freqLowHz}Hz – ${Math.round(P.freqHighHz/1000)}kHz ${P.freqQualifier||''}`.trim()
+    if (P.impedanceOhms)sA['Impedance']   = `${P.impedanceOhms}Ω`
+    if (P.splMaxDb)     sA['Max SPL']     = `${P.splMaxDb} dB`
+    if (P.thdN)         sA['THD+N']       = P.thdN
+    if (P.driverDescription) sA['Drivers']= P.driverDescription
+    if (P.crossoverType)sA['Crossover']   = P.crossoverType
+    if (P.directivityHDeg) sA['Directivity'] = `${P.directivityHDeg}° H × ${P.directivityVDeg}° V`
 
-    // 4. Build spec objects
-    const specsA: Record<string, string> = {}
-    if (P.powerRmsW) specsA['Power RMS'] = `${P.powerRmsW}W`
-    if (P.powerPeakW) specsA['Power Peak'] = `${P.powerPeakW}W`
-    if (P.sensitivityDb) specsA['Sensitivity'] = `${P.sensitivityDb} dB`
-    if (P.freqHighHz) specsA['Frequency'] = `${P.freqLowHz}Hz – ${Math.round(P.freqHighHz / 1000)}kHz ${P.freqQualifier || ''}`.trim()
-    if (P.impedanceOhms) specsA['Impedance'] = `${P.impedanceOhms}Ω`
-    if (P.splMaxDb) specsA['Max SPL'] = `${P.splMaxDb} dB`
-    if (P.thdN) specsA['THD+N'] = P.thdN
-    if (P.driverDescription) specsA['Drivers'] = P.driverDescription
-    if (P.crossoverType) specsA['Crossover'] = P.crossoverType
-    if (P.directivityHDeg) specsA['Directivity'] = `${P.directivityHDeg}° H × ${P.directivityVDeg}° V`
+    const sP: Record<string, string> = {}
+    if (P.heightMm) sP['H × W × D'] = `${P.heightMm} × ${P.widthMm} × ${P.depthMm} mm`
+    if (P.weightKg) sP['Weight']    = `${P.weightKg} kg`
+    if (P.housingMaterial) sP['Housing']  = P.housingMaterial
+    if (P.grilleMaterial)  sP['Grille']   = P.grilleMaterial
+    if (P.ipRating)        sP['IP Rating']= P.ipRating
+    if (P.speakerWireConnector) sP['Connector'] = P.speakerWireConnector
 
-    const specsP: Record<string, string> = {}
-    if (P.heightMm) specsP['H × W × D'] = `${P.heightMm} × ${P.widthMm} × ${P.depthMm} mm`
-    if (P.weightKg) specsP['Weight'] = `${P.weightKg} kg`
-    if (P.housingMaterial) specsP['Housing'] = P.housingMaterial
-    if (P.grilleMaterial) specsP['Grille'] = P.grilleMaterial
-    if (P.ipRating) specsP['IP Rating'] = P.ipRating
-    if (P.speakerWireConnector) specsP['Connector'] = P.speakerWireConnector
-
-    const tech = (P.proprietaryTechBadges || '').split(',').map((b: string) => b.trim().replace(/™/g, '').replace(/\s+/g, ' ')).filter(Boolean)
+    const tech = (P.proprietaryTechBadges||'').split(',').map((b:string)=>b.trim().replace(/™/g,'').replace(/\s+/g,' ')).filter(Boolean)
     const marineTxt = [P.ipRating, P.marineTreatable ? 'Marine-grade' : ''].filter(Boolean).join(' · ') || 'Standard'
 
-    // 5. Claude generates HTML
-    let html = await callClaude(
-      `You are a luxury product brochure designer. Output ONLY raw HTML. No markdown, no code fences, no explanation. Start with <!DOCTYPE html>.`,
-      `Create a stunning 4-page A4 landscape HTML brochure for this XSCACE luxury architectural speaker.
-
-Use this in your <head>: <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=DM+Sans:wght@400;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    // 4. Claude generates HTML — images as base64 inline, Google Fonts for typography
+    const msg = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 8000,
+      system: 'You are a luxury product brochure designer. Output ONLY raw HTML starting with <!DOCTYPE html>. No markdown, no explanation.',
+      messages: [{
+        role: 'user',
+        content: `Create a beautiful 4-page A4 landscape HTML brochure for this XSCACE luxury speaker.
 
 PRODUCT:
 Name: ${P.productName} | Full: ${P.productFullName || ''}
-Tagline: ${P.tagline || ''}
-Description: ${P.shortDescription || ''}
+Tagline: ${P.tagline || ''} | Description: ${P.shortDescription || ''}
 Series: ${P.series || ''} | SKU: ${P.skuBase || ''}
-Acoustic: ${JSON.stringify(specsA)}
-Physical: ${JSON.stringify(specsP)}
+Acoustic specs: ${JSON.stringify(sA)}
+Physical specs: ${JSON.stringify(sP)}
 Tech badges: ${JSON.stringify(tech)}
 Standard finishes: ${P.colorsStandard || ''}
-Custom RAL: ${P.customRalAvailable ? 'Available — any RAL, powder coat or anodised' : 'Not available'}
+Custom RAL: ${P.customRalAvailable ? 'Available — any RAL colour' : 'Not available'}
 Marine & IP: ${marineTxt}
-Mounting options: ${JSON.stringify(mounts.map(m => m.name))}
+Mounting options: ${JSON.stringify(mountMethods)}
 
-IMAGES — use these EXACT placeholder strings as the src value in <img> tags. I will replace them with base64 after you respond:
-- HERO_B64 (cover hero, product against luxury interior)
-- LIFE1_B64, LIFE2_B64, LIFE3_B64, LIFE4_B64 (lifestyle photos)
-- GAL1_B64 (product studio shot)
-${mounts.map((m, i) => `- MOUNT${i + 1}_B64 (${m.name} mount lifestyle photo)`).join('\n')}
-${hero ? '' : '(HERO not available — use a #0e0e0c block)'}
+IMAGES — these are actual base64 data URIs, use directly in src="":
+HERO: ${hero ? hero.slice(0, 60) + '...[HERO_B64]' : 'not available'}
+LIFE1: ${lives[0] ? lives[0].slice(0,40)+'...[LIFE1_B64]' : 'not available'}
+LIFE2: ${lives[1] ? lives[1].slice(0,40)+'...[LIFE2_B64]' : 'not available'}
+LIFE3: ${lives[2] ? lives[2].slice(0,40)+'...[LIFE3_B64]' : 'not available'}
+LIFE4: ${lives[3] ? lives[3].slice(0,40)+'...[LIFE4_B64]' : 'not available'}
+GAL1: ${gals[0] ? gals[0].slice(0,40)+'...[GAL1_B64]' : 'not available'}
+${mounts.map((m,i)=>`MOUNT${i+1} (${m.name}): ${m.img ? m.img.slice(0,40)+'...[MOUNT${i+1}_B64]' : 'not available'}`).join('\n')}
 
-DESIGN SYSTEM:
-- Background #090909, accent champagne #c9a96e, text #eeebe5, muted #7a776f
-- Fonts: 'Cormorant Garamond' headings, 'DM Sans' body, 'DM Mono' labels/specs
-- Flat. No shadows. No gradients except dark photo overlays. 0.5px champagne borders. Generous breathing room.
-- Each page: 297mm × 210mm, page-break-after: always (last page none)
+Replace [HERO_B64] [LIFE1_B64] [LIFE2_B64] [LIFE3_B64] [LIFE4_B64] [GAL1_B64] [MOUNT1_B64] [MOUNT2_B64] [MOUNT3_B64] with those exact placeholder strings — I will do string replacement after.
 
-PAGE 1 — COVER:
-HERO_B64 fills right 55% (object-fit:cover, height 100%, position absolute right). Left gradient overlay linear-gradient(to right,#090909 42%,rgba(9,9,9,0.4) 68%,transparent 88%). Left column padded 48px: "XSCACE" DM Mono 13px letter-spacing 0.18em #eeebe5; "SIZE DEFYING SOUND" DM Mono 7px #7a776f. Product name Cormorant 78px weight 300 #eeebe5 (margin-top 40px). Tagline Cormorant italic 20px #c9a96e. Description DM Sans 11px #7a776f max-width 300px. 1px champagne rule opacity 0.35 width 260px. Stats row: ${Object.keys({ Power: 1, Sensitivity: 1, Impedance: 1, Depth: 1 })} — value Cormorant 26px weight 600 #c9a96e, label DM Mono 7px #7a776f below, gap 28px. Footer absolute bottom: series·SKU left + XSCACE.COM right, DM Mono 8px #7a776f, champagne top border. Champagne bars top+bottom 5px.
+DESIGN: #090909 bg, #c9a96e champagne accent, #eeebe5 text, #7a776f muted.
+Google Fonts in <head>: Cormorant Garamond (headings), DM Sans (body), DM Mono (labels).
+Flat. No shadows. 0.5px champagne borders. Luxury spacing. Print-ready.
 
-PAGE 2 — SPECIFICATIONS:
-Header row "XSCACE · ${(P.productName || '').toUpperCase()}" + "02 — 04". "Specifications" Cormorant 44px. Two columns (left 50%, right 46%). LEFT: ACOUSTIC then PHYSICAL groups — group label DM Mono 8px #c9a96e + champagne underline, each row flex (label DM Mono 8px #7a776f, value DM Mono 8px #eeebe5 right) with 0.3px row separators. RIGHT: HERO_B64 top 55% (object-fit:contain, bg #0e0e0c, border 0.5px), LIFE1_B64 bottom 42% (object-fit:cover). Below specs full width: "MOUNTING OPTIONS" label + rule. Flex row of mount cards — each card border 0.5px champagne/0.2: MOUNT_N image top 75% object-fit:cover (or #111 placeholder with small champagne speaker SVG), name DM Mono 7px #c9a96e bottom strip bg #111110. Champagne bars top+bottom.
+@page { size: 297mm 210mm; margin: 0; } — each page has page-break-after: always (except last).
 
-PAGE 3 — TECHNOLOGY (NO photographs on this page):
-Header row + "03 — 04". "Designed to" Cormorant 50px #eeebe5 + line break "disappear." Cormorant italic 50px #c9a96e. "PROPRIETARY TECHNOLOGY" DM Mono 8px #c9a96e + champagne rule. 3-column CSS grid of tech badges, each cell: a UNIQUE inline SVG icon (viewBox 0 0 60 60, stroke #c9a96e fill none stroke-width 1.5):
-  * PsySculpt: smooth sine/EQ wave path spanning the icon
-  * XS-Flow: U-bend tube shape with 3 small filled circles as outlets
-  * Nano Resonance: 5 lines fanning upward from a filled dot at bottom
-  * PrecisionXover Array: 8 vertical rounded bars of varying heights, filled #c9a96e
-  * AeroFrame Chassis: 8-spoke asterisk with a circle in the middle
-  * PowerDense Dynamics: a lightning bolt (filled champagne 15% opacity) with 2-3 concentric arc lines on the left
-  Badge name below each icon, DM Mono 7px #c9a96e centered. Generous vertical spacing between the two rows.
-Bottom: 3 equal bordered cards (border 0.5px champagne/0.3, padding 12px):
-  1. "STANDARD FINISHES" — row of colour swatch squares (20×14px, map: Black/Anthracite→#2a2c2e, White→#F2F0EC, Champagne→#C9A96E) + the names in DM Sans 8px
-  2. "CUSTOM RAL" — an SVG colour wheel (6 coloured pie segments forming a ring) + "${P.customRalAvailable ? 'Any RAL colour' : 'Not available'}" DM Sans 8px
-  3. "MARINE & IP" — an SVG water droplet (champagne stroke, 15% fill) + "${marineTxt}" DM Sans 8px
+PAGE 1 COVER: Hero image right 55% position absolute object-fit cover. Black-to-transparent gradient overlay left. Left column: XSCACE wordmark DM Mono 13px, product name Cormorant 78px weight 300, italic tagline 20px champagne, description DM Sans 11px muted, champagne rule, 4 key stats (value Cormorant 26px champagne, label DM Mono 7px below). Footer: series·SKU left, XSCACE.COM right. Champagne bars 5px top+bottom.
 
-PAGE 4 — GALLERY:
-Header row + "04 — 04". "In context." Cormorant 40px + champagne rule. 2×2 CSS grid (gap 4px) filling remaining height with LIFE1_B64..LIFE4_B64 (fallback GAL1_B64), object-fit:cover. Footer strip bg #0e0e0c border-top champagne: "Enquire or specify at xscace.com" Cormorant 18px #eeebe5 + "support@xscace.com" DM Mono 9px #c9a96e; right "XSCACE · SIZE DEFYING SOUND" DM Mono 7px #7a776f.
+PAGE 2 SPECS: Header "XSCACE · ${P.productName?.toUpperCase()}" + "02—04". "Specifications" Cormorant 44px. Left 50%: ACOUSTIC then PHYSICAL spec groups — label DM Mono 8px muted left, value DM Mono 8px text right, thin row separators. Right 46%: hero image top (contain, dark bg), LIFE1 bottom (cover). Below: MOUNTING OPTIONS — flex row cards, each with image top 75% cover (or dark placeholder) + name DM Mono 7px champagne bottom strip.
 
-Make it genuinely beautiful — like a real luxury print brochure. Output ONLY the HTML.`
-    )
+PAGE 3 TECH (no photos): "Designed to" + line break "disappear." Cormorant 50px. "PROPRIETARY TECHNOLOGY" label + rule. 3-col grid — each badge: inline SVG icon unique to each technology (PsySculpt=sine wave, XS-Flow=U-bend tube, Nano Resonance=fan of 5 lines from dot, PrecisionXover=8 vertical bars filled champagne, AeroFrame=8-spoke asterisk+circle, PowerDense=lightning bolt+arcs) + name DM Mono 7px. Bottom: 3 bordered cards — Standard Finishes (color swatches), Custom RAL (SVG colour wheel), Marine & IP (SVG water droplet).
 
-    // Strip markdown fences
-    if (html.startsWith('```')) html = html.replace(/^```html?\n/, '').replace(/```\s*$/, '').trim()
+PAGE 4 GALLERY: "In context." Cormorant 40px + rule. 2×2 grid LIFE1-LIFE4 object-fit cover. Footer: enquire CTA + xscace.com + support@xscace.com.
 
-    // Images only — fonts loaded via Google Fonts link in head
-    html = html.replaceAll('HERO_B64', hero || '')
-    lives.forEach((l, i) => { html = html.replaceAll(`LIFE${i + 1}_B64`, l || '') })
-    gals.forEach((g, i) => { html = html.replaceAll(`GAL${i + 1}_B64`, g || '') })
-    mounts.forEach((m, i) => { html = html.replaceAll(`MOUNT${i + 1}_B64`, m.img || '') })
+Output ONLY the complete HTML.`
+      }]
+    })
 
-    // 6. Render HTML → PDF with Puppeteer setContent (no URL navigation!)
-    const puppeteer = await import('puppeteer-core')
-    const chromium = (await import('@sparticuz/chromium')).default
+    let html = msg.content.filter((b:any)=>b.type==='text').map((b:any)=>b.text).join('')
+    if (html.startsWith('```')) html = html.replace(/^```html?\n?/,'').replace(/```\s*$/,'').trim()
 
-    const browser = await puppeteer.default.launch({
-      args: chromium.args,
+    // Inject images
+    html = html.replaceAll('[HERO_B64]',   hero  || '')
+    html = html.replaceAll('[LIFE1_B64]',  lives[0] || '')
+    html = html.replaceAll('[LIFE2_B64]',  lives[1] || '')
+    html = html.replaceAll('[LIFE3_B64]',  lives[2] || '')
+    html = html.replaceAll('[LIFE4_B64]',  lives[3] || '')
+    html = html.replaceAll('[GAL1_B64]',   gals[0]  || '')
+    mounts.forEach((m,i) => { html = html.replaceAll(`[MOUNT${i+1}_B64]`, m.img || '') })
+
+    console.log('[brochure] HTML size:', html.length)
+
+    // 5. Puppeteer with bundled Chromium (no runtime download)
+    const puppeteer  = (await import('puppeteer-core')).default
+    const chromium   = (await import('@sparticuz/chromium')).default
+
+    const browser = await puppeteer.launch({
+      args:           [...chromium.args, '--no-sandbox', '--single-process', '--disable-gpu'],
       executablePath: await chromium.executablePath(
+        process.env.CHROMIUM_PACK_URL ||
         'https://github.com/Sparticuz/chromium/releases/download/v147.0.0/chromium-v147.0.0-pack.tar'
       ),
       headless: true,
     })
 
     const page = await browser.newPage()
-    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 20000 })
-    const pdfBuffer = await page.pdf({
-      width: '297mm',
-      height: '210mm',
+    await page.setContent(html, { waitUntil: 'networkidle2', timeout: 25000 })
+
+    const pdf = await page.pdf({
+      width:           '297mm',
+      height:          '210mm',
       printBackground: true,
-      margin: { top: '0', right: '0', bottom: '0', left: '0' },
+      margin:          { top: '0', right: '0', bottom: '0', left: '0' },
     })
     await browser.close()
 
-    const pdf = Buffer.from(pdfBuffer)
+    const pdfBuf = Buffer.from(pdf)
+    console.log('[brochure] PDF size:', pdfBuf.length)
 
-    // 7. Upload to Sanity and cache
-    if (process.env.SANITY_API_TOKEN && pdf.length > 1000) {
+    // 6. Upload to Sanity + cache
+    if (process.env.SANITY_API_TOKEN && pdfBuf.length > 1000) {
       try {
-        const fname = `XSCACE_${P.productName.replace(/\s+/g, '_')}_Brochure.pdf`
+        const fname = `XSCACE_${P.productName.replace(/\s+/g,'_')}_Brochure.pdf`
         const up = await fetch(
           `https://${PROJECT}.api.sanity.io/v2024-01-01/assets/files/${DATASET}?filename=${encodeURIComponent(fname)}`,
-          { method: 'POST', headers: { Authorization: `Bearer ${process.env.SANITY_API_TOKEN}`, 'Content-Type': 'application/pdf' }, body: pdf }
+          { method:'POST', headers:{ Authorization:`Bearer ${process.env.SANITY_API_TOKEN}`, 'Content-Type':'application/pdf' }, body:pdfBuf }
         )
         if (up.ok) {
           const { document: doc } = await up.json()
           await fetch(`https://${PROJECT}.api.sanity.io/v2024-01-01/data/mutate/${DATASET}`, {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${process.env.SANITY_API_TOKEN}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mutations: [{ patch: { id: P._id, set: { brochureRef: doc._id, brochureHash: h, brochure: { _type: 'file', asset: { _type: 'reference', _ref: doc._id } } } } }] }),
+            method:'POST',
+            headers:{ Authorization:`Bearer ${process.env.SANITY_API_TOKEN}`, 'Content-Type':'application/json' },
+            body: JSON.stringify({ mutations:[{ patch:{ id:P._id, set:{ brochureRef:doc._id, brochureHash:h, brochure:{ _type:'file', asset:{ _type:'reference', _ref:doc._id } } } } }] })
           })
         }
-      } catch (e) { console.error('[brochure] upload failed', e) }
+      } catch(e) { console.error('[brochure] cache failed', e) }
     }
 
-    return new NextResponse(pdf, {
+    return new NextResponse(pdfBuf, {
       status: 200,
       headers: {
-        'Content-Type': 'application/pdf',
+        'Content-Type':        'application/pdf',
         'Content-Disposition': `inline; filename="XSCACE_${slug}_Brochure.pdf"`,
-        'Content-Length': String(pdf.length),
-        'Cache-Control': 'no-cache',
+        'Content-Length':      String(pdfBuf.length),
+        'Cache-Control':       'no-cache',
       },
     })
-  } catch (err: any) {
+  } catch(err: any) {
     console.error('[brochure]', err)
-    return NextResponse.json({ error: err?.message || String(err) }, { status: 500 })
+    return NextResponse.json({ error: err?.message }, { status: 500 })
   }
 }
