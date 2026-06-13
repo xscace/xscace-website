@@ -1,14 +1,6 @@
 # vercel.json: {"functions": {"api/brochure/[slug].py": {"maxDuration": 300}}}
-"""
-XSCACE Brochure Generator
-- Fetches product + images from Sanity
-- Builds complete HTML with embedded fonts, base64 images, inline SVG icons
-- Claude writes ONLY the tagline/description copy (fast, cheap call)  
-- WeasyPrint renders HTML → PDF (pure Python, no system deps)
-- Uploads PDF to Sanity, caches, serves
-"""
 from http.server import BaseHTTPRequestHandler
-import sys, os, json, urllib.request, urllib.parse, hashlib, traceback, base64
+import sys, os, json, urllib.request, urllib.parse, hashlib, traceback, base64, subprocess, tempfile
 
 sys.path.insert(0, '/usr/local/lib/python3.12/dist-packages')
 
@@ -17,7 +9,6 @@ TOKEN   = os.environ.get('SANITY_API_TOKEN', '')
 CLAUDE  = os.environ.get('ANTHROPIC_API_KEY', '')
 API     = f'https://{PROJECT}.api.sanity.io/v2024-01-01'
 
-# ── Helpers ────────────────────────────────────────────────────────────────────
 def sanity_fetch(q):
     url = f'{API}/data/query/{DATASET}?query={urllib.parse.quote(q)}'
     r = urllib.request.Request(url)
@@ -60,600 +51,102 @@ def fetch_b64(ref, w=1400):
 def get_ref(obj):
     return ((obj or {}).get('asset') or {}).get('_ref', '') or ''
 
-def load_font_css():
-    try:
-        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-        from font_css import FONT_CSS
-        return FONT_CSS
-    except:
-        return ''  # Falls back to system fonts
+def load_fonts_b64():
+    """Load all brand fonts as base64 for embedding in HTML."""
+    font_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fonts')
+    fonts = {}
+    mapping = {
+        'Cor':  ('Cormorant Garamond', '300', 'normal', 'Cormorant-Light.ttf'),
+        'CorI': ('Cormorant Garamond', '400', 'italic', 'Cormorant-Italic.ttf'),
+        'CorSB':('Cormorant Garamond', '600', 'normal', 'Cormorant-SemiBold.ttf'),
+        'DMS':  ('DM Sans', '400', 'normal', 'DMSans-Reg.ttf'),
+        'DMSB': ('DM Sans', '700', 'normal', 'DMSans-Bold.ttf'),
+        'DMM':  ('DM Mono', '400', 'normal', 'DMMono-Regular.ttf'),
+        'DMMM': ('DM Mono', '500', 'normal', 'DMMono-Medium.ttf'),
+    }
+    css = ''
+    for alias, (family, weight, style, fname) in mapping.items():
+        p = os.path.join(font_dir, fname)
+        if os.path.exists(p):
+            with open(p, 'rb') as f: b64 = base64.b64encode(f.read()).decode()
+            css += f"@font-face{{font-family:'{family}';font-weight:{weight};font-style:{style};src:url('data:font/truetype;base64,{b64}') format('truetype');}}\n"
+    return css
 
-# Tech icon SVGs — exact, fixed, correct
-TECH_ICONS = {
-    'psysculpt': '<svg viewBox="0 0 60 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2,20 C7,2 11,38 16,20 C21,2 25,38 30,20 C35,2 39,38 44,20 C49,2 53,38 58,20" stroke="#c9a96e" stroke-width="1.8" stroke-linecap="round"/><path d="M2,26 C7,14 11,38 16,26 C21,14 25,38 30,26 C35,14 39,38 44,26 C49,14 53,38 58,26" stroke="#c9a96e" stroke-width="0.7" stroke-linecap="round" opacity="0.3"/></svg>',
-    'xs-flow': '<svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M38,8 L38,22 C38,36 22,36 22,22 L22,8" stroke="#c9a96e" stroke-width="2.2" stroke-linecap="round"/><line x1="38" y1="8" x2="52" y2="8" stroke="#c9a96e" stroke-width="1.6" stroke-linecap="round"/><line x1="38" y1="28" x2="52" y2="28" stroke="#c9a96e" stroke-width="1.6" stroke-linecap="round"/><circle cx="55" cy="8" r="3" fill="#c9a96e"/><circle cx="55" cy="28" r="3" fill="#c9a96e"/><line x1="22" y1="8" x2="8" y2="8" stroke="#c9a96e" stroke-width="1.6" stroke-linecap="round"/><circle cx="5" cy="8" r="3" fill="#c9a96e"/></svg>',
-    'nano resonance': '<svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M30,52 Q12,30 12,10" stroke="#c9a96e" stroke-width="1.2" stroke-linecap="round" opacity="0.5"/><path d="M30,52 Q18,28 20,8" stroke="#c9a96e" stroke-width="1.4" stroke-linecap="round" opacity="0.75"/><path d="M30,52 L30,8" stroke="#c9a96e" stroke-width="1.8" stroke-linecap="round"/><path d="M30,52 Q42,28 40,8" stroke="#c9a96e" stroke-width="1.4" stroke-linecap="round" opacity="0.75"/><path d="M30,52 Q48,30 48,10" stroke="#c9a96e" stroke-width="1.2" stroke-linecap="round" opacity="0.5"/><circle cx="30" cy="56" r="4" fill="#c9a96e"/></svg>',
-    'precisionxover array': '<svg viewBox="0 0 66 50" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="31" width="6" height="18" rx="1.5" fill="#c9a96e"/><rect x="11" y="24" width="6" height="25" rx="1.5" fill="#c9a96e"/><rect x="20" y="14" width="6" height="35" rx="1.5" fill="#c9a96e"/><rect x="29" y="8" width="6" height="41" rx="1.5" fill="#c9a96e"/><rect x="38" y="14" width="6" height="35" rx="1.5" fill="#c9a96e"/><rect x="47" y="24" width="6" height="25" rx="1.5" fill="#c9a96e"/><rect x="56" y="31" width="6" height="18" rx="1.5" fill="#c9a96e"/></svg>',
-    'aeroframe chassis': '<svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="30" cy="30" r="20" stroke="#c9a96e" stroke-width="0.6" opacity="0.4"/><line x1="30" y1="4" x2="30" y2="56" stroke="#c9a96e" stroke-width="1.8" stroke-linecap="round"/><line x1="4" y1="30" x2="56" y2="30" stroke="#c9a96e" stroke-width="1.8" stroke-linecap="round"/><line x1="11" y1="11" x2="49" y2="49" stroke="#c9a96e" stroke-width="1.1" stroke-linecap="round" opacity="0.7"/><line x1="49" y1="11" x2="11" y2="49" stroke="#c9a96e" stroke-width="1.1" stroke-linecap="round" opacity="0.7"/><circle cx="30" cy="30" r="8" stroke="#c9a96e" stroke-width="1.5"/></svg>',
-    'powerdense dynamics': '<svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M36,4 L22,30 L32,30 L28,56 L46,24 L36,24 Z" fill="rgba(201,169,110,0.15)" stroke="#c9a96e" stroke-width="1.6" stroke-linejoin="round"/><path d="M14,30 C10,20 11,10 18,5" stroke="#c9a96e" stroke-width="1.1" stroke-linecap="round" opacity="0.65"/><path d="M11,35 C5,21 6,7 16,1" stroke="#c9a96e" stroke-width="0.8" stroke-linecap="round" opacity="0.4"/></svg>',
-}
+def call_claude(system, user):
+    body = json.dumps({
+        'model': 'claude-sonnet-4-6',
+        'max_tokens': 16000,
+        'stream': True,
+        'system': system,
+        'messages': [{'role': 'user', 'content': user}]
+    }).encode()
+    r = urllib.request.Request('https://api.anthropic.com/v1/messages', data=body)
+    r.add_header('Content-Type', 'application/json')
+    r.add_header('x-api-key', CLAUDE)
+    r.add_header('anthropic-version', '2023-06-01')
+    chunks = []
+    with urllib.request.urlopen(r, timeout=240) as resp:
+        for raw in resp:
+            line = raw.decode('utf-8').strip()
+            if not line.startswith('data:'): continue
+            data = line[5:].strip()
+            if data == '[DONE]': break
+            try:
+                ev = json.loads(data)
+                if ev.get('type') == 'content_block_delta':
+                    chunks.append(ev['delta'].get('text', ''))
+            except: pass
+    return ''.join(chunks).strip()
 
-def get_tech_icon(badge_name):
-    n = badge_name.lower().replace('™','').replace('\u2122','').replace('  ',' ').strip()
-    for key, svg in TECH_ICONS.items():
-        if key in n: return svg
-    return f'<svg viewBox="0 0 60 60" fill="none"><circle cx="30" cy="30" r="20" stroke="#c9a96e" stroke-width="1.5"/><text x="30" y="35" text-anchor="middle" fill="#c9a96e" font-size="14">{badge_name[0]}</text></svg>'
+def html_to_pdf(html):
+    """Convert HTML to PDF using wkhtmltopdf if available, else reportlab fallback."""
+    # Try wkhtmltopdf first
+    wk = None
+    for path in ['/usr/bin/wkhtmltopdf', '/usr/local/bin/wkhtmltopdf', 'wkhtmltopdf']:
+        try:
+            subprocess.run([path, '--version'], capture_output=True, timeout=5)
+            wk = path; break
+        except: pass
 
-def build_html(P, hero, gals, lives, mounts, font_css):
-    name        = P.get('productName','')
-    full_name   = P.get('productFullName', name)
-    tagline     = P.get('tagline','')
-    desc        = P.get('shortDescription','')
-    series      = P.get('series','')
-    sku         = P.get('skuBase','')
-    colors      = P.get('colorsStandard','')
-    marine      = bool(P.get('marineTreatable'))
-    ral         = bool(P.get('customRalAvailable'))
-    ip          = P.get('ipRating','')
-    marine_txt  = ' · '.join(filter(None,[ip,'Marine-grade' if marine else '']))
+    if wk:
+        with tempfile.NamedTemporaryFile(suffix='.html', delete=False, mode='w') as hf:
+            hf.write(html); hpath = hf.name
+        ppath = hpath.replace('.html', '.pdf')
+        try:
+            r = subprocess.run([
+                wk,
+                '--page-size', 'A4',
+                '--orientation', 'Landscape',
+                '--print-media-type',
+                '--enable-local-file-access',
+                '--no-stop-slow-scripts',
+                '--javascript-delay', '500',
+                '--quiet',
+                hpath, ppath
+            ], capture_output=True, timeout=60)
+            if os.path.exists(ppath):
+                with open(ppath, 'rb') as f: return f.read()
+        finally:
+            for p in [hpath, ppath]:
+                try: os.unlink(p)
+                except: pass
 
-    specs_rows_acoustic = [
-        ('Power RMS',   f"{P['powerRmsW']}W"       if P.get('powerRmsW')    else ''),
-        ('Power Peak',  f"{P['powerPeakW']}W"       if P.get('powerPeakW')   else ''),
-        ('Sensitivity', f"{P['sensitivityDb']} dB"  if P.get('sensitivityDb') else ''),
-        ('Frequency',   f"{P.get('freqLowHz')}Hz – {int(P['freqHighHz']//1000)}kHz {P.get('freqQualifier','')or ''}".strip() if P.get('freqHighHz') else ''),
-        ('Impedance',   f"{P['impedanceOhms']}Ω"    if P.get('impedanceOhms') else ''),
-        ('Max SPL',     f"{P['splMaxDb']} dB"       if P.get('splMaxDb')     else ''),
-        ('THD+N',       P.get('thdN','') or ''),
-        ('Drivers',     P.get('driverDescription','') or ''),
-        ('Crossover',   P.get('crossoverType','') or ''),
-        ('Directivity', f"{P['directivityHDeg']}° H × {P['directivityVDeg']}° V" if P.get('directivityHDeg') else ''),
-    ]
-    specs_rows_physical = [
-        ('H × W × D', f"{P.get('heightMm')} × {P.get('widthMm')} × {P.get('depthMm')} mm" if P.get('heightMm') else ''),
-        ('Weight',     f"{P['weightKg']} kg"         if P.get('weightKg')   else ''),
-        ('Housing',    P.get('housingMaterial','') or ''),
-        ('Grille',     P.get('grilleMaterial','') or ''),
-        ('IP Rating',  ip or ''),
-        ('Connector',  P.get('speakerWireConnector','') or ''),
-    ]
-
-    def spec_rows(rows):
-        return ''.join(f'''<div class="spec-row">
-          <span class="spec-label">{l}</span>
-          <span class="spec-value">{v}</span>
-        </div>''' for l,v in rows if v)
-
-    tech_badges = [b.strip().replace('™','').replace('\u2122','').replace('  ',' ')
-                   for b in (P.get('proprietaryTechBadges') or '').split(',') if b.strip()]
-
-    def tech_grid():
-        items = []
-        for badge in tech_badges:
-            icon = get_tech_icon(badge)
-            items.append(f'''<div class="tech-item">
-              <div class="tech-icon">{icon}</div>
-              <div class="tech-name">{badge.upper()}</div>
-            </div>''')
-        return ''.join(items)
-
-    # Color swatches
-    color_map = {'black':'#111111','anthracite':'#3C3F41','white':'#F2F0EC',
-                 'champagne':'#C9A96E','matte champagne':'#C9A96E','slate':'#4A4A52','grey':'#5A5A5A'}
-    def color_swatches():
-        items = []
-        for cname in [c.strip() for c in colors.split(',') if c.strip()]:
-            hex_c = color_map.get(cname.lower(), '#555555')
-            items.append(f'<div class="swatch" style="background:{hex_c}" title="{cname}"></div>')
-        return ''.join(items)
-
-    # Mounting cards
-    def mount_cards():
-        cards = []
-        for m in mounts:
-            img_html = f'<img src="{m["img"]}" class="mount-img">' if m.get('img') else '''
-              <div class="mount-placeholder">
-                <svg viewBox="0 0 60 60" fill="none" width="40" height="40">
-                  <rect x="10" y="8" width="16" height="44" rx="2" stroke="#c9a96e" stroke-width="1" opacity="0.4"/>
-                  <line x1="18" y1="8" x2="18" y2="4" stroke="#c9a96e" stroke-width="1.5" opacity="0.6"/>
-                  <line x1="14" y1="4" x2="22" y2="4" stroke="#c9a96e" stroke-width="1.5" opacity="0.6"/>
-                  <line x1="2" y1="52" x2="34" y2="52" stroke="#c9a96e" stroke-width="1" opacity="0.3"/>
-                </svg>
-              </div>'''
-            cards.append(f'''<div class="mount-card">
-              {img_html}
-              <div class="mount-label">{m["name"].upper()}</div>
-            </div>''')
-        return ''.join(cards)
-
-    # Life images for page 4
-    def gallery_cells():
-        imgs = [l for l in lives if l] + [g for g in gals if g]
-        cells = []
-        for i in range(4):
-            if i < len(imgs):
-                cells.append(f'<div class="gallery-cell"><img src="{imgs[i]}" class="gallery-img"></div>')
-            else:
-                cells.append('<div class="gallery-cell gallery-empty"></div>')
-        return ''.join(cells)
-
-    return f'''<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<style>
-{font_css}
-
-* {{ margin: 0; padding: 0; box-sizing: border-box; }}
-
-@page {{
-  size: 297mm 210mm;
-  margin: 0;
-}}
-
-body {{
-  font-family: 'DM Sans', Helvetica, sans-serif;
-  background: #090909;
-  color: #eeebe5;
-  width: 297mm;
-}}
-
-/* ── PAGE WRAPPER ── */
-.page {{
-  width: 297mm;
-  height: 210mm;
-  position: relative;
-  overflow: hidden;
-  background: #090909;
-  page-break-after: always;
-}}
-
-.champagne-bar-top {{
-  position: absolute; top: 0; left: 0; right: 0;
-  height: 5px; background: #c9a96e; z-index: 10;
-}}
-.champagne-bar-bottom {{
-  position: absolute; bottom: 0; left: 0; right: 0;
-  height: 5px; background: #c9a96e; z-index: 10;
-}}
-
-/* ── PAGE 1: COVER ── */
-.cover-hero {{
-  position: absolute; right: 0; top: 0;
-  width: 58%; height: 100%;
-  object-fit: cover;
-}}
-.cover-fade {{
-  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(to right, #090909 44%, rgba(9,9,9,0.7) 65%, transparent 85%);
-}}
-.cover-left {{
-  position: absolute; left: 0; top: 0; bottom: 0;
-  width: 52%; padding: 40px 44px;
-  display: flex; flex-direction: column;
-  justify-content: flex-start;
-}}
-.cover-wordmark {{
-  font-family: 'DM Mono', monospace;
-  font-size: 13px; font-weight: 500;
-  letter-spacing: 0.18em; color: #eeebe5;
-  text-transform: uppercase;
-}}
-.cover-tagline-sub {{
-  font-family: 'DM Mono', monospace;
-  font-size: 7.5px; letter-spacing: 0.2em;
-  color: #7a776f; margin-top: 5px;
-  text-transform: uppercase;
-}}
-.cover-name {{
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 82px; font-weight: 300; line-height: 1;
-  color: #eeebe5; margin-top: 36px;
-}}
-.cover-product-tagline {{
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 22px; font-style: italic;
-  color: #c9a96e; margin-top: 10px;
-}}
-.cover-desc {{
-  font-family: 'DM Sans', Helvetica, sans-serif;
-  font-size: 11.5px; line-height: 1.75;
-  color: #7a776f; margin-top: 16px;
-  max-width: 300px;
-}}
-.cover-rule {{
-  height: 1px; background: rgba(201,169,110,0.35);
-  margin-top: 24px; width: 260px;
-}}
-.cover-stats {{
-  display: flex; gap: 0; margin-top: 20px;
-  align-items: flex-start;
-}}
-.stat-item {{
-  flex: 0 0 auto; margin-right: 28px;
-}}
-.stat-value {{
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 28px; font-weight: 600;
-  color: #c9a96e; line-height: 1;
-}}
-.stat-label {{
-  font-family: 'DM Mono', monospace;
-  font-size: 6.5px; letter-spacing: 0.18em;
-  color: #7a776f; margin-top: 5px;
-  text-transform: uppercase;
-}}
-.cover-footer {{
-  position: absolute; bottom: 14px; left: 44px; right: 44px;
-  display: flex; justify-content: space-between; align-items: center;
-  border-top: 0.5px solid rgba(201,169,110,0.2);
-  padding-top: 10px;
-}}
-.cover-footer-text {{
-  font-family: 'DM Mono', monospace;
-  font-size: 7.5px; letter-spacing: 0.14em;
-  color: #7a776f; text-transform: uppercase;
-}}
-
-/* ── PAGE HEADER (pages 2-4) ── */
-.page-header {{
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 12px 36px 10px;
-  border-bottom: 0.5px solid rgba(201,169,110,0.08);
-}}
-.page-header-left {{
-  font-family: 'DM Mono', monospace;
-  font-size: 7.5px; letter-spacing: 0.16em;
-  color: #7a776f; text-transform: uppercase;
-}}
-.page-header-right {{
-  font-family: 'DM Mono', monospace;
-  font-size: 7.5px; letter-spacing: 0.1em;
-  color: #3a3835;
-}}
-
-/* ── PAGE 2: SPECS ── */
-.specs-layout {{
-  display: flex; gap: 0;
-  padding: 18px 36px 16px;
-  height: calc(100% - 36px);
-}}
-.specs-left {{
-  flex: 0 0 50%; padding-right: 24px;
-  overflow: hidden;
-}}
-.specs-heading {{
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 44px; font-weight: 300;
-  color: #eeebe5; margin-bottom: 16px;
-  line-height: 1;
-}}
-.spec-group-label {{
-  font-family: 'DM Mono', monospace;
-  font-size: 7.5px; letter-spacing: 0.18em;
-  color: #c9a96e; text-transform: uppercase;
-  padding-bottom: 6px;
-  border-bottom: 0.5px solid rgba(201,169,110,0.3);
-  margin-bottom: 4px; margin-top: 12px;
-}}
-.spec-row {{
-  display: flex; justify-content: space-between;
-  padding: 4px 0;
-  border-bottom: 0.3px solid rgba(255,255,255,0.04);
-}}
-.spec-label {{
-  font-family: 'DM Mono', monospace;
-  font-size: 8px; color: #7a776f;
-}}
-.spec-value {{
-  font-family: 'DM Mono', monospace;
-  font-size: 8px; color: #eeebe5;
-  text-align: right; max-width: 55%;
-}}
-.mount-section-label {{
-  font-family: 'DM Mono', monospace;
-  font-size: 7.5px; letter-spacing: 0.18em;
-  color: #c9a96e; text-transform: uppercase;
-  padding-bottom: 6px;
-  border-bottom: 0.5px solid rgba(201,169,110,0.3);
-  margin-bottom: 8px; margin-top: 14px;
-}}
-.mount-cards {{
-  display: flex; gap: 8px;
-}}
-.mount-card {{
-  flex: 1; border: 0.5px solid rgba(201,169,110,0.2);
-  background: #0e0e0c; overflow: hidden;
-  display: flex; flex-direction: column;
-  height: 90px;
-}}
-.mount-img {{
-  flex: 1; width: 100%; object-fit: cover;
-  min-height: 0;
-}}
-.mount-placeholder {{
-  flex: 1; display: flex; align-items: center;
-  justify-content: center; background: #111110;
-}}
-.mount-label {{
-  font-family: 'DM Mono', monospace;
-  font-size: 7px; letter-spacing: 0.14em;
-  color: #c9a96e; text-align: center;
-  padding: 6px 4px;
-  background: #111110;
-  border-top: 0.5px solid rgba(201,169,110,0.15);
-  flex-shrink: 0;
-}}
-.specs-right {{
-  flex: 0 0 46%; margin-left: 4%;
-  display: flex; flex-direction: column; gap: 8px;
-}}
-.specs-right-img {{
-  flex: 1; background: #0e0e0c;
-  border: 0.5px solid rgba(201,169,110,0.08);
-  overflow: hidden; display: flex;
-  align-items: center; justify-content: center;
-}}
-.specs-right-img img {{
-  width: 100%; height: 100%; object-fit: contain;
-}}
-
-/* ── PAGE 3: TECH ── */
-.tech-page-inner {{
-  padding: 16px 36px;
-  height: calc(100% - 36px);
-  display: flex; flex-direction: column;
-}}
-.tech-headline {{
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 50px; font-weight: 300;
-  color: #eeebe5; line-height: 1.1;
-  margin-bottom: 4px;
-}}
-.tech-headline em {{
-  font-style: italic; color: #c9a96e;
-}}
-.tech-section-label {{
-  font-family: 'DM Mono', monospace;
-  font-size: 7.5px; letter-spacing: 0.18em;
-  color: #c9a96e; text-transform: uppercase;
-  padding-bottom: 5px;
-  border-bottom: 0.5px solid rgba(201,169,110,0.3);
-  margin-top: 16px; margin-bottom: 10px;
-}}
-.tech-grid {{
-  display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: 8px 0; flex: 1;
-}}
-.tech-item {{
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  padding: 8px 4px;
-}}
-.tech-icon {{
-  width: 52px; height: 44px;
-  display: flex; align-items: center; justify-content: center;
-}}
-.tech-icon svg {{ width: 100%; height: 100%; }}
-.tech-name {{
-  font-family: 'DM Mono', monospace;
-  font-size: 7px; letter-spacing: 0.14em;
-  color: #c9a96e; text-align: center;
-  margin-top: 6px; text-transform: uppercase;
-}}
-.finish-row {{
-  display: flex; gap: 8px; margin-top: 10px;
-  flex-shrink: 0;
-}}
-.finish-card {{
-  flex: 1; border: 0.5px solid rgba(201,169,110,0.25);
-  background: #0a0a0a; padding: 10px 12px;
-  min-height: 60px;
-}}
-.finish-card-label {{
-  font-family: 'DM Mono', monospace;
-  font-size: 6.5px; letter-spacing: 0.18em;
-  color: #c9a96e; text-transform: uppercase;
-  border-bottom: 0.3px solid rgba(201,169,110,0.15);
-  padding-bottom: 5px; margin-bottom: 7px;
-}}
-.swatches {{ display: flex; gap: 5px; margin-bottom: 6px; }}
-.swatch {{
-  width: 18px; height: 14px;
-  border: 0.5px solid rgba(255,255,255,0.12);
-}}
-.finish-text {{
-  font-family: 'DM Sans', Helvetica, sans-serif;
-  font-size: 8.5px; color: #eeebe5; line-height: 1.4;
-}}
-.ral-wheel {{ margin-bottom: 6px; }}
-.marine-drop {{
-  margin-bottom: 6px;
-}}
-
-/* ── PAGE 4: GALLERY ── */
-.gallery-page-inner {{
-  padding: 14px 36px 0;
-  height: calc(100% - 36px);
-  display: flex; flex-direction: column;
-}}
-.gallery-heading {{
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 40px; font-weight: 300;
-  color: #eeebe5; line-height: 1;
-}}
-.gallery-rule {{
-  height: 1px; background: rgba(201,169,110,0.25);
-  margin: 10px 0 10px;
-}}
-.gallery-grid {{
-  display: grid; grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  gap: 4px; flex: 1;
-  min-height: 0;
-}}
-.gallery-cell {{
-  overflow: hidden; background: #0e0e0c;
-}}
-.gallery-empty {{
-  border: 0.5px solid rgba(201,169,110,0.06);
-}}
-.gallery-img {{
-  width: 100%; height: 100%; object-fit: cover;
-}}
-.gallery-footer {{
-  background: #0e0e0c;
-  border-top: 1px solid rgba(201,169,110,0.15);
-  padding: 10px 0 14px;
-  display: flex; justify-content: space-between; align-items: flex-end;
-  flex-shrink: 0;
-}}
-.gallery-cta {{
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 17px; color: #eeebe5; font-weight: 300;
-}}
-.gallery-email {{
-  font-family: 'DM Mono', monospace;
-  font-size: 8px; color: #c9a96e;
-  letter-spacing: 0.08em; margin-top: 4px;
-}}
-.gallery-brand {{
-  font-family: 'DM Mono', monospace;
-  font-size: 7px; color: #3a3835;
-  letter-spacing: 0.12em; text-transform: uppercase;
-}}
-</style>
-</head>
-<body>
-
-<!-- PAGE 1: COVER -->
-<div class="page">
-  {'<img src="'+hero+'" class="cover-hero">' if hero else '<div class="cover-hero" style="background:#0e0e0c"></div>'}
-  <div class="cover-fade"></div>
-  <div class="cover-left">
-    <div class="cover-wordmark">XSCACE</div>
-    <div class="cover-tagline-sub">Size Defying Sound</div>
-    <div class="cover-name">{name}</div>
-    <div class="cover-product-tagline">{tagline}</div>
-    <div class="cover-desc">{desc}</div>
-    <div class="cover-rule"></div>
-    <div class="cover-stats">
-      {''.join(f'<div class="stat-item"><div class="stat-value">{v}</div><div class="stat-label">{l}</div></div>' for l,v in [
-        ('Power', f"{P['powerRmsW']}W" if P.get('powerRmsW') else ''),
-        ('Sensitivity', f"{P['sensitivityDb']} dB" if P.get('sensitivityDb') else ''),
-        ('Impedance', f"{P['impedanceOhms']}Ω" if P.get('impedanceOhms') else ''),
-        ('Depth', f"{P['depthMm']} mm" if P.get('depthMm') else ''),
-      ] if v)}
-    </div>
-  </div>
-  <div class="cover-footer">
-    <span class="cover-footer-text">{series} · {sku}</span>
-    <span class="cover-footer-text">XSCACE.COM</span>
-  </div>
-  <div class="champagne-bar-top"></div>
-  <div class="champagne-bar-bottom"></div>
-</div>
-
-<!-- PAGE 2: SPECIFICATIONS -->
-<div class="page">
-  <div class="champagne-bar-top"></div>
-  <div class="champagne-bar-bottom"></div>
-  <div class="page-header">
-    <span class="page-header-left">XSCACE · {name.upper()}</span>
-    <span class="page-header-right">02 — 04</span>
-  </div>
-  <div class="specs-layout">
-    <div class="specs-left">
-      <div class="specs-heading">Specifications</div>
-      <div class="spec-group-label">Acoustic</div>
-      {spec_rows(specs_rows_acoustic)}
-      <div class="spec-group-label">Physical</div>
-      {spec_rows(specs_rows_physical)}
-      <div class="mount-section-label">Mounting Options</div>
-      <div class="mount-cards">{mount_cards()}</div>
-    </div>
-    <div class="specs-right">
-      <div class="specs-right-img" style="flex:1.2">
-        {'<img src="'+hero+'">' if hero else ''}
-      </div>
-      <div class="specs-right-img" style="flex:1">
-        {'<img src="'+lives[0]+'" style="object-fit:cover">' if lives and lives[0] else ''}
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- PAGE 3: TECHNOLOGY + FINISHES -->
-<div class="page">
-  <div class="champagne-bar-top"></div>
-  <div class="champagne-bar-bottom"></div>
-  <div class="page-header">
-    <span class="page-header-left">XSCACE · {name.upper()}</span>
-    <span class="page-header-right">03 — 04</span>
-  </div>
-  <div class="tech-page-inner">
-    <div class="tech-headline">Designed to <em>disappear.</em></div>
-    <div class="tech-section-label">Proprietary Technology</div>
-    <div class="tech-grid">{tech_grid()}</div>
-    <div class="finish-row">
-      <div class="finish-card">
-        <div class="finish-card-label">Standard Finishes</div>
-        <div class="swatches">{color_swatches()}</div>
-        <div class="finish-text">{colors}</div>
-      </div>
-      <div class="finish-card">
-        <div class="finish-card-label">Custom RAL</div>
-        <div class="ral-wheel"><svg viewBox="0 0 40 40" width="36" height="36" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="20" cy="20" r="19" fill="#c9a96e" opacity="0.08" stroke="#c9a96e" stroke-width="0.5"/>
-  <path d="M20,20 L20,1 A19,19 0 0,1 37.1,10.5 Z" fill="hsl(0,75%,55%)"/>
-  <path d="M20,20 L37.1,10.5 A19,19 0 0,1 37.1,29.5 Z" fill="hsl(60,75%,55%)"/>
-  <path d="M20,20 L37.1,29.5 A19,19 0 0,1 20,39 Z" fill="hsl(120,75%,55%)"/>
-  <path d="M20,20 L20,39 A19,19 0 0,1 2.9,29.5 Z" fill="hsl(180,75%,55%)"/>
-  <path d="M20,20 L2.9,29.5 A19,19 0 0,1 2.9,10.5 Z" fill="hsl(240,75%,55%)"/>
-  <path d="M20,20 L2.9,10.5 A19,19 0 0,1 20,1 Z" fill="hsl(300,75%,55%)"/>
-  <circle cx="20" cy="20" r="10" fill="#0a0a0a"/>
-</svg></div>
-        <div class="finish-text">{'Any RAL — powder coat or anodised' if ral else 'Not available'}</div>
-      </div>
-      <div class="finish-card">
-        <div class="finish-card-label">Marine &amp; IP</div>
-        <div class="marine-drop">
-          <svg viewBox="0 0 40 54" width="32" height="40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20,2 C20,2 3,26 3,38 C3,47 10.5,52 20,52 C29.5,52 37,47 37,38 C37,26 20,2 20,2 Z" fill="rgba(201,169,110,0.15)" stroke="#c9a96e" stroke-width="1.5"/>
-            <line x1="13" y1="36" x2="27" y2="36" stroke="#c9a96e" stroke-width="0.8" opacity="0.5"/>
-            <line x1="20" y1="30" x2="20" y2="42" stroke="#c9a96e" stroke-width="0.8" opacity="0.5"/>
-          </svg>
-        </div>
-        <div class="finish-text">{marine_txt or 'Standard protection'}</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- PAGE 4: GALLERY -->
-<div class="page">
-  <div class="champagne-bar-top"></div>
-  <div class="champagne-bar-bottom"></div>
-  <div class="page-header">
-    <span class="page-header-left">XSCACE · {name.upper()}</span>
-    <span class="page-header-right">04 — 04</span>
-  </div>
-  <div class="gallery-page-inner">
-    <div class="gallery-heading">In context.</div>
-    <div class="gallery-rule"></div>
-    <div class="gallery-grid">{gallery_cells()}</div>
-    <div class="gallery-footer">
-      <div>
-        <div class="gallery-cta">Enquire or specify at xscace.com</div>
-        <div class="gallery-email">support@xscace.com</div>
-      </div>
-      <div class="gallery-brand">XSCACE · Size Defying Sound</div>
-    </div>
-  </div>
-</div>
-
-</body>
-</html>'''
+    # Fallback: reportlab minimal
+    from reportlab.lib.pagesizes import landscape, A4
+    from reportlab.pdfgen import canvas as rl_canvas
+    from reportlab.lib.colors import HexColor
+    buf = tempfile.NamedTemporaryFile(suffix='.pdf', delete=False)
+    buf.close()
+    cv = rl_canvas.Canvas(buf.name, pagesize=landscape(A4))
+    cv.setFillColor(HexColor('#090909'))
+    cv.rect(0,0,*landscape(A4),fill=1,stroke=0)
+    cv.setFillColor(HexColor('#c9a96e'))
+    cv.setFont('Helvetica', 24)
+    cv.drawString(50, 400, 'PDF generation requires wkhtmltopdf on this server.')
+    cv.save()
+    with open(buf.name,'rb') as f: pdf = f.read()
+    os.unlink(buf.name)
+    return pdf
 
 
 class handler(BaseHTTPRequestHandler):
@@ -664,6 +157,7 @@ class handler(BaseHTTPRequestHandler):
             slug = self.path.rstrip('/').split('/')[-1].split('?')[0]
             if not slug: return self._err(400, 'No slug')
 
+            # 1. Fetch product
             P = sanity_fetch(f'''*[_type=="product" && slug.current=="{slug}" && status=="Active"][0]{{
                 _id, productName, productFullName, tagline, shortDescription,
                 series, skuBase, colorsStandard, mountingMethods,
@@ -673,16 +167,14 @@ class handler(BaseHTTPRequestHandler):
                 directivityHDeg, directivityVDeg, heightMm, widthMm, depthMm,
                 weightKg, driverDescription, crossoverType, housingMaterial,
                 grilleMaterial, speakerWireConnector, proprietaryTechBadges,
-                heroImage,
-                "gallery": galleryImages[0..3],
+                heroImage, "gallery": galleryImages[0..3],
                 "lifestyle": lifestyleImages[0..5],
-                "accessories": accessories[]->{{
-                    name, category, shortDescription, heroImage, lifestyleImage
-                }},
+                "accessories": accessories[]->{{name, category, heroImage, lifestyleImage}},
                 brochureRef, brochureHash
             }}''')
             if not P: return self._err(404, 'Product not found')
 
+            # 2. Cache check
             h = hashlib.md5(f"{P.get('productName')}{P.get('powerRmsW')}{P.get('depthMm')}".encode()).hexdigest()[:12]
             if P.get('brochureRef') and P.get('brochureHash') == h:
                 cdn = file_cdn(P['brochureRef'])
@@ -692,6 +184,7 @@ class handler(BaseHTTPRequestHandler):
                 except urllib.error.HTTPError as e:
                     if e.code == 403: return self._redirect(cdn)
 
+            # 3. Fetch images as base64 data URIs
             hero  = fetch_b64(get_ref(P.get('heroImage')), 1600)
             gals  = [fetch_b64(get_ref(g), 900)  for g in (P.get('gallery')   or [])[:3]]
             lives = [fetch_b64(get_ref(l), 1200) for l in (P.get('lifestyle')  or [])[:5]]
@@ -699,32 +192,151 @@ class handler(BaseHTTPRequestHandler):
             # Match accessory images to mount methods
             accs = P.get('accessories') or []
             mount_methods = [m.strip() for m in (P.get('mountingMethods') or '').split(',') if m.strip()]
-            mounts = []
-            used_lives = 0
-            for m in mount_methods:
-                img = ''
-                # Try to match accessory by name
-                for a in accs:
-                    aname = (a.get('name') or '').lower()
-                    if any(w.lower() in aname for w in m.split()):
-                        img = fetch_b64(get_ref(a.get('lifestyleImage')) or get_ref(a.get('heroImage')), 900)
-                        if img: break
-                # Fall back to lifestyle images
-                if not img and used_lives < len(lives):
-                    img = lives[used_lives]; used_lives += 1
-                mounts.append({'name': m, 'img': img})
+            mount_imgs = {}
+            for a in accs:
+                aname = (a.get('name') or '').lower()
+                img = fetch_b64(get_ref(a.get('lifestyleImage')) or get_ref(a.get('heroImage')), 900)
+                if img:
+                    for m in mount_methods:
+                        if any(w.lower() in aname for w in m.lower().split()):
+                            mount_imgs[m] = img
 
-            # Render directly with brochure_render.py — pure reportlab, no HTML conversion
-            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-            import brochure_render as _br
-            import tempfile as _tmp
-            _tf = _tmp.NamedTemporaryFile(suffix='.pdf', delete=False)
-            _tf.close()
-            _br.render(P, hero, gals, lives, mounts, _tf.name)
-            with open(_tf.name, 'rb') as _f: pdf_bytes = _f.read()
-            os.unlink(_tf.name)
+            # 4. Load fonts
+            font_css = load_fonts_b64()
+
+            # 5. Ask Claude to generate HTML
+            tech = [b.strip().replace('™','').replace('\u2122','').replace('  ',' ')
+                    for b in (P.get('proprietaryTechBadges') or '').split(',') if b.strip()]
+
+            specs_a = {k:v for k,v in {
+                'Power RMS':   f"{P['powerRmsW']}W"           if P.get('powerRmsW')    else None,
+                'Power Peak':  f"{P['powerPeakW']}W"          if P.get('powerPeakW')   else None,
+                'Sensitivity': f"{P['sensitivityDb']} dB"     if P.get('sensitivityDb') else None,
+                'Frequency':   f"{P.get('freqLowHz')}Hz – {int(P['freqHighHz']//1000)}kHz {P.get('freqQualifier','')or ''}".strip() if P.get('freqHighHz') else None,
+                'Impedance':   f"{P['impedanceOhms']}Ω"       if P.get('impedanceOhms') else None,
+                'Max SPL':     f"{P['splMaxDb']} dB"          if P.get('splMaxDb')     else None,
+                'THD+N':       P.get('thdN'),
+                'Drivers':     P.get('driverDescription'),
+                'Crossover':   P.get('crossoverType'),
+                'Directivity': f"{P['directivityHDeg']}° H × {P['directivityVDeg']}° V" if P.get('directivityHDeg') else None,
+            }.items() if v}
+            specs_p = {k:v for k,v in {
+                'H × W × D': f"{P.get('heightMm')} × {P.get('widthMm')} × {P.get('depthMm')} mm" if P.get('heightMm') else None,
+                'Weight':    f"{P['weightKg']} kg"   if P.get('weightKg') else None,
+                'Housing':   P.get('housingMaterial'),
+                'Grille':    P.get('grilleMaterial'),
+                'IP Rating': P.get('ipRating'),
+                'Connector': P.get('speakerWireConnector'),
+            }.items() if v}
+
+            marine_txt = ' · '.join(filter(None,[P.get('ipRating',''),'Marine-grade' if P.get('marineTreatable') else ''])) or 'Standard'
+
+            # Build mount data for prompt
+            mounts_info = []
+            life_idx = 0
+            for m in mount_methods:
+                img = mount_imgs.get(m, '')
+                if not img and life_idx < len(lives):
+                    img = lives[life_idx]; life_idx += 1
+                mounts_info.append({'name': m, 'img': img})
+
+            html = call_claude(
+                system="""You are a luxury product brochure designer. Output ONLY raw HTML, nothing else.
+No markdown, no explanation, no code fences. Start with <!DOCTYPE html>.""",
+
+                user=f"""Create a stunning 4-page A4 landscape HTML brochure for this XSCACE luxury speaker.
+
+The font CSS (with all fonts embedded as base64) is already provided — paste it as-is inside <style>.
+FONT_CSS_PLACEHOLDER
+
+Images are provided as base64 data URIs — use them directly in src="" attributes.
+
+PRODUCT:
+Name: {P.get('productName')} | Full: {P.get('productFullName','')}
+Tagline: {P.get('tagline','')}
+Description: {P.get('shortDescription','')}
+Series: {P.get('series','')} | SKU: {P.get('skuBase','')}
+Acoustic specs: {json.dumps(specs_a)}
+Physical specs: {json.dumps(specs_p)}
+Tech badges: {json.dumps(tech)}
+Standard finishes: {P.get('colorsStandard','')}
+Custom RAL: {'Available — any RAL, powder coat or anodised' if P.get('customRalAvailable') else 'Not available'}
+Marine & IP: {marine_txt}
+Mounting options: {json.dumps([m['name'] for m in mounts_info])}
+
+IMAGES (base64 data URIs — use in img src= directly):
+HERO_IMAGE: {hero[:80]}... (use full string: {repr('HERO_B64')})
+LIFE1: {lives[0][:60] if lives else ''}... (use full: LIFE1_B64)
+LIFE2: {lives[1][:60] if len(lives)>1 else ''}... LIFE2_B64
+LIFE3: {lives[2][:60] if len(lives)>2 else ''}... LIFE3_B64
+LIFE4: {lives[3][:60] if len(lives)>3 else ''}... LIFE4_B64
+GAL1: {gals[0][:60] if gals else ''}... GAL1_B64
+{chr(10).join(f'MOUNT_{i+1} ({m["name"]}): {m["img"][:60] if m["img"] else "none"}... MOUNT{i+1}_B64' for i,m in enumerate(mounts_info))}
+
+DESIGN: background #090909, accent #c9a96e, text #eeebe5, muted #7a776f
+Fonts: 'Cormorant Garamond' (headings), 'DM Sans' (body), 'DM Mono' (labels/specs)
+Style: flat, no shadows, 0.5px champagne borders, luxury breathing room
+
+PAGES (each 297mm × 210mm, page-break-after: always):
+
+PAGE 1 COVER:
+- Full black bg. Hero image on right 55% object-fit:cover height 100%.
+- Overlay: linear-gradient(to right, #090909 42%, rgba(9,9,9,0.5) 65%, transparent 85%)
+- Left: XSCACE in DM Mono 13px. Product name Cormorant 78px weight 300. Tagline Cormorant italic 20px #c9a96e.
+  Description DM Sans 11px #7a776f. Thin champagne rule. Stats row: 4 key specs (value Cormorant 26px #c9a96e, label DM Mono 7px below).
+  Footer: series·SKU left, XSCACE.COM right, DM Mono 8px #7a776f.
+- Champagne bars top and bottom (5px).
+
+PAGE 2 SPECS:
+- Header: "XSCACE · NAME" left, "02 — 04" right, DM Mono 8px.
+- "Specifications" Cormorant 44px.
+- Left 50%: ACOUSTIC group then PHYSICAL group. Each row: label DM Mono 8px #7a776f, value DM Mono 8px #eeebe5 right-aligned. Thin separator lines.
+- Right 46%: hero image top 55% (object-fit:contain, dark bg), lifestyle image bottom 40% (object-fit:cover).
+- Below specs (full width): "MOUNTING OPTIONS" label. Flex row of cards — each card: image top 75% object-fit:cover (or placeholder dark div), mount name DM Mono 8px bottom strip.
+
+PAGE 3 TECH:
+- "Designed to" Cormorant 50px + line break + "disappear." Cormorant italic 50px #c9a96e. NO image strip.
+- "PROPRIETARY TECHNOLOGY" DM Mono 8px + champagne rule.
+- 3-column grid of tech badges. Each: unique inline SVG icon (60×50 viewBox, stroke #c9a96e, fill none):
+  * PsySculpt: sine wave path across full width
+  * XS-Flow: U-bend tube with 3 outlet dots
+  * Nano Resonance: 5 lines fanning from bottom point
+  * PrecisionXover Array: 8 vertical bars varying height, filled #c9a96e
+  * AeroFrame Chassis: asterisk of 8 spokes + inner circle
+  * PowerDense Dynamics: lightning bolt + 3 arc lines
+  Badge name below in DM Mono 7px #c9a96e.
+- Bottom: 3 bordered cards (border 0.5px rgba(201,169,110,0.3)):
+  1. Standard Finishes: colour swatches (div squares) + names
+  2. Custom RAL: SVG colour wheel (6-segment pie) + text
+  3. Marine & IP: SVG water droplet + text
+
+PAGE 4 GALLERY:
+- "In context." Cormorant 40px + champagne rule.
+- 2×2 grid of lifestyle images, object-fit:cover, fills height.
+- Footer strip: "Enquire or specify at xscace.com" Cormorant 18px, "support@xscace.com" DM Mono 9px #c9a96e. Right: "XSCACE · SIZE DEFYING SOUND" DM Mono 7px.
+
+Use HERO_B64, LIFE1_B64, LIFE2_B64, LIFE3_B64, LIFE4_B64, GAL1_B64, MOUNT1_B64, MOUNT2_B64, MOUNT3_B64 as placeholder strings in src attributes."""
+            )
+
+            # Strip markdown
+            if html.startswith('```'): html = html.split('\n',1)[1].rsplit('```',1)[0].strip()
+
+            # Inject font CSS
+            html = html.replace('FONT_CSS_PLACEHOLDER', font_css)
+
+            # Inject images
+            html = html.replace('HERO_B64',   hero or '')
+            for i,l in enumerate(lives,1):   html = html.replace(f'LIFE{i}_B64',  l or '')
+            for i,g in enumerate(gals,1):     html = html.replace(f'GAL{i}_B64',  g or '')
+            for i,m in enumerate(mounts_info,1): html = html.replace(f'MOUNT{i}_B64', m['img'] or '')
+
+            print(f'[brochure] HTML: {len(html):,} chars', file=sys.stderr)
+
+            # 6. Convert to PDF
+            pdf_bytes = html_to_pdf(html)
             print(f'[brochure] PDF: {len(pdf_bytes):,} bytes', file=sys.stderr)
 
+            # 7. Upload and cache
             if TOKEN and len(pdf_bytes) > 1000:
                 try:
                     fname    = f"XSCACE_{P['productName'].replace(' ','_')}_Brochure.pdf"
@@ -732,7 +344,7 @@ class handler(BaseHTTPRequestHandler):
                     sanity_patch(P['_id'], {
                         'brochureRef':  asset_id,
                         'brochureHash': h,
-                        'brochure':     {'_type': 'file', 'asset': {'_type': 'reference', '_ref': asset_id}}
+                        'brochure':     {'_type':'file','asset':{'_type':'reference','_ref':asset_id}}
                     })
                     print(f'[brochure] cached: {asset_id}', file=sys.stderr)
                 except Exception as e:
