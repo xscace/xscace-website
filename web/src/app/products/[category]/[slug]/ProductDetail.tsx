@@ -2097,6 +2097,24 @@ export default function ProductDetail({ product }: { product: Product }) {
           <div className="pd-downloads-grid">
 
             <a
+              href={`/api/brochure/${product.slug?.current}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="pd-download-card"
+            >
+              <div className="pd-dl-top">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#c9a96e" strokeWidth="1" width="28" height="28">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <rect x="8" y="12" width="8" height="1.5" rx="0.5" fill="#c9a96e"/>
+                  <rect x="8" y="15" width="6" height="1.5" rx="0.5" fill="#c9a96e" opacity="0.5"/>
+                </svg>
+                <div className="pd-dl-label">Product Brochure</div>
+              </div>
+              <div className="pd-dl-format">PDF · 3 pages · Auto-generated</div>
+            </a>
+
+            <a
               href={`/api/specsheet/${product.slug?.current || product.productName}`}
               target="_blank"
               rel="noopener noreferrer"
