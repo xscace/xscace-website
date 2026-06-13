@@ -3,15 +3,19 @@ import { NextRequest, NextResponse } from 'next/server'
 const W = 1587, H = 1123
 
 // Always use the canonical production URL — never self-reference
-const SITE = 'https://xscace.com'
+
 
 export const maxDuration = 60
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params
+  // Derive site URL from the incoming request — works on any deployment
+  const host = req.headers.get('host') || 'localhost:3000'
+  const proto = host.includes('localhost') ? 'http' : 'https'
+  const SITE = `${proto}://${host}`
 
   try {
     const puppeteer   = await import('puppeteer-core')
