@@ -992,55 +992,259 @@ function AnnotatedImage({ imgUrl, productName, badges }: { imgUrl: string; produ
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────────
 
 // ── VIDEO GRID GALLERY ───────────────────────────────────────────────────────
-// ── FLOATING GALLERY ─────────────────────────────────────────────────────────
-// Masonry-style drifting images on pure black — click to lightbox
+// ── ACCESSORIES SECTION ──────────────────────────────────────────────────────
+// Split-screen lifestyle cards — alternating left/right image
+// inWallProduct: the in-wall variant of this product (Cane IC, Bonsai IC, etc.)
+// Reveal slider — drag to compare two images in the same box
+function RevealSlider({ heroUrl, lifestyleUrl, alt }: { heroUrl: string|null, lifestyleUrl: string|null, alt: string }) {
+  const [pct, setPct] = useState(50)
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const dragging = useRef(false)
+
+  const calc = (clientX: number) => {
+    const rect = wrapRef.current!.getBoundingClientRect()
+    const p = Math.max(0, Math.min(100, (clientX - rect.left) / rect.width * 100))
+    setPct(p)
+  }
+
+  const onMouseDown = (e: React.MouseEvent) => { dragging.current = true; calc(e.clientX) }
+  const onMouseMove = (e: React.MouseEvent) => { if (dragging.current) calc(e.clientX) }
+  const onMouseUp   = () => { dragging.current = false }
+  const onTouchMove = (e: React.TouchEvent) => { e.preventDefault(); calc(e.touches[0].clientX) }
+
+  // Only one image — just show it
+  if (!heroUrl || !lifestyleUrl) {
+    const src = heroUrl || lifestyleUrl
+    return src ? (
+      <div className="acc-reveal-wrap">
+        <img src={src} alt={alt} className="acc-reveal-base"/>
+      </div>
+    ) : null
+  }
+
+  return (
+    <div className="acc-reveal-wrap"
+      ref={wrapRef}
+      onMouseDown={onMouseDown}
+      onMouseMove={onMouseMove}
+      onMouseUp={onMouseUp}
+      onMouseLeave={onMouseUp}
+      onTouchStart={e => calc(e.touches[0].clientX)}
+      onTouchMove={onTouchMove}
+    >
+      {/* Base — lifestyle */}
+      <img src={lifestyleUrl} alt={`${alt} installed`} className="acc-reveal-base"/>
+      {/* Top — product, clipped */}
+      <div className="acc-reveal-top" style={{width: `${pct}%`}}>
+        <img src={heroUrl} alt={alt} className="acc-reveal-img"
+          style={{width: wrapRef.current?.offsetWidth + 'px' || '100%'}}/>
+      </div>
+      {/* Handle */}
+      <div className="acc-reveal-handle" style={{left: `${pct}%`}}>
+        <div className="acc-reveal-line"/>
+        <div className="acc-reveal-grip">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <circle cx="9" cy="9" r="8" fill="#000" stroke="#c9a96e" strokeWidth="0.8"/>
+            <path d="M5 9l2.5-3v6L5 9zM13 9l-2.5-3v6L13 9z" fill="#c9a96e" opacity="0.8"/>
+          </svg>
+        </div>
+      </div>
+      {/* Labels */}
+      <div className="acc-reveal-label acc-reveal-label-l" style={{opacity: pct > 15 ? 1 : 0}}>Product</div>
+      <div className="acc-reveal-label acc-reveal-label-r" style={{opacity: pct < 85 ? 1 : 0}}>In Use</div>
+    </div>
+  )
+}
+
+function AccessoriesSection({ accessories, productName, getImageUrl, inWallProduct }: {
+  accessories: any[]
+  productName: string
+  getImageUrl: (img: any, w?: number) => string | null
+  inWallProduct?: any
+}) {
+  const hasItems = (accessories && accessories.length > 0) || inWallProduct
+  if (!hasItems) return null
+
+  return (
+    <section className="acc-section">
+      <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
+      <div className="acc-header">
+        <div className="pd-section-ey">Accessories</div>
+        <h2 className="pd-section-title">Mount it <em>your way</em></h2>
+      </div>
+
+      {[...(accessories || []), ...(inWallProduct ? [{ _isInWall: true, ...inWallProduct }] : [])].map((acc: any, i: number) => {
+        const isEven = i % 2 === 0
+
+        // In-wall product — special card linking to its product page
+        if (acc._isInWall) {
+          const imgUrl = getImageUrl(acc.heroImage, 1200)
+          return (
+            <a key="inwall"
+              href={`/products/${acc.catSlug || 'in-ceiling-series'}/${acc.slug}`}
+              className={`acc-card acc-card-link${isEven ? '' : ' acc-card-flip'}`}
+              style={{textDecoration:'none',color:'inherit'}}>
+              <div className="acc-img-side">
+                {imgUrl
+                  ? <img src={imgUrl} alt={acc.productName} className="acc-img"/>
+                  : <div className="acc-img-placeholder"/>
+                }
+              </div>
+              <div className="acc-info-side">
+                <div className="acc-cat">In-Wall / In-Ceiling Version</div>
+                <h3 className="acc-name">{acc.productName}</h3>
+                <p className="acc-desc">The fully flush version of the {productName} — same driver array, same performance, completely hidden inside the wall or ceiling.</p>
+                {acc.specs && (
+                  <div className="acc-specs">
+                    {[
+                      acc.heightMm && { label: 'Cutout height', value: `${acc.heightMm}mm` },
+                      acc.widthMm  && { label: 'Cutout width',  value: `${acc.widthMm}mm` },
+                      acc.depthMm  && { label: 'Required depth', value: `${acc.depthMm}mm` },
+                    ].filter(Boolean).map((s: any, j: number) => (
+                      <div key={j} className="acc-spec-row">
+                        <span className="acc-spec-label">{s.label}</span>
+                        <span className="acc-spec-val">{s.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <span className="acc-enquire">View {acc.productName} →</span>
+              </div>
+            </a>
+          )
+        }
+
+        const heroUrl      = getImageUrl(acc.heroImage, 1200)
+        const lifestyleUrl = getImageUrl(acc.lifestyleImage, 1200)
+        return (
+          <div key={acc._id} className={`acc-card${isEven ? '' : ' acc-card-flip'}`}>
+            {/* Reveal slider — drag to compare product shot vs lifestyle */}
+            <div className="acc-img-side">
+              <RevealSlider
+                heroUrl={heroUrl}
+                lifestyleUrl={lifestyleUrl}
+                alt={acc.name}
+              />
+            </div>
+
+            {/* Info side */}
+            <div className="acc-info-side">
+              <div className="acc-cat">{acc.category || 'Accessory'}</div>
+              <h3 className="acc-name">{acc.name}</h3>
+              <p className="acc-desc">{acc.shortDescription || acc.description}</p>
+
+              {acc.specs && acc.specs.length > 0 && (
+                <div className="acc-specs">
+                  {acc.specs.slice(0, 4).map((s: any, j: number) => (
+                    <div key={j} className="acc-spec-row">
+                      <span className="acc-spec-label">{s.label}</span>
+                      <span className="acc-spec-val">{s.value}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {acc.skuCode && (
+                <div className="acc-sku">{acc.skuCode}</div>
+              )}
+
+              <a href="mailto:support@xscace.com?subject=Accessory Enquiry — " className="acc-enquire">
+                Enquire about this accessory →
+              </a>
+            </div>
+          </div>
+        )
+      })}
+
+    </section>
+  )
+}
+
+// ── FLOATING GALLERY — scrollable strip ──────────────────────────────────────
 function FloatingGallery({ images, productName, getImageUrl }: {
   images: any[]
   productName: string
   getImageUrl: (img: any, w?: number) => string | null
 }) {
   const [lightbox, setLightbox] = useState<string | null>(null)
-  const [hovered, setHovered]   = useState<number | null>(null)
+  const stripRef = useRef<HTMLDivElement>(null)
 
-  // Build grid items with varying sizes
   const items = images.map((img, i) => {
-    const url = getImageUrl(img, 1200)
+    const url = getImageUrl(img, 900)
     if (!url) return null
-    // Alternate large/small in a pattern
-    const size = [2,1,1,2,1,2,1,1][i % 8] // 2=large, 1=small
-    return { url, size, i }
-  }).filter(Boolean) as { url: string; size: number; i: number }[]
+    return { url, i }
+  }).filter(Boolean) as { url: string; i: number }[]
 
   if (items.length === 0) return null
+
+  // Drag-to-scroll
+  const drag = useRef({ active: false, startX: 0, scrollLeft: 0 })
+  const onMouseDown = (e: React.MouseEvent) => {
+    drag.current = { active: true, startX: e.pageX - (stripRef.current?.offsetLeft || 0), scrollLeft: stripRef.current?.scrollLeft || 0 }
+    if (stripRef.current) stripRef.current.style.cursor = 'grabbing'
+  }
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!drag.current.active || !stripRef.current) return
+    e.preventDefault()
+    const x = e.pageX - (stripRef.current.offsetLeft || 0)
+    stripRef.current.scrollLeft = drag.current.scrollLeft - (x - drag.current.startX)
+  }
+  const onMouseUp = () => {
+    drag.current.active = false
+    if (stripRef.current) stripRef.current.style.cursor = 'grab'
+  }
+
+  // Update progress track on scroll
+  useEffect(() => {
+    const strip = stripRef.current
+    if (!strip) return
+    const update = () => {
+      const fill = document.getElementById('fg-track-fill')
+      if (!fill) return
+      const pct = strip.scrollLeft / (strip.scrollWidth - strip.clientWidth) * 100
+      fill.style.width = Math.max(8, pct) + '%'
+    }
+    strip.addEventListener('scroll', update, { passive: true })
+    return () => strip.removeEventListener('scroll', update)
+  }, [])
 
   return (
     <section className="fg-section">
       <div className="fg-header">
-        <div className="pd-section-ey">Gallery</div>
-        <h2 className="pd-section-title">{productName} <em>in context</em></h2>
+        <div className="fg-header-row">
+          <div>
+            <div className="pd-section-ey">Gallery</div>
+            <h2 className="pd-section-title" style={{marginBottom:0}}>{productName} <em>in context</em></h2>
+          </div>
+          <div className="fg-scroll-hint">
+            <svg width="36" height="14" viewBox="0 0 36 14" fill="none">
+              <line x1="0" y1="7" x2="28" y2="7" stroke="#c9a96e" strokeWidth="0.6" opacity="0.4"/>
+              <path d="M24 3l5 4-5 4" stroke="#c9a96e" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.6"/>
+            </svg>
+            <span>Scroll</span>
+          </div>
+        </div>
+        {/* Scrollbar track indicator */}
+        <div className="fg-track">
+          <div className="fg-track-fill" id="fg-track-fill"/>
+        </div>
       </div>
 
-      <div className="fg-grid">
-        {items.map(({ url, size, i }) => (
-          <div
-            key={i}
-            className={`fg-item fg-item-${size}${hovered === i ? ' fg-hovered' : ''}`}
-            onClick={() => setLightbox(url)}
-            onMouseEnter={() => setHovered(i)}
-            onMouseLeave={() => setHovered(null)}
-          >
-            <img src={url} alt={`${productName} ${i + 1}`} className="fg-img"/>
-            <div className="fg-overlay">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M3 3h5M3 3v5M17 3h-5M17 3v5M3 17h5M3 17v-5M17 17h-5M17 17v-5"
-                  stroke="#c9a96e" strokeWidth="1.2" strokeLinecap="round"/>
-              </svg>
-            </div>
+      <div
+        className="fg-strip"
+        ref={stripRef}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseUp}
+      >
+        {items.map(({ url, i }) => (
+          <div key={i} className="fg-strip-item" onClick={() => setLightbox(url)}>
+            <img src={url} alt={`${productName} ${i + 1}`} className="fg-strip-img"/>
           </div>
         ))}
       </div>
 
-      {/* Lightbox */}
       {lightbox && (
         <div className="fg-lightbox" onClick={() => setLightbox(null)}>
           <img src={lightbox} alt={productName} className="fg-lb-img"/>
@@ -1145,21 +1349,24 @@ function VideoGallery({ images, videos, productName, getImageUrl }: {
 
         {/* Left video */}
         <div className="vg-panel">
-          {videos.length > 0 && getVideoSrc(videos[leftIdx]) ? (
-            <div className={`vg-embed-wrap${leftFading ? ' vg-fading' : ''}`}>
-              {(() => {
-                const vs = getVideoSrc(videos[leftIdx])!
-                return vs.type === 'file' ? (
-                  <video key={`left-${leftIdx}`} className="vg-video-el"
+          {(() => {
+            // Always show a video — use leftIdx, fall back to 0
+            const idx = videos.length > 0 ? leftIdx % videos.length : -1
+            const vs  = idx >= 0 ? getVideoSrc(videos[idx]) : null
+            if (!vs) return null
+            return (
+              <div className={`vg-embed-wrap${leftFading ? ' vg-fading' : ''}`}>
+                {vs.type === 'file' ? (
+                  <video key={`left-${idx}`} className="vg-video-el"
                     src={vs.src} autoPlay muted loop playsInline/>
                 ) : (
-                  <iframe key={`left-${leftIdx}`}
+                  <iframe key={`left-${idx}`}
                     src={`https://www.youtube-nocookie.com/embed/${vs.src}?autoplay=1&mute=1&loop=1&playlist=${vs.src}&controls=0&modestbranding=1&playsinline=1&rel=0&disablekb=1&iv_load_policy=3`}
                     className="vg-iframe" allow="autoplay; encrypted-media" allowFullScreen/>
-                )
-              })()}
-            </div>
-          ) : null}
+                )}
+              </div>
+            )
+          })()}
 
           {/* Vignette */}
           <div className="vg-vignette"/>
@@ -1190,22 +1397,24 @@ function VideoGallery({ images, videos, productName, getImageUrl }: {
 
         {/* Right video */}
         <div className="vg-panel">
-          {videos.length > 0 && getVideoSrc(videos[rightIdx]) ? (
-            <div className={`vg-embed-wrap${rightFading ? ' vg-fading' : ''}`}>
-              {(() => {
-                const vs = getVideoSrc(videos[rightIdx])!
-                return vs.type === 'file' ? (
-                  <video key={`right-${rightIdx}`} className="vg-video-el"
-                    src={vs.src} autoPlay muted loop playsInline
-                    style={{animationDelay: '3s'}}/>
+          {(() => {
+            // Use rightIdx if multiple videos, otherwise duplicate video 0 (offset start)
+            const idx = videos.length > 1 ? rightIdx % videos.length : 0
+            const vs  = videos.length > 0 ? getVideoSrc(videos[idx]) : null
+            if (!vs) return null
+            return (
+              <div className={`vg-embed-wrap${rightFading ? ' vg-fading' : ''}`}>
+                {vs.type === 'file' ? (
+                  <video key={`right-${idx}`} className="vg-video-el"
+                    src={vs.src} autoPlay muted loop playsInline/>
                 ) : (
-                  <iframe key={`right-${rightIdx}`}
+                  <iframe key={`right-${idx}`}
                     src={`https://www.youtube-nocookie.com/embed/${vs.src}?autoplay=1&mute=1&loop=1&playlist=${vs.src}&controls=0&modestbranding=1&playsinline=1&rel=0&disablekb=1&iv_load_policy=3&start=8`}
                     className="vg-iframe" allow="autoplay; encrypted-media" allowFullScreen/>
-                )
-              })()}
-            </div>
-          ) : null}
+                )}
+              </div>
+            )
+          })()}
 
           <div className="vg-vignette"/>
           <div className="vg-bottom-fade"/>
@@ -1703,13 +1912,6 @@ export default function ProductDetail({ product }: { product: Product }) {
         />
       )}
 
-      {/* ── FLOATING GALLERY ── */}
-      {galleryAll.length > 0 && (
-        <>
-          <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
-          <FloatingGallery images={galleryAll} productName={product.productName} getImageUrl={getImageUrl}/>
-        </>
-      )}
 
 
       {/* wave divider */}
@@ -1884,98 +2086,6 @@ export default function ProductDetail({ product }: { product: Product }) {
 
       {/* wave divider */}
       <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
-      {/* ── RIGGING & MOUNTS ── */}
-      {hasMount && (
-        <section className="pd-section pd-mounts-section">
-          <div className="pd-section-inner">
-            <div className="pd-section-ey">Mounting Options</div>
-            <h2 className="pd-section-title">Every <em>configuration</em></h2>
-          </div>
-
-          {/* Installation diagram images from Sanity */}
-          {product.installationDiagramImages && product.installationDiagramImages.length > 0 && (
-            <div className="pd-install-diagrams">
-              {product.installationDiagramImages.map((img: any, i: number) => {
-                const url = getImageUrl(img, 800)
-                if (!url) return null
-                return (
-                  <div key={i} className="pd-install-diagram">
-                    <img src={url} alt={`${product.productName} installation ${i + 1}`}/>
-                    {img.alt && <div className="pd-install-diagram-label">{img.alt}</div>}
-                  </div>
-                )
-              })}
-            </div>
-          )}
-
-          {/* Mount method cards */}
-          <div className="pd-mounts-grid">
-            {mountingMethodsList.map((method: string) => (
-              <div key={method} className="pd-mount-card">
-                <div className="pd-mount-icon">
-                  <svg viewBox="0 0 48 48" fill="none" width="36" height="36">
-                    {method.toLowerCase().includes('corner') ? (
-                      <>
-                        <path d="M4 4 L44 4 L44 44" stroke="#c9a96e" strokeWidth="1" opacity="0.4"/>
-                        <rect x="30" y="4" width="8" height="16" rx="1" fill="rgba(201,169,110,0.1)" stroke="#c9a96e" strokeWidth="0.7"/>
-                      </>
-                    ) : method.toLowerCase().includes('floor') || method.toLowerCase().includes('stand') ? (
-                      <>
-                        <line x1="24" y1="40" x2="24" y2="16" stroke="#c9a96e" strokeWidth="1" opacity="0.4"/>
-                        <rect x="16" y="4" width="16" height="14" rx="1" fill="rgba(201,169,110,0.1)" stroke="#c9a96e" strokeWidth="0.7"/>
-                        <line x1="12" y1="40" x2="36" y2="40" stroke="#c9a96e" strokeWidth="1" opacity="0.4"/>
-                      </>
-                    ) : method.toLowerCase().includes('ceiling') ? (
-                      <>
-                        <line x1="24" y1="4" x2="24" y2="18" stroke="#c9a96e" strokeWidth="1" opacity="0.4"/>
-                        <circle cx="24" cy="28" r="10" fill="rgba(201,169,110,0.08)" stroke="#c9a96e" strokeWidth="0.7"/>
-                        <circle cx="24" cy="28" r="4" fill="rgba(201,169,110,0.15)"/>
-                      </>
-                    ) : (
-                      <>
-                        <rect x="4" y="16" width="8" height="16" rx="1" fill="rgba(201,169,110,0.1)" stroke="#c9a96e" strokeWidth="0.7"/>
-                        <rect x="16" y="12" width="16" height="24" rx="1" fill="rgba(201,169,110,0.08)" stroke="#c9a96e" strokeWidth="0.7"/>
-                      </>
-                    )}
-                  </svg>
-                </div>
-                <div className="pd-mount-name">{method}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Cutout dimensions */}
-          {(product.cutoutHeightMm || product.cutoutDiameterMm) && (
-            <div className="pd-mount-dims">
-              <div className="pd-spec-col-title">Cutout Dimensions</div>
-              {product.cutoutDiameterMm && (
-                <div className="pd-spec-row">
-                  <span className="pd-spec-label">Diameter</span>
-                  <span className="pd-spec-value">{product.cutoutDiameterMm}mm</span>
-                </div>
-              )}
-              {product.cutoutHeightMm && product.cutoutWidthMm && (
-                <div className="pd-spec-row">
-                  <span className="pd-spec-label">H × W</span>
-                  <span className="pd-spec-value">{product.cutoutHeightMm} × {product.cutoutWidthMm}mm</span>
-                </div>
-              )}
-              {product.requiredCavityDepthMm && (
-                <div className="pd-spec-row">
-                  <span className="pd-spec-label">Cavity depth</span>
-                  <span className="pd-spec-value">{product.requiredCavityDepthMm}mm</span>
-                </div>
-              )}
-            </div>
-          )}
-        </section>
-      )}
-
-      
-
-      
-      {/* wave divider */}
-      <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
 
       {/* ── DOWNLOADS ── */}
       {hasDownloads && (
@@ -2047,6 +2157,24 @@ export default function ProductDetail({ product }: { product: Product }) {
 
           </div>
         </section>
+      )}
+
+      {/* ── ACCESSORIES ── */}
+      {(product.accessories?.length > 0 || product.inWallVariant) && (
+        <AccessoriesSection
+          accessories={product.accessories || []}
+          productName={product.productName}
+          getImageUrl={getImageUrl}
+          inWallProduct={product.inWallVariant}
+        />
+      )}
+
+      {/* ── GALLERY — last section ── */}
+      {galleryAll.length > 0 && (
+        <>
+          <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
+          <FloatingGallery images={galleryAll} productName={product.productName} getImageUrl={getImageUrl}/>
+        </>
       )}
 
     </div>

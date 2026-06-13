@@ -57,6 +57,15 @@ async function getProduct(slug: string) {
       compatibleSpeakers[]->{ _id, productName, slug, heroImage, series, category->{ name, slug } },
       accessories[]->{ _id, productName, slug, heroImage },
       relatedProducts[]->{ _id, productName, slug, heroImage, series, sensitivityDb, powerRmsW, impedanceOhms, "category": category->{ name, "slug": slug } },
+      "inWallVariant": *[_type=="product" && status=="Active" && (
+        (^.productName == "Cane" && productName == "Cane In-Ceiling / In-Wall") ||
+        (^.productName == "Bonsai" && productName == "Bonsai In-Ceiling / In-Wall") ||
+        (^.productName == "QuadCane" && productName == "QuadCane In-Ceiling / In-Wall")
+      )][0]{ _id, productName, "slug": slug.current, "catSlug": category->slug.current, heroImage, heightMm, widthMm, depthMm },
+      accessories[]->{ _id, name, category, shortDescription, description, skuCode,
+        heroImage, lifestyleImage,
+        specs[]{ label, value }
+      },
       typicalSetups[]{
         _key, label, description,
         products[]{
