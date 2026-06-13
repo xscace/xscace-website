@@ -1,144 +1,165 @@
 // web/src/app/api/brochure/[slug]/route.ts
-// Renders real product page sections via Puppeteer into a landscape PDF
-
 import { NextRequest, NextResponse } from 'next/server'
 
-// A4 landscape in px @96dpi
-const W = 1123
-const H  = 794
+const W = 1587, H = 1123  // A4 landscape @1.5x
 
 const SITE = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
-  : 'http://localhost:3000'
+  : process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
 export const maxDuration = 60
 
+async function launchBrowser() {
+  // Try playwright first (better Vercel support)
+  try {
+    const { chromium } = await import('playwright-core')
+    // On Vercel, use the bundled browser
+    if (process.env.VERCEL) {
+      const { default: chromiumPkg } = await import('@sparticuz/chromium')
+      const execPath = await chromiumPkg.executablePath()
+      return chromium.launch({
+        executablePath: execPath,
+        args: chromiumPkg.args,
+        headless: true,
+      })
+    }
+    // Local — find Chrome
+    return chromium.launch({
+      channel: 'chrome',
+      headless: true,
+    })
+  } catch {
+    // Fallback to puppeteer-core
+    const puppeteer = await import('puppeteer-core')
+    const { default: chromiumPkg } = await import('@sparticuz/chromium')
+    return puppeteer.default.launch({
+      executablePath: await chromiumPkg.executablePath(),
+      args: chromiumPkg.args,
+      defaultViewport: { width: W, height: H },
+      headless: true,
+    }) as any
+  }
+}
+
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params
 
   try {
-    // Dynamic import so the module is only loaded serverside
-    const puppeteer    = await import('puppeteer-core')
-    const { default: chromium } = await import('@sparticuz/chromium')
+    const { chromium } = await import('playwright-core')
+    const { default: chromiumPkg } = await import('@sparticuz/chromium')
 
-    const browser = await puppeteer.default.launch({
-      args: chromium.args,
-      defaultViewport: { width: W, height: H, deviceScaleFactor: 2 },
-      executablePath: await chromium.executablePath(),
+    const executablePath = await chromiumPkg.executablePath(
+      // Provide remote URL so Vercel downloads the binary at runtime
+      `https://github.com/Sparticuz/chromium/releases/download/v131.0.0/chromium-v131.0.0-pack.tar`
+    )
+
+    const browser = await chromium.launch({
+      executablePath,
+      args: chromiumPkg.args,
       headless: true,
     })
 
-    const page = await browser.newPage()
+    const ctx = await browser.newContext({
+      viewport: { width: W, height: H },
+      deviceScaleFactor: 1.5,
+    })
+    const page = await ctx.newPage()
 
-    // ── Load product page with ?brochure=1 ───────────────────────────────────
     const url = `${SITE}/products/slim-array-series/${slug}?brochure=1`
-    await page.goto(url, { waitUntil: 'networkidle0', timeout: 45000 })
+    await page.goto(url, { waitUntil: 'networkidle', timeout: 45000 })
 
-    // Hide chrome that shouldn't appear in brochure
     await page.addStyleTag({ content: `
       nav, footer, .nav-wrap, .audio-btn-wrap, .scroll-wave-wrap,
       .pd-wave-divider, .pd-hero-ctas, .pd-brochure-btn, .ar-wall-btn,
       .fg-scroll-hint, .fg-track { display: none !important; }
-      * { animation-play-state: paused !important; cursor: none !important; }
-      ::-webkit-scrollbar { display: none; }
+      * { animation-play-state: paused !important; }
     ` })
-    await page.waitForTimeout(1000)
+    await page.waitForTimeout(1500)
 
-    // ── Capture each section as a full-page screenshot ───────────────────────
-    const sections = [
-      { sel: '.pd-hero-v2',       label: 'hero'        },
-      { sel: '.pd-specs-section', label: 'specs'       },
-      { sel: '.acc-section',      label: 'accessories' },
-      { sel: '.pd-tech-section',  label: 'tech'        },
-      { sel: '.fg-section',       label: 'gallery'     },
+    const SECTIONS = [
+      { sel: '.pd-hero-v2',        label: 'Hero'           },
+      { sel: '.pd-specs-section',  label: 'Specifications' },
+      { sel: '.acc-section',       label: 'Accessories'    },
+      { sel: '.pd-tech-section',   label: 'Technology'     },
+      { sel: '.fg-section',        label: 'Gallery'        },
     ]
 
     const shots: { png: Buffer; label: string }[] = []
-
-    for (const s of sections) {
-      const el = await page.$(s.sel)
-      if (!el) continue
-      const box = await el.boundingBox()
-      if (!box || box.height < 10) continue
-
-      await page.evaluate((sel: string) => {
-        document.querySelector(sel)?.scrollIntoView({ block: 'start' })
-      }, s.sel)
-      await page.waitForTimeout(400)
-
-      const png = await page.screenshot({
-        type: 'png',
-        clip: { x: Math.max(0, box.x), y: box.y, width: W, height: Math.min(box.height, H * 4) },
-        captureBeyondViewport: true,
-      }) as Buffer
-      shots.push({ png, label: s.label })
+    for (const s of SECTIONS) {
+      try {
+        const el = await page.$(s.sel)
+        if (!el) continue
+        const box = await el.boundingBox()
+        if (!box || box.height < 10) continue
+        await el.scrollIntoViewIfNeeded()
+        await page.waitForTimeout(300)
+        const png = await el.screenshot({ type: 'png' }) as Buffer
+        shots.push({ png, label: s.label })
+      } catch {}
     }
-
     await browser.close()
 
-    // ── Compose PDF using PDFKit ─────────────────────────────────────────────
-    const { default: PDFDocument } = await import('pdfkit')
-    const { Readable } = await import('stream')
-
-    const doc = new PDFDocument({ size: [W * 2, H * 2], margin: 0, autoFirstPage: false })
+    // Build PDF
+    const PW = W * 1.5, PH = H * 1.5
+    const PDFDocument = (await import('pdfkit')).default
     const chunks: Buffer[] = []
+    const doc = new PDFDocument({ size: [PW, PH], margin: 0, autoFirstPage: false })
     doc.on('data', (c: Buffer) => chunks.push(c))
     const done = new Promise<void>(res => doc.on('end', res))
 
-    const BG   = '#090909'
-    const CHAMP = '#c9a96e'
-    const TEXT  = '#eeebe5'
-    const MUTED = '#7a776f'
-    const PW = W * 2, PH = H * 2
+    const BG = '#090909', CHAMP = '#c9a96e', TEXT = '#eeebe5', MUTED = '#7a776f'
 
-    // ── PAGE 1: COVER ────────────────────────────────────────────────────────
+    // Cover page
     doc.addPage()
     doc.rect(0, 0, PW, PH).fill(BG)
-    // Champagne top rule
     doc.rect(0, 0, PW, 8).fill(CHAMP)
-    // XSCACE wordmark
-    doc.fillColor(TEXT).fontSize(52).font('Helvetica-Bold').text('XSCACE', 80, 90)
-    doc.fillColor(MUTED).fontSize(13).font('Helvetica').text('SIZE DEFYING SOUND', 83, 150)
-    // Product name
-    const prodName = slug.split('-')
-      .map((w: string) => w[0].toUpperCase() + w.slice(1)).join(' ')
-      .replace(/Slim Array Speaker|Slim Array/g, '').trim()
-    doc.fillColor(TEXT).fontSize(140).font('Helvetica-Bold').text(prodName, 80, PH / 2 - 100)
-    // Champagne rule
-    doc.moveTo(80, PH / 2 + 60).lineTo(600, PH / 2 + 60).lineWidth(1.5).strokeColor(CHAMP).stroke()
-    // Tagline
-    doc.fillColor(CHAMP).fontSize(26).font('Helvetica').text('Slim Array Speaker', 83, PH / 2 + 90)
-    // Footer
-    doc.fillColor(MUTED).fontSize(14).text('XSCACE.COM', PW - 220, PH - 80)
-    doc.text('1 / 6', PW / 2, PH - 80)
+    doc.rect(0, PH - 8, PW, 8).fill(CHAMP)
+    const name = slug.split('-').map((w: string) => w[0].toUpperCase() + w.slice(1))
+      .join(' ').replace(/Slim Array Speaker|Slim Array/gi, '').trim()
+    // Hero image on right if available
+    if (shots[0]) {
+      const rx = PW * 0.45
+      doc.save()
+      doc.rect(rx, 0, PW - rx, PH).clip()
+      doc.image(shots[0].png, rx, 0, { width: PW - rx, height: PH, cover: [PW - rx, PH] as any })
+      doc.restore()
+      // fade overlay
+      for (let i = 0; i < 50; i++) {
+        const a = Math.pow(1 - i/50, 2) * 0.95
+        doc.fillColor(BG).fillOpacity(a).rect(rx + i*(PW*0.28/50), 0, PW*0.28/50+2, PH).fill()
+      }
+      doc.fillOpacity(1)
+    }
+    doc.fillColor(TEXT).fontSize(46).font('Helvetica-Bold').text('XSCACE', 80, 90)
+    doc.fillColor(MUTED).fontSize(11).font('Helvetica').text('SIZE DEFYING SOUND', 82, 148)
+    doc.fillColor(TEXT).fontSize(100).font('Helvetica-Bold').text(name, 80, PH/2 - 80, { lineBreak: false })
+    doc.moveTo(80, PH/2+55).lineTo(80+PW*0.32, PH/2+55).lineWidth(2).strokeColor(CHAMP).stroke()
+    doc.fillColor(CHAMP).fontSize(22).font('Helvetica').text('Slim Array Speaker', 82, PH/2+85)
+    doc.fillColor(MUTED).fontSize(11).text('XSCACE.COM', PW - 200, PH - 65)
+    doc.text(`1 / ${shots.length + 1}`, PW/2, PH - 65)
 
-    // ── PAGES 2-6: Section screenshots ───────────────────────────────────────
+    // Section pages
     for (let i = 0; i < shots.length; i++) {
       const { png, label } = shots[i]
       doc.addPage()
       doc.rect(0, 0, PW, PH).fill(BG)
-
-      // Fit image to page
       const img = doc.openImage(png)
-      const iw = img.width, ih = img.height
-      const scale = Math.min(PW / iw, PH / ih)
-      const sw = iw * scale, sh = ih * scale
-      const ox = (PW - sw) / 2, oy = (PH - sh) / 2
-      doc.image(png, ox, oy, { width: sw, height: sh })
-
-      // Page label
-      doc.fillColor(MUTED).fontSize(12).font('Helvetica')
-      doc.text(label.toUpperCase(), PW - 240, PH - 60)
-      doc.text(`${i + 2} / 6`, PW / 2, PH - 60)
+      const scale = Math.min(PW / img.width, PH / img.height)
+      const sw = img.width * scale, sh = img.height * scale
+      doc.image(png, (PW-sw)/2, sh < PH ? (PH-sh)/2 : 0, { width: sw, height: sh })
+      doc.rect(0, 0, PW, 6).fill(CHAMP)
+      doc.rect(0, PH-6, PW, 6).fill(CHAMP)
+      doc.fillColor(MUTED).fontSize(11).font('Helvetica-Bold').text('XSCACE', PW-140, 28)
+      doc.font('Helvetica').text(label.toUpperCase(), PW-240, PH-52)
+      doc.text(`${i+2} / ${shots.length+1}`, PW/2, PH-52)
     }
 
-    doc.end()
-    await done
-
+    doc.end(); await done
     const pdf = Buffer.concat(chunks)
+
     return new NextResponse(pdf, {
       status: 200,
       headers: {
@@ -146,11 +167,10 @@ export async function GET(
         'Content-Disposition': `inline; filename="XSCACE_${slug}_Brochure.pdf"`,
         'Content-Length': String(pdf.length),
         'Cache-Control': 'no-cache',
-      }
+      },
     })
-
   } catch (err: any) {
-    console.error('[brochure]', err?.message)
+    console.error('[brochure]', err)
     return NextResponse.json({ error: err?.message }, { status: 500 })
   }
 }
