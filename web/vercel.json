@@ -1,8 +1,5 @@
 {
   "functions": {
-    "api/brochure/[slug].py": {
-      "maxDuration": 300
-    },
     "api/specsheet/[slug].py": {
       "maxDuration": 60
     }
