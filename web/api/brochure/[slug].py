@@ -1,3 +1,4 @@
+# Requires vercel.json: {"functions": {"api/brochure/[slug].py": {"maxDuration": 300}}}
 """
 api/brochure/[slug].py
 Claude writes a reportlab PDF brochure from Sanity data → uploads → caches.
@@ -37,6 +38,7 @@ def call_claude(prompt):
     body = json.dumps({
         'model': 'claude-sonnet-4-6',
         'max_tokens': 8000,
+        'stream': True,
         'system': '''You are an expert Python developer specialising in reportlab PDF generation.
 You write complete, runnable Python scripts that generate beautiful luxury product brochures.
 Output ONLY executable Python code. No markdown. No explanation. No code fences.
@@ -47,8 +49,20 @@ The script must read product data from a JSON file at sys.argv[1] and write a PD
     req.add_header('Content-Type', 'application/json')
     req.add_header('x-api-key', CLAUDE)
     req.add_header('anthropic-version', '2023-06-01')
-    resp = json.loads(urllib.request.urlopen(req, timeout=90).read())
-    code = ''.join(b['text'] for b in resp['content'] if b['type'] == 'text').strip()
+    # Stream so we read chunks as they arrive — avoids the 90s read timeout
+    chunks = []
+    with urllib.request.urlopen(req, timeout=240) as r:
+        for raw_line in r:
+            line = raw_line.decode('utf-8').strip()
+            if not line.startswith('data:'): continue
+            data = line[5:].strip()
+            if data == '[DONE]': break
+            try:
+                ev = json.loads(data)
+                if ev.get('type') == 'content_block_delta':
+                    chunks.append(ev['delta'].get('text', ''))
+            except: pass
+    code = ''.join(chunks).strip()
     if code.startswith('```'): code = code.split('\n', 1)[1].rsplit('```', 1)[0]
     return code
 
@@ -259,7 +273,11 @@ Make it genuinely beautiful — proper whitespace, typographic hierarchy, the fe
                 try:
                     fname    = f"XSCACE_{P['productName'].replace(' ','_')}_Brochure.pdf"
                     asset_id = sanity_upload(pdf_bytes, fname)
-                    sanity_patch(P['_id'], {'brochureRef': asset_id, 'brochureHash': h})
+                    sanity_patch(P['_id'], {
+                        'brochureRef': asset_id,
+                        'brochureHash': h,
+                        'brochure': {'_type': 'file', 'asset': {'_type': 'reference', '_ref': asset_id}}
+                    })
                     print(f'[brochure] cached as {asset_id}', file=sys.stderr)
                 except Exception as e:
                     print(f'[brochure] upload failed (non-fatal): {e}', file=sys.stderr)
