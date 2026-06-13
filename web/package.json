@@ -11,8 +11,11 @@
   "dependencies": {
     "@sanity/client": "^7.22.1",
     "@sanity/image-url": "^2.1.1",
+    "@sparticuz/chromium": "^147.0.0",
     "next": "16.2.7",
     "next-sanity": "^13.0.11",
+    "pdfkit": "^0.19.1",
+    "puppeteer-core": "^24.43.1",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
