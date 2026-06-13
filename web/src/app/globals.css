@@ -2674,6 +2674,21 @@ a.p-card, a.p-card:hover {
 
 
 /* ── AR WALL BUTTON ──────────────────────────────────────────────────────── */
+.pd-brochure-btn {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: #000;
+  border: 0.5px solid rgba(201,169,110,0.18);
+  color: rgba(201,169,110,0.55);
+  font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .12em;
+  text-transform: uppercase; font-weight: 500;
+  text-decoration: none; cursor: pointer;
+  transition: border-color .2s, color .2s;
+  flex-shrink: 0;
+}
+.pd-brochure-btn:hover { border-color: rgba(201,169,110,0.45); color: rgba(201,169,110,0.85); }
+
 .ar-wall-btn {
   position: relative;
   display: inline-flex; align-items: center; gap: 9px;

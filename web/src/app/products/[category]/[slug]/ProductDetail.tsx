@@ -1835,6 +1835,19 @@ export default function ProductDetail({ product }: { product: Product }) {
                 Add to System →
               </a>
               {product.model3dUrl && <ARWallBtn modelUrl={product.model3dUrl} productName={product.productName}/>}
+              <a href={`/api/brochure/${product.slug?.current}`}
+                target="_blank" rel="noopener noreferrer"
+                className="pd-brochure-btn" aria-label="Download product brochure PDF">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <rect x="2" y="1" width="8" height="10" rx="0.8" stroke="currentColor" strokeWidth="0.8"/>
+                  <line x1="4" y1="4" x2="8" y2="4" stroke="currentColor" strokeWidth="0.6" opacity="0.6"/>
+                  <line x1="4" y1="6" x2="8" y2="6" stroke="currentColor" strokeWidth="0.6" opacity="0.4"/>
+                  <line x1="4" y1="8" x2="6" y2="8" stroke="currentColor" strokeWidth="0.6" opacity="0.3"/>
+                  <path d="M9 9.5 L11 12 L13 9.5" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"/>
+                  <line x1="11" y1="7" x2="11" y2="12" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" opacity="0.7"/>
+                </svg>
+                Brochure
+              </a>
             </div>
           </div>
 
@@ -2095,24 +2108,6 @@ export default function ProductDetail({ product }: { product: Product }) {
             <h2 className="pd-section-title">Downloads</h2>
           </div>
           <div className="pd-downloads-grid">
-
-            <a
-              href={`/api/brochure/${product.slug?.current}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="pd-download-card"
-            >
-              <div className="pd-dl-top">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#c9a96e" strokeWidth="1" width="28" height="28">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <polyline points="14 2 14 8 20 8"/>
-                  <rect x="8" y="12" width="8" height="1.5" rx="0.5" fill="#c9a96e"/>
-                  <rect x="8" y="15" width="6" height="1.5" rx="0.5" fill="#c9a96e" opacity="0.5"/>
-                </svg>
-                <div className="pd-dl-label">Product Brochure</div>
-              </div>
-              <div className="pd-dl-format">PDF · 3 pages · Auto-generated</div>
-            </a>
 
             <a
               href={`/api/specsheet/${product.slug?.current || product.productName}`}
