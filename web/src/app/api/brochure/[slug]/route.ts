@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const W = 1587, H = 1123
 
-const SITE = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+// Always use the canonical production URL — never self-reference
+const SITE = 'https://xscace.com'
 
 export const maxDuration = 60
 
@@ -15,11 +14,12 @@ export async function GET(
   const { slug } = await params
 
   try {
-    const puppeteer = await import('puppeteer-core')
+    const puppeteer   = await import('puppeteer-core')
     const chromiumPkg = await import('@sparticuz/chromium')
 
+    // Match the remote URL version to @sparticuz/chromium@147
     const executablePath = await chromiumPkg.default.executablePath(
-      'https://github.com/Sparticuz/chromium/releases/download/v131.0.0/chromium-v131.0.0-pack.tar'
+      'https://github.com/Sparticuz/chromium/releases/download/v147.0.0/chromium-v147.0.0-pack.tar'
     )
 
     const browser = await puppeteer.default.launch({
@@ -30,17 +30,25 @@ export async function GET(
     })
 
     const page = await browser.newPage()
-    const url = `${SITE}/products/slim-array-series/${slug}?brochure=1`
-    await page.goto(url, { waitUntil: 'networkidle0', timeout: 45000 })
 
+    // Navigate to the product page
+    const url = `${SITE}/products/slim-array-series/${slug}`
+    console.log('[brochure] navigating to', url)
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 })
+
+    // Wait for key element to confirm page loaded
+    await page.waitForSelector('.pd-hero-v2', { timeout: 15000 }).catch(() => {})
+
+    // Hide chrome elements
     await page.addStyleTag({ content: `
       nav, footer, .nav-wrap, .audio-btn-wrap, .scroll-wave-wrap,
       .pd-wave-divider, .pd-hero-ctas, .pd-brochure-btn, .ar-wall-btn,
       .fg-scroll-hint, .fg-track { display: none !important; }
       * { animation-play-state: paused !important; }
     ` })
-    await page.waitForTimeout(1500)
+    await page.waitForTimeout(2000)
 
+    // Screenshot each section
     const SECTIONS = [
       { sel: '.pd-hero-v2',        label: 'Hero'           },
       { sel: '.pd-specs-section',  label: 'Specifications' },
@@ -53,24 +61,33 @@ export async function GET(
     for (const s of SECTIONS) {
       try {
         const el = await page.$(s.sel)
-        if (!el) continue
+        if (!el) { console.log('[brochure] missing:', s.sel); continue }
         const box = await el.boundingBox()
         if (!box || box.height < 10) continue
         await page.evaluate((sel: string) => {
           document.querySelector(sel)?.scrollIntoView({ block: 'start' })
         }, s.sel)
-        await page.waitForTimeout(400)
+        await page.waitForTimeout(500)
         const png = await page.screenshot({
           type: 'png',
-          clip: { x: Math.max(0, Math.floor(box.x)), y: Math.floor(box.y), width: Math.min(W, Math.floor(box.width)), height: Math.min(H * 3, Math.floor(box.height)) },
+          clip: {
+            x: Math.max(0, Math.floor(box.x)),
+            y: Math.floor(box.y),
+            width: Math.min(W, Math.floor(box.width)),
+            height: Math.min(H * 3, Math.floor(box.height)),
+          },
           captureBeyondViewport: true,
         }) as Buffer
         shots.push({ png, label: s.label })
-      } catch (e) { console.error(`[brochure] ${s.sel}:`, e) }
+        console.log('[brochure] captured:', s.label, box.height + 'px')
+      } catch (e) {
+        console.error('[brochure] section error:', s.sel, e)
+      }
     }
     await browser.close()
+    console.log('[brochure] shots:', shots.length)
 
-    // Build PDF with PDFKit
+    // Build PDF
     const PDFDocument = (await import('pdfkit')).default
     const PW = W * 1.5, PH = H * 1.5
     const BG = '#090909', CHAMP = '#c9a96e', TEXT = '#eeebe5', MUTED = '#7a776f'
@@ -79,13 +96,17 @@ export async function GET(
     doc.on('data', (c: Buffer) => chunks.push(c))
     const done = new Promise<void>(res => doc.on('end', res))
 
-    // Cover
+    // Cover page
     doc.addPage()
     doc.rect(0, 0, PW, PH).fill(BG)
     doc.rect(0, 0, PW, 8).fill(CHAMP)
     doc.rect(0, PH - 8, PW, 8).fill(CHAMP)
-    const name = slug.split('-').map((w: string) => w[0].toUpperCase() + w.slice(1))
+
+    const name = slug.split('-')
+      .map((w: string) => w[0].toUpperCase() + w.slice(1))
       .join(' ').replace(/Slim Array Speaker|Slim Array/gi, '').trim()
+
+    // Hero image on right half
     if (shots[0]) {
       const rx = PW * 0.45
       doc.save()
@@ -94,16 +115,21 @@ export async function GET(
       doc.restore()
       for (let i = 0; i < 50; i++) {
         const a = Math.pow(1 - i / 50, 2) * 0.95
-        doc.fillColor(BG).fillOpacity(a).rect(rx + i * (PW * 0.28 / 50), 0, PW * 0.28 / 50 + 2, PH).fill()
+        doc.fillColor(BG).fillOpacity(a)
+          .rect(rx + i * (PW * 0.28 / 50), 0, PW * 0.28 / 50 + 2, PH).fill()
       }
       doc.fillOpacity(1)
     }
+
     doc.fillColor(TEXT).fontSize(46).font('Helvetica-Bold').text('XSCACE', 80, 90)
     doc.fillColor(MUTED).fontSize(11).font('Helvetica').text('SIZE DEFYING SOUND', 82, 148)
-    doc.fillColor(TEXT).fontSize(100).font('Helvetica-Bold').text(name, 80, PH / 2 - 80, { lineBreak: false })
-    doc.moveTo(80, PH / 2 + 55).lineTo(80 + PW * 0.32, PH / 2 + 55).lineWidth(2).strokeColor(CHAMP).stroke()
+    doc.fillColor(TEXT).fontSize(100).font('Helvetica-Bold')
+    doc.text(name, 80, PH / 2 - 80, { lineBreak: false })
+    doc.moveTo(80, PH / 2 + 55).lineTo(80 + PW * 0.32, PH / 2 + 55)
+      .lineWidth(2).strokeColor(CHAMP).stroke()
     doc.fillColor(CHAMP).fontSize(22).font('Helvetica').text('Slim Array Speaker', 82, PH / 2 + 85)
-    doc.fillColor(MUTED).fontSize(11).text('XSCACE.COM', PW - 200, PH - 65)
+    doc.fillColor(MUTED).fontSize(11)
+    doc.text('XSCACE.COM', PW - 200, PH - 65)
     doc.text(`1 / ${shots.length + 1}`, PW / 2, PH - 65)
 
     // Section pages
@@ -136,7 +162,7 @@ export async function GET(
     })
 
   } catch (err: any) {
-    console.error('[brochure]', err)
+    console.error('[brochure] fatal:', err?.message)
     return NextResponse.json({ error: err?.message }, { status: 500 })
   }
 }
