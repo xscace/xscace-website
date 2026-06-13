@@ -195,98 +195,111 @@ class handler(BaseHTTPRequestHandler):
 
                 # 5. Ask Claude to write the reportlab script
                 font_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fonts')
-                prompt = f"""Write a complete Python script using reportlab to generate a beautiful 3-page A4 landscape PDF brochure for this XSCACE luxury speaker product.
+                prompt = f"""Write a complete Python script that generates a 4-page A4 landscape PDF brochure.
 
-PRODUCT JSON (read from sys.argv[1]):
+CRITICAL: Start your script with exactly these two lines and nothing before them:
+import sys, os, json, math
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from brochure_base import *
+
+Then read data: P = json.load(open(sys.argv[1]))
+Write PDF to: sys.argv[2]
+
+PRODUCT DATA:
 {json.dumps(product_data, indent=2)}
 
-The script must:
-- Read product data: import json; P = json.load(open(sys.argv[1]))
-- Write PDF to sys.argv[2]
-- Use A4 landscape: from reportlab.lib.pagesizes import landscape, A4; W,H = landscape(A4)
-- Register fonts with EXACTLY these aliases — use this exact code block verbatim at the top:
+IMAGE FILES (absolute paths — use draw_img() to render them):
+{json.dumps(img_paths, indent=2)}
 
-import os, sys, json, math
-from reportlab.lib.pagesizes import landscape, A4
-from reportlab.lib.colors import HexColor, Color
-from reportlab.lib.utils import ImageReader
-from reportlab.pdfgen import canvas
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
+USE ONLY these functions from brochure_base (already imported via *):
+- F('Cor')=Cormorant Light, F('CorI')=Cormorant Italic, F('CorSB')=Cormorant SemiBold
+- F('DMS')=DM Sans, F('DMSM')=DM Sans Medium, F('DMSB')=DM Sans Bold
+- F('DMM')=DM Mono, F('Magma')=MagmaWave logo
+- draw_img(c, path, x, y, w, h, cover=True/False) — draws image from file
+- draw_tech_icon(c, badge_name, cx, cy, sc=0.42) — draws correct SVG tech icon
+- draw_finish_card(c, x, y, w, h, label, content, icon_type, colors) — bordered card
+- draw_mount_block(c, x, y, w, h, name, img_path) — mounting option with image
+- wrap_text(c, text, x, y, max_w, font, size, color) — word-wrapped text
+- rule(c, y, x=0, w=None, lw=0.8) — draws champagne rule line
+- fill_rect(c, x, y, w, h, col) — fills rectangle
+- W, H = A4 landscape dimensions, BG, CHAMP, TEXT, MUTED, DARK, DIM = preset colors
+- champ_a(a), bg_a(a), white_a(a) — colors with alpha
 
-FONT_DIR = os.environ.get('XSCACE_BROCHURE_FONTS', '{font_dir}')
-def _reg(alias, fname):
-    p = os.path.join(FONT_DIR, fname)
-    if os.path.exists(p):
-        try: pdfmetrics.registerFont(TTFont(alias, p))
-        except: pass
-_reg('Cor',   'Cormorant-Light.ttf')
-_reg('CorR',  'Cormorant-Regular.ttf')
-_reg('CorSB', 'Cormorant-SemiBold.ttf')
-_reg('CorI',  'Cormorant-Italic.ttf')
-_reg('DMS',   'DMSans-Reg.ttf')
-_reg('DMSM',  'DMSans-Med.ttf')
-_reg('DMSB',  'DMSans-Bold.ttf')
-_reg('DMM',   'DMMono-Regular.ttf')
-_reg('DMMM',  'DMMono-Medium.ttf')
-_reg('Magma', 'MagmaWave.otf')
-_FONTS = set(pdfmetrics._fonts.keys())
-def F(a, fb='Helvetica'): return a if a in _FONTS else fb
-def FB(a, fb='Helvetica-Bold'): return a if a in _FONTS else fb
-def FI(a, fb='Helvetica-Oblique'): return a if a in _FONTS else fb
+NEVER call c.setFont() with a raw font name string — always use F('alias').
+NEVER import reportlab fonts yourself — brochure_base handles all font registration.
 
-P = json.load(open(sys.argv[1]))
-W, H = landscape(A4)
-BG    = HexColor('#090909')
-CHAMP = HexColor('#c9a96e')
-TEXT  = HexColor('#eeebe5')
-MUTED = HexColor('#7a776f')
-DARK  = HexColor('#0e0e0c')
+PAGE 1 — COVER (W x H canvas):
+- fill_rect full page BG
+- If hero image: draw_img cover=True on right 56% (x=W*0.44). Then 60 gradient rects fading black from W*0.44 rightward
+- Champagne bars: fill_rect(c, 0, H-6, W, 6, CHAMP) top, fill_rect(c, 0, 0, W, 6, CHAMP) bottom
+- Left column (x=50): "XSCACE" F('Magma') or F('DMSB') size 18, MUTED "SIZE DEFYING SOUND" F('DMM') 7pt below
+- Product name P['name'] in F('Cor') 58pt TEXT, y=H*0.52
+- Tagline in F('CorI') 18pt CHAMP below name
+- Short description wrap_text F('DMS') 11pt MUTED, width=W*0.30
+- rule() at y=H*0.18+8, width W*0.34
+- Key stats row at y=H*0.18: power, sensitivity, impedance, depth — each: value F('CorSB') 22pt CHAMP, label F('DMM') 6pt MUTED below. Space them W*0.34/4 apart starting x=50
+- Footer: series+SKU MUTED F('DMM') 9pt at y=32, "XSCACE.COM" right-aligned
 
-# CRITICAL: Always call fonts using F('Cor'), F('CorI'), F('DMM') etc — NEVER use raw strings like 'Cormorant-Light' or 'DMSans-Bold'
-# Use these aliases: Cor=Cormorant Light, CorR=Cormorant Regular, CorSB=Cormorant SemiBold, CorI=Cormorant Italic
-#                   DMS=DM Sans Regular, DMSM=DM Sans Medium, DMSB=DM Sans Bold
-#                   DMM=DM Mono Regular, DMMM=DM Mono Medium, Magma=MagmaWave (logo only)
-
-- Use these exact colours already defined above: BG, CHAMP, TEXT, MUTED, DARK
-
-PAGE 1 — COVER:
-- Black background full page
-- Thin champagne bar top and bottom (3pt)  
-- If hero image exists: draw it covering right 55% of page, then draw a gradient overlay fading from black on left edge using 60 semi-transparent black rectangles
-- Left side: "XSCACE" in MagmaWave/DMSans-Bold 18pt, "SIZE DEFYING SOUND" in DMMono 8pt below
-- Large product name in Cormorant-Light ~60pt, champagne italic tagline below
-- Short description in DMSans 11pt, champagne rule
-- Bottom: 4 key specs in Cormorant-SemiBold 22pt with DMMono labels below (Power, Sensitivity, Impedance, Depth)
-- Series + SKU bottom left, XSCACE.COM bottom right, page number centred
-
-PAGE 2 — SPECIFICATIONS:
-- Black background
-- Champagne top/bottom bars
-- Header: "XSCACE · PRODUCT NAME" left, "02 — 03" right
-- "Specifications" in Cormorant-Light 36pt  
-- Left 52%: two spec groups (ACOUSTIC, PHYSICAL) with champagne group labels, spec rows (label in MUTED DMMono 8pt, value right-aligned TEXT DMMono 8pt), faint row separators
-- Mounting options as separate group below specs
-- Right 44%: hero image top half contained in dark box, life1 image bottom half if available
+PAGE 2 — SPECIFICATIONS + MOUNTING OPTIONS:
+- fill_rect BG, champagne bars
+- Header: "XSCACE · NAME" F('DMM') 8pt MUTED left, "02 — 04" right, at y=H-20
+- rule at y=H-26, lw=0.3
+- "Specifications" F('Cor') 36pt TEXT at y=H-50
+- Left col width=W*0.50: two spec groups ACOUSTIC and PHYSICAL
+  Each group: group name F('DMM') 8pt CHAMP, rule lw=0.3, then rows:
+  label F('DMM') 8pt MUTED left, value F('DMM') 8pt TEXT right-aligned at x+colw
+  After each row: thin white_a(0.05) rule
+- Mounting options section below specs with label "MOUNTING OPTIONS" F('DMM') 8pt CHAMP + rule
+- Then mounting cards side by side using draw_mount_block():
+  Parse P['specs']['Mounting'] by comma to get mount names list
+  Assign lifestyle images: life1→first mount, life2→second, life3→third
+  Each card width = (W*0.48) / num_mounts, height = 110pt
+  Place starting x=50, y=50
+- Right col x=W*0.53: draw_img hero image contained in dark box top 55% of usable height; life1 image bottom 40%
 
 PAGE 3 — TECHNOLOGY + FINISHES:
-- Black background
-- Champagne top/bottom bars
-- "Designed to" in Cormorant-Light 44pt + "disappear." in Cormorant-Italic champagne same size
-- life1 or life2 image as full-width strip (28% of page height) below headline
-- "PROPRIETARY TECHNOLOGY" in DMMono champagne label + thin rule
-- Tech badges in 3-column grid — for each badge draw:
-  * A simple vector icon using reportlab paths (PsySculpt=sine wave path, XS-Flow=U-shape path, Nano Resonance=fan lines, PrecisionXover=vertical bars, AeroFrame=radial spokes, PowerDense=arc lines)
-  * Badge name in DMMono 8pt champagne below icon
-- Bottom row: 3 info boxes with champagne borders (0.5pt): "STANDARD FINISHES" | "CUSTOM RAL" | "MARINE & IP"
-  Each box: label in DMMono champagne 7pt, value in DMSans 9pt TEXT
+- fill_rect BG, champagne bars
+- Header: "XSCACE · NAME" left, "03 — 04" right
+- "Designed to" F('Cor') 42pt TEXT + "disappear." F('CorI') 42pt CHAMP on next line, at y=H-50
+- Life2 or life1 full-width image strip: x=0, y=H-170, width=W, height=100, cover=True, then bg_a(0.18) overlay
+- "PROPRIETARY TECHNOLOGY" F('DMM') 8pt CHAMP + rule at y=H-188
+- Tech badge grid: 3 per row, cell width=W/3
+  For each badge in P['tech_badges']:
+    cx = col_index * W/3 + W/6
+    cy = start_y - row * 85
+    draw_tech_icon(c, badge, cx, cy+20)  ← uses correct icon
+    badge name: c.setFillColor(CHAMP); c.setFont(F('DMM'), 7.5); c.drawCentredString(cx, cy, badge.upper())
+- Bottom row (y=55, height=70, split into 3): three finish cards using draw_finish_card():
+  Card 1: label='Standard Finishes', content=P['finishes'], icon_type='swatches',
+    colors=[('#0A0A0A','Black'),('#F2F0EC','White'),('#C9A96E','Champagne'),('#3C3F41','Slate')]
+  Card 2: label='Custom RAL', content='Any RAL colour' if P['custom_ral'] else 'Not available', icon_type='ral'
+  Card 3: label='Marine & IP', content=ip_string, icon_type='marine'
+  Each card: x=i*(W/3)+8, y=55, w=W/3-16, h=70
 
-Image loading: use from reportlab.lib.utils import ImageReader and draw with c.drawImage(ImageReader(path), x, y, w, h, preserveAspectRatio=True, mask='auto') wrapped in try/except.
-If an image path doesn't exist or fails, skip it gracefully.
+PAGE 4 — LIFESTYLE GALLERY + CONTACT:
+- fill_rect BG, champagne bars
+- Header: "XSCACE · NAME" left, "04 — 04" right
+- "In context." F('Cor') 36pt TEXT at y=H-50
+- rule at y=H-62
+- Gallery grid: up to 4 lifestyle images in 2×2 grid
+  gw=(W-60)/2, gh=(H-130)/2
+  Positions: (30, H*0.5), (40+gw, H*0.5), (30, H*0.5-gh-6), (40+gw, H*0.5-gh-6)
+  draw_img each, cover=True. If image missing skip or leave placeholder fill_rect DARK
+- Bottom strip y=0 to 60: fill_rect DARK
+  "Enquire or specify at xscace.com" F('Cor') 18pt TEXT at x=50, y=35
+  "support@xscace.com" F('DMM') 9pt CHAMP at x=50, y=18
+  "XSCACE · SIZE DEFYING SOUND" F('DMM') 7pt MUTED right-aligned at y=18
 
-Make it genuinely beautiful — proper whitespace, typographic hierarchy, the feeling of a luxury brand document. Use all the product data provided."""
+Output ONLY the Python script. Nothing else."""
+
 
                 code = call_claude(prompt)
+
+                # Copy brochure_base into tmp so gen.py can import it
+                base_src = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'brochure_base.py')
+                if os.path.exists(base_src):
+                    import shutil
+                    shutil.copy(base_src, os.path.join(tmp, 'brochure_base.py'))
 
                 # Save and run the generated script
                 script_path = os.path.join(tmp, 'gen.py')
