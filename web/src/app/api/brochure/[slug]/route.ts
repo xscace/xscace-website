@@ -195,13 +195,17 @@ Output ONLY the complete HTML.`
     const puppeteer  = (await import('puppeteer-core')).default
     const chromium   = (await import('@sparticuz/chromium')).default
 
+    // Disable WebGL to skip swiftshader extraction (saves ~1s)
+    chromium.setGraphicsMode = false
+
     const browser = await puppeteer.launch({
       args:           [...chromium.args, '--no-sandbox', '--single-process', '--disable-gpu'],
       executablePath: await chromium.executablePath(
+        // x64 architecture, correct filename format for v147+
         process.env.CHROMIUM_PACK_URL ||
-        'https://github.com/Sparticuz/chromium/releases/download/v147.0.0/chromium-v147.0.0-pack.tar'
+        'https://github.com/Sparticuz/chromium/releases/download/v147.0.0/chromium-v147.0.0-pack.x64.tar'
       ),
-      headless: true,
+      headless: chromium.headless,
     })
 
     const page = await browser.newPage()
