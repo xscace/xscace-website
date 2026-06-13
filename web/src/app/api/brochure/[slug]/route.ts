@@ -25,7 +25,7 @@ function imgUrl(ref: string, w = 1400) {
   const ext = parts[parts.length - 1]
   const dims = parts[parts.length - 2]
   const hash = parts.slice(0, parts.length - 2).join('-')
-  return `https://cdn.sanity.io/images/${PROJECT}/${DATASET}/${hash}-${dims}.${ext}?w=${w}&auto=format&q=90`
+  return `https://cdn.sanity.io/images/${PROJECT}/${DATASET}/${hash}-${dims}.${ext}?w=${w}&auto=format&q=75`
 }
 
 async function imgDataUri(ref: string | null, w = 1400): Promise<string> {
@@ -50,29 +50,10 @@ function fileCdn(assetId: string) {
 }
 
 // ── Embedded fonts ───────────────────────────────────────────────────────────
-import fs from 'fs'
-import path from 'path'
-
 function loadFontCss(): string {
-  const fontDir = path.join(process.cwd(), 'src/app/api/brochure/[slug]/fonts')
-  const map: [string, string, string, string][] = [
-    ['Cormorant Garamond', '300', 'normal', 'Cormorant-Light.ttf'],
-    ['Cormorant Garamond', '400', 'italic', 'Cormorant-Italic.ttf'],
-    ['Cormorant Garamond', '600', 'normal', 'Cormorant-SemiBold.ttf'],
-    ['DM Sans', '400', 'normal', 'DMSans-Reg.ttf'],
-    ['DM Sans', '700', 'normal', 'DMSans-Bold.ttf'],
-    ['DM Mono', '400', 'normal', 'DMMono-Regular.ttf'],
-    ['DM Mono', '500', 'normal', 'DMMono-Medium.ttf'],
-  ]
-  let css = ''
-  for (const [family, weight, style, fname] of map) {
-    const p = path.join(fontDir, fname)
-    if (fs.existsSync(p)) {
-      const b64 = fs.readFileSync(p).toString('base64')
-      css += `@font-face{font-family:'${family}';font-weight:${weight};font-style:${style};src:url('data:font/truetype;base64,${b64}') format('truetype');}\n`
-    }
-  }
-  return css
+  // Use Google Fonts — Puppeteer has internet access so this works fine
+  // Much faster than embedding 4MB of base64 fonts in the HTML
+  return `@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=DM+Sans:wght@400;700&family=DM+Mono:wght@400;500&display=swap');`
 }
 
 // ── Claude call ──────────────────────────────────────────────────────────────
@@ -129,9 +110,9 @@ export async function GET(
     }
 
     // 3. Fetch images
-    const hero = await imgDataUri(getRef(P.heroImage), 1600)
-    const gals = await Promise.all((P.gallery || []).slice(0, 3).map((g: any) => imgDataUri(getRef(g), 900)))
-    const lives = await Promise.all((P.lifestyle || []).slice(0, 5).map((l: any) => imgDataUri(getRef(l), 1200)))
+    const hero = await imgDataUri(getRef(P.heroImage), 900)
+    const gals = await Promise.all((P.gallery || []).slice(0, 3).map((g: any) => imgDataUri(getRef(g), 700)))
+    const lives = await Promise.all((P.lifestyle || []).slice(0, 5).map((l: any) => imgDataUri(getRef(l), 700)))
 
     // Match accessory images to mount methods
     const mountMethods = (P.mountingMethods || '').split(',').map((m: string) => m.trim()).filter(Boolean)
@@ -143,7 +124,7 @@ export async function GET(
       for (const a of accs) {
         const an = (a.name || '').toLowerCase()
         if (m.toLowerCase().split(' ').some((w: string) => an.includes(w))) {
-          img = await imgDataUri(getRef(a.lifestyleImage) || getRef(a.heroImage), 900)
+          img = await imgDataUri(getRef(a.lifestyleImage) || getRef(a.heroImage), 700)
           if (img) break
         }
       }
@@ -151,7 +132,6 @@ export async function GET(
       mounts.push({ name: m, img })
     }
 
-    const fontCss = loadFontCss()
 
     // 4. Build spec objects
     const specsA: Record<string, string> = {}
@@ -182,8 +162,7 @@ export async function GET(
       `You are a luxury product brochure designer. Output ONLY raw HTML. No markdown, no code fences, no explanation. Start with <!DOCTYPE html>.`,
       `Create a stunning 4-page A4 landscape HTML brochure for this XSCACE luxury architectural speaker.
 
-Paste this font CSS verbatim inside your <style> tag:
-FONT_CSS_PLACEHOLDER
+Use this in your <head>: <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=DM+Sans:wght@400;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 PRODUCT:
 Name: ${P.productName} | Full: ${P.productFullName || ''}
@@ -240,8 +219,7 @@ Make it genuinely beautiful — like a real luxury print brochure. Output ONLY t
     // Strip markdown fences
     if (html.startsWith('```')) html = html.replace(/^```html?\n/, '').replace(/```\s*$/, '').trim()
 
-    // Inject font CSS + images
-    html = html.replace('FONT_CSS_PLACEHOLDER', fontCss)
+    // Images only — fonts loaded via Google Fonts link in head
     html = html.replaceAll('HERO_B64', hero || '')
     lives.forEach((l, i) => { html = html.replaceAll(`LIFE${i + 1}_B64`, l || '') })
     gals.forEach((g, i) => { html = html.replaceAll(`GAL${i + 1}_B64`, g || '') })
@@ -260,7 +238,7 @@ Make it genuinely beautiful — like a real luxury print brochure. Output ONLY t
     })
 
     const page = await browser.newPage()
-    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 })
+    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 20000 })
     const pdfBuffer = await page.pdf({
       width: '297mm',
       height: '210mm',
