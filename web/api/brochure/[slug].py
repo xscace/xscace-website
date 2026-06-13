@@ -714,12 +714,15 @@ class handler(BaseHTTPRequestHandler):
                     img = lives[used_lives]; used_lives += 1
                 mounts.append({'name': m, 'img': img})
 
-            font_css = load_font_css()
-            html = build_html(P, hero, gals, lives, mounts, font_css)
-            print(f'[brochure] HTML: {len(html):,} chars, fonts: {bool(font_css)}', file=sys.stderr)
-
-            import weasyprint
-            pdf_bytes = weasyprint.HTML(string=html).write_pdf()
+            # Render directly with brochure_render.py — pure reportlab, no HTML conversion
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            import brochure_render as _br
+            import tempfile as _tmp
+            _tf = _tmp.NamedTemporaryFile(suffix='.pdf', delete=False)
+            _tf.close()
+            _br.render(P, hero, gals, lives, mounts, _tf.name)
+            with open(_tf.name, 'rb') as _f: pdf_bytes = _f.read()
+            os.unlink(_tf.name)
             print(f'[brochure] PDF: {len(pdf_bytes):,} bytes', file=sys.stderr)
 
             if TOKEN and len(pdf_bytes) > 1000:
