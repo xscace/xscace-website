@@ -15,7 +15,7 @@ const anthropic = new Anthropic()
 function sanityImgUrl(ref: string, w = 800, crop?: any, hotspot?: any) {
   const b = ref.replace(/^image-/, '').split('-')
   const ext = b.pop()!, dims = b.pop()!, hash = b.join('-')
-  let url = `https://cdn.sanity.io/images/${PROJECT}/${DATASET}/${hash}-${dims}.${ext}?w=${w}&auto=format&q=80`
+  let url = `https://cdn.sanity.io/images/${PROJECT}/${DATASET}/${hash}-${dims}.${ext}?w=${w}&auto=format&q=70`
   if (crop && hotspot) {
     // Apply crop/hotspot so Sanity returns the correct region
     url += `&rect=${Math.round(crop.left * parseInt(dims))},${Math.round(crop.top * parseInt(dims.split('x')[1]))},${Math.round((1 - crop.left - crop.right) * parseInt(dims))},${Math.round((1 - crop.top - crop.bottom) * parseInt(dims.split('x')[1]))}`
@@ -104,9 +104,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{slug
     }
 
     // 3. Fetch hero + lifestyle images
-    const hero  = await imgB64(getRef(P.heroImage), 900)
-    const lives = await Promise.all((P.lifestyle || []).slice(0, 4).map((l: any) => imgB64(getRef(l), 700)))
-    const gals  = await Promise.all((P.gallery   || []).slice(0, 3).map((g: any) => imgB64(getRef(g), 600)))
+    const hero  = await imgB64(getRef(P.heroImage), 700)
+    const lives = await Promise.all((P.lifestyle || []).slice(0, 4).map((l: any) => imgB64(getRef(l), 550)))
+    const gals  = await Promise.all((P.gallery   || []).slice(0, 3).map((g: any) => imgB64(getRef(g), 450)))
 
     // 4. Mounting option images — Corner, Floorstand, In-Wall each from correct source
     // Corner Mount accessory (93147ca7), Floorstand accessory (a7c4659b),
@@ -121,18 +121,18 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{slug
       const n = (acc.name || '').toLowerCase()
       if (n.includes('corner')) {
         mountImages['corner'] = await imgB64(
-          getRef(acc.lifestyleImage) || getRef(acc.heroImage), 700,
+          getRef(acc.lifestyleImage) || getRef(acc.heroImage), 550,
           acc.lifestyleImage?.crop, acc.lifestyleImage?.hotspot
         )
       } else if (n.includes('floor') || n.includes('stand')) {
         mountImages['floorstand'] = await imgB64(
-          getRef(acc.lifestyleImage) || getRef(acc.heroImage), 700,
+          getRef(acc.lifestyleImage) || getRef(acc.heroImage), 550,
           acc.lifestyleImage?.crop, acc.lifestyleImage?.hotspot
         )
       }
     }
     if (inWallRef) {
-      mountImages['in-wall'] = await imgB64(inWallRef, 700, inWallCrop, inWallHotspot)
+      mountImages['in-wall'] = await imgB64(inWallRef, 550, inWallCrop, inWallHotspot)
     }
 
     // 5. Load fonts + tech icons from disk
@@ -258,7 +258,7 @@ body{font-family:'DM Sans',sans-serif;background:#090909;color:#eeebe5;width:297
 /* Tech icons row on page 1 */
 .trow{display:flex;gap:0;margin-top:10px;border-top:.4px solid rgba(201,169,110,.15);padding-top:10px}
 .ti{display:flex;flex-direction:column;align-items:center;flex:1;padding:0 2px}
-.timg{width:28px;height:24px;object-fit:contain;filter:brightness(0) saturate(100%) invert(77%) sepia(28%) saturate(600%) hue-rotate(5deg) brightness(95%)}
+.timg{width:28px;height:24px;object-fit:contain}
 .tph{width:28px;height:24px;background:rgba(201,169,110,.1);border-radius:2px}
 .tn{font-family:'DM Mono',monospace;font-size:5px;letter-spacing:.1em;color:#7a776f;text-align:center;margin-top:4px;text-transform:uppercase;line-height:1.3}
 
@@ -287,7 +287,7 @@ body{font-family:'DM Sans',sans-serif;background:#090909;color:#eeebe5;width:297
 .sv{font-family:'DM Mono',monospace;font-size:7.5px;color:#eeebe5;text-align:right;max-width:56%}
 .mg{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.18em;color:#c9a96e;text-transform:uppercase;border-bottom:.4px solid rgba(201,169,110,.22);padding-bottom:4px;margin:12px 0 6px}
 .mcs{display:flex;gap:6px}
-.mc{flex:1;border:.5px solid rgba(201,169,110,.2);background:#0e0e0c;display:flex;flex-direction:column;overflow:hidden;height:90px}
+.mc{flex:1;border:.5px solid rgba(201,169,110,.2);background:#0e0e0c;display:flex;flex-direction:column;overflow:hidden;height:120px}
 .mi{flex:1;width:100%;object-fit:cover;min-height:0}
 .mp{flex:1;display:flex;align-items:center;justify-content:center;background:#111}
 .mp svg{width:28px;height:42px;opacity:.3}
@@ -416,10 +416,13 @@ body{font-family:'DM Sans',sans-serif;background:#090909;color:#eeebe5;width:297
       headless: true,
     })
     const page = await browser.newPage()
+    await page.setViewport({ width: 1587, height: 1123, deviceScaleFactor: 1 })
     await page.setContent(html, { waitUntil: 'networkidle2', timeout: 20000 })
+    await page.emulateMediaType('print')
     const pdf = Buffer.from(await page.pdf({
       width: '297mm', height: '210mm', printBackground: true,
       margin: { top: '0', right: '0', bottom: '0', left: '0' },
+      omitBackground: false,
     }))
     await browser.close()
 
