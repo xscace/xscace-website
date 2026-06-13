@@ -205,6 +205,55 @@ export default defineType({
     defineField({name: 'relatedProducts',      title: 'Related Products',      type: 'array', group: 'relations',
       description: 'Alternatives in same category',
       of: [{type: 'reference', to: [{type: 'product'}]}]}),
+    defineField({
+      name: 'typicalSetups',
+      title: 'Typical Setups',
+      type: 'array',
+      group: 'relations',
+      description: 'Common installation packages featuring this product',
+      of: [{
+        type: 'object',
+        name: 'setup',
+        title: 'Setup',
+        fields: [
+          defineField({name: 'label', title: 'Setup Label', type: 'string',
+            description: 'e.g. 2.1 TV Setup, Home Cinema 5.1'}),
+          defineField({name: 'description', title: 'Short Description', type: 'string'}),
+          defineField({
+            name: 'products',
+            title: 'Products in Setup',
+            type: 'array',
+            of: [{
+              type: 'object',
+              name: 'setupProduct',
+              fields: [
+                defineField({name: 'product', title: 'Product', type: 'reference', to: [{type: 'product'}]}),
+                defineField({name: 'quantity', title: 'Quantity', type: 'number'}),
+                defineField({name: 'role', title: 'Role', type: 'string',
+                  description: 'e.g. LR Speakers, Subwoofer, Amplifier'}),
+              ],
+              preview: {
+                select: { title: 'product.productName', qty: 'quantity', role: 'role' },
+                prepare: ({title, qty, role}) => ({ title: `${title} ×${qty}`, subtitle: role })
+              }
+            }]
+          }),
+        ],
+        preview: {
+          select: { title: 'label', desc: 'description' },
+          prepare: ({title, desc}) => ({ title, subtitle: desc })
+        }
+      }]
+    }),
+    defineField({name: 'brochure', title: 'Product Brochure PDF', type: 'file', group: 'media',
+      description: 'Auto-generated — delete this file to force regeneration on next request',
+      options: { accept: 'application/pdf' }}),
+    defineField({name: 'brochureRef', title: 'Brochure Asset Ref (legacy)', type: 'string', group: 'media',
+      description: 'Auto-populated cache key — clear to regenerate'}),
+    defineField({name: 'brochureHash', title: 'Brochure Hash', type: 'string', group: 'media',
+      description: 'Auto-populated — hash used to detect stale cache'}),
+    defineField({name: 'specSheetHash',  title: 'Spec Sheet Hash (auto)',  type: 'string', group: 'relations',
+      description: 'Auto-generated hash of spec data. Delete to force PDF regeneration.', readOnly: true}),
     defineField({name: 'specSheet',   title: 'Spec Sheet (PDF)',      type: 'file',  group: 'relations', options: {accept: 'application/pdf'}}),
     defineField({name: 'installGuide', title: 'Installation Guide (PDF)', type: 'file', group: 'relations', options: {accept: 'application/pdf'}}),
     defineField({name: 'cadFile',              title: 'CAD File (DWG/DXF)',    type: 'file',  group: 'relations'}),
