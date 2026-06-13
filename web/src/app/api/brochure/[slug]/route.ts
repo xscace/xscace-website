@@ -173,7 +173,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{slug
     const marineTxt = [P.ipRating, P.marineTreatable ? 'Marine-grade treatment' : ''].filter(Boolean).join(' · ') || 'Standard'
     const colors = P.colorsStandard || ''
     const colorMap: Record<string,string> = {
-      'black':'#111','anthracite':'#3C3F41','white':'#F2F0EC',
+      'black':'#111','anthracite':'#111','white':'#F2F0EC',
       'champagne':'#C9A96E','matte champagne':'#C9A96E','slate':'#4A4A52'
     }
     const swatches = colors.split(',').map((c:string)=>c.trim()).filter(Boolean)
@@ -287,8 +287,8 @@ body{font-family:'DM Sans',sans-serif;background:#090909;color:#eeebe5;width:297
 .sv{font-family:'DM Mono',monospace;font-size:7.5px;color:#eeebe5;text-align:right;max-width:56%}
 .mg{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.18em;color:#c9a96e;text-transform:uppercase;border-bottom:.4px solid rgba(201,169,110,.22);padding-bottom:4px;margin:12px 0 6px}
 .mcs{display:flex;gap:6px}
-.mc{flex:1;border:.5px solid rgba(201,169,110,.2);background:#0e0e0c;display:flex;flex-direction:column;overflow:hidden;height:120px}
-.mi{flex:1;width:100%;object-fit:cover;min-height:0}
+.mc{flex:1;border:.5px solid rgba(201,169,110,.2);background:#0e0e0c;display:flex;flex-direction:column;overflow:hidden;height:130px}
+.mi{flex:1;width:100%;height:0;object-fit:cover;min-height:0}
 .mp{flex:1;display:flex;align-items:center;justify-content:center;background:#111}
 .mp svg{width:28px;height:42px;opacity:.3}
 .ml{font-family:'DM Mono',monospace;font-size:6px;letter-spacing:.14em;color:#c9a96e;text-align:center;padding:5px 3px;background:#111110;border-top:.4px solid rgba(201,169,110,.12);flex-shrink:0}
