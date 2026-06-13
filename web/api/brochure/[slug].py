@@ -204,11 +204,51 @@ The script must:
 - Read product data: import json; P = json.load(open(sys.argv[1]))
 - Write PDF to sys.argv[2]
 - Use A4 landscape: from reportlab.lib.pagesizes import landscape, A4; W,H = landscape(A4)
-- Register fonts from this directory: {font_dir}
-  Available: Cormorant-Light.ttf, Cormorant-Regular.ttf, Cormorant-SemiBold.ttf, Cormorant-Italic.ttf,
-             DMSans-Reg.ttf, DMSans-Med.ttf, DMSans-Bold.ttf, DMMono-Regular.ttf, DMMono-Medium.ttf
-  Also check for MagmaWave.otf (logo only). Use try/except for each font.
-- Use these exact colours: BG=#090909, CHAMP=#c9a96e, TEXT=#eeebe5, MUTED=#7a776f, DARK=#0e0e0c
+- Register fonts with EXACTLY these aliases — use this exact code block verbatim at the top:
+
+import os, sys, json, math
+from reportlab.lib.pagesizes import landscape, A4
+from reportlab.lib.colors import HexColor, Color
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfgen import canvas
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+
+FONT_DIR = os.environ.get('XSCACE_BROCHURE_FONTS', '{font_dir}')
+def _reg(alias, fname):
+    p = os.path.join(FONT_DIR, fname)
+    if os.path.exists(p):
+        try: pdfmetrics.registerFont(TTFont(alias, p))
+        except: pass
+_reg('Cor',   'Cormorant-Light.ttf')
+_reg('CorR',  'Cormorant-Regular.ttf')
+_reg('CorSB', 'Cormorant-SemiBold.ttf')
+_reg('CorI',  'Cormorant-Italic.ttf')
+_reg('DMS',   'DMSans-Reg.ttf')
+_reg('DMSM',  'DMSans-Med.ttf')
+_reg('DMSB',  'DMSans-Bold.ttf')
+_reg('DMM',   'DMMono-Regular.ttf')
+_reg('DMMM',  'DMMono-Medium.ttf')
+_reg('Magma', 'MagmaWave.otf')
+_FONTS = set(pdfmetrics._fonts.keys())
+def F(a, fb='Helvetica'): return a if a in _FONTS else fb
+def FB(a, fb='Helvetica-Bold'): return a if a in _FONTS else fb
+def FI(a, fb='Helvetica-Oblique'): return a if a in _FONTS else fb
+
+P = json.load(open(sys.argv[1]))
+W, H = landscape(A4)
+BG    = HexColor('#090909')
+CHAMP = HexColor('#c9a96e')
+TEXT  = HexColor('#eeebe5')
+MUTED = HexColor('#7a776f')
+DARK  = HexColor('#0e0e0c')
+
+# CRITICAL: Always call fonts using F('Cor'), F('CorI'), F('DMM') etc — NEVER use raw strings like 'Cormorant-Light' or 'DMSans-Bold'
+# Use these aliases: Cor=Cormorant Light, CorR=Cormorant Regular, CorSB=Cormorant SemiBold, CorI=Cormorant Italic
+#                   DMS=DM Sans Regular, DMSM=DM Sans Medium, DMSB=DM Sans Bold
+#                   DMM=DM Mono Regular, DMMM=DM Mono Medium, Magma=MagmaWave (logo only)
+
+- Use these exact colours already defined above: BG, CHAMP, TEXT, MUTED, DARK
 
 PAGE 1 — COVER:
 - Black background full page
