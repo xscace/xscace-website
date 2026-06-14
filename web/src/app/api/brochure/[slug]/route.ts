@@ -66,6 +66,10 @@ const TECH_ICON_FILES: Record<string, string> = {
   'powerdense dynamics': 'tech-icons/powerdense-dynamics.png',
 }
 
+function coverPageB64(type: 'cover' | 'back'): string {
+  return publicFileB64(type === 'cover' ? 'brochure-cover.png' : 'brochure-back.png')
+}
+
 function techIconB64(badgeName: string): string {
   const key = badgeName.toLowerCase().replace(/™/g,'').replace(/\s+/g,' ').trim()
   for (const [k, file] of Object.entries(TECH_ICON_FILES)) {
@@ -140,6 +144,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{slug
     const fontCss = magmaFont
       ? `@font-face{font-family:'MagmaWave';src:url('${magmaFont}') format('opentype');}`
       : ''
+
+    const coverPage = coverPageB64('cover')
+    const backPage  = coverPageB64('back')
 
     const tech = (P.proprietaryTechBadges || '').split(',')
       .map((b: string) => b.trim().replace(/™/g,'').replace(/\s+/g,' ').trim()).filter(Boolean)
@@ -287,11 +294,11 @@ body{font-family:'DM Sans',sans-serif;background:#090909;color:#eeebe5;width:297
 .sv{font-family:'DM Mono',monospace;font-size:7.5px;color:#eeebe5;text-align:right;max-width:56%}
 .mg{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.18em;color:#c9a96e;text-transform:uppercase;border-bottom:.4px solid rgba(201,169,110,.22);padding-bottom:4px;margin:12px 0 6px}
 .mcs{display:flex;gap:6px}
-.mc{flex:1;border:.5px solid rgba(201,169,110,.2);background:#0e0e0c;display:flex;flex-direction:column;overflow:hidden;height:130px}
-.mi{flex:1;width:100%;height:0;object-fit:cover;min-height:0}
-.mp{flex:1;display:flex;align-items:center;justify-content:center;background:#111}
+.mc{flex:1;border:.5px solid rgba(201,169,110,.2);background:#0e0e0c;position:relative;overflow:hidden;height:130px}
+.mi{position:absolute;top:0;left:0;width:100%;height:calc(100% - 20px);object-fit:cover}
+.mp{position:absolute;top:0;left:0;width:100%;height:calc(100% - 20px);display:flex;align-items:center;justify-content:center;background:#111}
 .mp svg{width:28px;height:42px;opacity:.3}
-.ml{font-family:'DM Mono',monospace;font-size:6px;letter-spacing:.14em;color:#c9a96e;text-align:center;padding:5px 3px;background:#111110;border-top:.4px solid rgba(201,169,110,.12);flex-shrink:0}
+.ml{position:absolute;bottom:0;left:0;right:0;height:20px;font-family:'DM Mono',monospace;font-size:6px;letter-spacing:.14em;color:#c9a96e;text-align:center;line-height:20px;background:#111110;border-top:.4px solid rgba(201,169,110,.12)}
 .sright{flex:0 0 47%;margin-left:4%;display:flex;flex-direction:column;gap:5px}
 .sri{flex:1;background:#0e0e0c;border:.4px solid rgba(201,169,110,.07);overflow:hidden;display:flex;align-items:center;justify-content:center}
 .sri img{width:100%;height:100%}
@@ -312,6 +319,12 @@ body{font-family:'DM Sans',sans-serif;background:#090909;color:#eeebe5;width:297
 .gfb{font-family:'DM Mono',monospace;font-size:6.5px;color:#3a3835;letter-spacing:.1em;text-transform:uppercase}
 </style>
 </head><body>
+
+${coverPage ? `
+<!-- COVER PAGE (from brochure-cover.png) -->
+<div class="page" style="padding:0;margin:0">
+  <img src="${coverPage}" style="width:100%;height:100%;object-fit:cover;display:block">
+</div>` : ''}
 
 <!-- PAGE 1: COVER -->
 <div class="page">
@@ -399,6 +412,12 @@ body{font-family:'DM Sans',sans-serif;background:#090909;color:#eeebe5;width:297
     </div>
   </div>
 </div>
+
+${backPage ? `
+<!-- BACK PAGE (from brochure-back.png) -->
+<div class="page" style="padding:0;margin:0;page-break-after:auto">
+  <img src="${backPage}" style="width:100%;height:100%;object-fit:cover;display:block">
+</div>` : ''}
 
 </body></html>`
 
