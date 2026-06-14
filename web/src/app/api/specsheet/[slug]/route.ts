@@ -297,7 +297,7 @@ function chartPolar(dirH: number, dirV: number): string {
     <path d="${hMain}" fill="${C.champ}" fill-opacity="0.13" stroke="${C.champ}" stroke-width="1.8" stroke-opacity="0.9"/>
     <path d="${v4k}" fill="${C.blue}" fill-opacity="0.05" stroke="${C.blue}" stroke-width="0.6" stroke-opacity="0.4"/>
     <path d="${vMain}" fill="${C.blue}" fill-opacity="0.10" stroke="${C.blue}" stroke-width="1.4" stroke-opacity="0.8"/>
-    <line x1="${CX}" y1="${PT||20}" x2="${CX}" y2="${H-20}" stroke="${C.border}" stroke-width="0.6"/>
+    <line x1="${CX}" y1="20" x2="${CX}" y2="${H-20}" stroke="${C.border}" stroke-width="0.6"/>
     <text x="${CX+8}" y="${CY-R-4}" fill="${C.muted}" font-size="8" font-family="DM Mono,monospace">0°</text>
     <rect x="30" y="${legY-8}" width="20" height="2" fill="${C.champ}"/>
     <text x="56" y="${legY+1}" fill="${C.muted}" font-size="9" font-family="DM Mono,monospace">H ${dirH}° (1kHz)</text>
