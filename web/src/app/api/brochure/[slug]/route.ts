@@ -141,10 +141,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{slug
 
     // 5. Load fonts + tech icons from disk
     const magmaFont = magwaFont()
-    const magmaCss = magmaFont
+    const fontCss = magmaFont
       ? `@font-face{font-family:'MagmaWave';src:url('${magmaFont}') format('opentype');}`
       : ''
-    const fontCss = loadFontCss() + '\n' + magmaCss
 
     const coverPage = coverPageB64('cover')
     const backPage  = coverPageB64('back')
@@ -234,7 +233,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{slug
     // 9. Build HTML
     const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8">
-<!-- fonts embedded via @font-face below -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 ${fontCss}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -436,7 +436,7 @@ ${backPage ? `
     })
     const page = await browser.newPage()
     await page.setViewport({ width: 1587, height: 1123, deviceScaleFactor: 1 })
-    await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 15000 })
+    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 45000 })
     await page.emulateMediaType('print')
     const pdf = Buffer.from(await page.pdf({
       width: '297mm', height: '210mm', printBackground: true,
