@@ -313,19 +313,18 @@ function chartSPL(sens: number, powerRms: number, powerPeak: number): string {
   <clipPath id="clip-spl"><rect x="${PL}" y="${PT}" width="${gw}" height="${gh}"/></clipPath>
   ${gridSvg}
   <g clip-path="url(#clip-spl)">
-    <line x1="${PL}" y1="${damageY}" x2="${PL+gw}" y2="${damageY}" stroke="${CH}" stroke-width="0.7" stroke-dasharray="10,6" opacity="0.2"/>
     <path d="${rmsFill}" fill="${CH2}"/>
     <path d="${rmsCurve}" fill="none" stroke="${CH}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="${peakCurve}" fill="none" stroke="#dfc060" stroke-width="1.5" stroke-dasharray="10,4" stroke-linecap="round"/>
   </g>
-  ${gridSvg.match(/<text[^>]*>\d+m<\/text>/g)||[]}
   <text x="${PL}" y="${H-6}" fill="${MUTED}" font-size="10" font-family="DM Mono,monospace">Distance</text>
   <text x="12" y="${PT+gh/2}" fill="${MUTED}" font-size="10" font-family="DM Mono,monospace" transform="rotate(-90,12,${PT+gh/2})">dB SPL</text>
-  <text x="${parseFloat(damageY)}" y="${parseFloat(damageY)-5}" fill="${MUTED}" font-size="9" font-family="DM Mono,monospace" opacity="0.45">85 dB — hearing risk</text>
+  <line x1="${PL}" y1="${damageY}" x2="${PL+gw}" y2="${damageY}" stroke="${CH}" stroke-width="0.7" stroke-dasharray="10,6" opacity="0.18"/>
+  <text x="${(PL+gw-4).toFixed(0)}" y="${(parseFloat(damageY)-4).toFixed(0)}" text-anchor="end" fill="${MUTED}" font-size="9" font-family="DM Mono,monospace" opacity="0.4">85 dB — hearing risk</text>
   <rect x="40" y="${H-18}" width="28" height="2.5" fill="${CH}"/>
   <text x="74" y="${H-13}" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">RMS ${powerRms}W · ${splRms} dB @ 1m</text>
-  <rect x="340" y="${H-18}" width="22" height="2.5" fill="#dfc060"/>
-  <text x="368" y="${H-13}" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">Peak ${powerPeak}W · ${splPeak} dB @ 1m</text>
+  <rect x="380" y="${H-18}" width="22" height="2.5" fill="#dfc060"/>
+  <text x="408" y="${H-13}" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">Peak ${powerPeak}W · ${splPeak} dB @ 1m</text>
 </svg>`
 }
 
@@ -454,12 +453,13 @@ function sr(label: string, value: string): string {
   return `<div class="sr"><span class="sl">${label}</span><span class="sv">${value}</span></div>`
 }
 
+
 // ── MAIN HANDLER ──────────────────────────────────────────────────────────────
 export async function GET(_req: NextRequest, { params }: { params: Promise<{slug:string}> }) {
   const { slug } = await params
   try {
     const P: any = await sanity.fetch(`*[_type=="product"&&slug.current=="${slug}"&&status=="Active"][0]{
-      _id,productName,productFullName,tagline,shortDescription,series,skuBase,skuVariants,
+      _id,productName,productFullName,tagline,shortDescription,series,skuBase,skuVariants,slug,
       sensitivityDb,powerRmsW,powerPeakW,impedanceOhms,splMaxDb,thdN,
       freqLowHz,freqHighHz,freqQualifier,directivityHDeg,directivityVDeg,
       heightMm,widthMm,depthMm,diameterMm,weightKg,driverDescription,crossoverType,crossoverFrequency,
@@ -501,7 +501,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{slug
       'powerdense dynamics':'Copper-silver composite voice coil conductor. Significantly higher continuous power in the same former diameter — higher thermal ceiling without increasing coil mass or inductance.',
     }
 
-    // Charts
+    // Charts — SVG-based (smooth bezier, same math as product page)
     const sens=P.sensitivityDb||90
     const frChart=chartFreqResponse(sens,P.freqLowHz||100,P.freqHighHz||20000,eq)
     const polChart=chartPolar(P.directivityHDeg||140,P.directivityVDeg||25)
@@ -550,16 +550,16 @@ body{font-family:'DM Sans',Helvetica,sans-serif;background:#090909;color:#eeebe5
 .ftl,.ftr{font-family:'DM Mono',monospace;font-size:6.5px;color:#7a776f}
 
 /* ── Specs page ── */
-.spec-body{padding:8px 18mm 0;flex:1;display:flex;flex-direction:column;min-height:0}
-.spec-title{font-family:'Cormorant Garamond',Georgia,serif;font-size:28px;font-weight:300;color:#eeebe5;margin-bottom:10px;line-height:1}
-.spec-cols{display:flex;gap:14px;flex:1;min-height:0}
+.spec-body{padding:10px 18mm 0;flex:1;display:flex;flex-direction:column;min-height:0}
+.spec-title{font-family:'Cormorant Garamond',Georgia,serif;font-size:38px;font-weight:300;color:#eeebe5;margin-bottom:14px;line-height:1}
+.spec-cols{display:flex;gap:20px;flex:1;min-height:0}
 .spec-col{flex:1;overflow:hidden}
-.sg{font-family:'DM Mono',monospace;font-size:6.5px;letter-spacing:.2em;color:#c9a96e;text-transform:uppercase;border-bottom:.4px solid rgba(201,169,110,.18);padding-bottom:2.5px;margin:7px 0 2px}
+.sg{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.18em;color:#c9a96e;text-transform:uppercase;border-bottom:.4px solid rgba(201,169,110,.18);padding-bottom:3px;margin:9px 0 3px}
 .sg:first-child{margin-top:0}
-.sr{display:flex;justify-content:space-between;align-items:baseline;padding:2px 0;border-bottom:.25px solid rgba(255,255,255,.04)}
+.sr{display:flex;justify-content:space-between;align-items:baseline;padding:3px 0;border-bottom:.25px solid rgba(255,255,255,.04)}
 .sr-empty .sv{color:#3a3835}
-.sl{font-family:'DM Mono',monospace;font-size:7px;color:#7a776f;flex-shrink:0;padding-right:6px}
-.sv{font-family:'DM Mono',monospace;font-size:7.5px;color:#eeebe5;text-align:right}
+.sl{font-family:'DM Mono',monospace;font-size:9px;color:#7a776f;flex-shrink:0;padding-right:8px}
+.sv{font-family:'DM Mono',monospace;font-size:9.5px;color:#eeebe5;text-align:right}
 
 /* ── Chart pages ── */
 .chart-body{padding:8px 18mm 0;flex:1;display:flex;flex-direction:column;min-height:0}
