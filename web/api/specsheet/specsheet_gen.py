@@ -164,6 +164,9 @@ _rf('DMSM', 'DMSans-Med.ttf')
 _rf('DMSB', 'DMSans-Bold.ttf')
 _rf('DMM',  'DMMono-Regular.ttf')
 _rf('DMMM', 'DMMono-Medium.ttf')
+print(f'[fonts] loaded: {sorted(_FONT_LOADED)}', file=__import__("sys").stderr)
+print(f'[fonts] script dir: {_SCRIPT_DIR}', file=__import__("sys").stderr)
+print(f'[fonts] fonts dir exists: {__import__("os").path.exists(__import__("os").path.join(_SCRIPT_DIR,"fonts"))}', file=__import__("sys").stderr)
 def F(a, fb='Helvetica'):      return a if a in _FONT_LOADED else fb
 def FB(a, fb='Helvetica-Bold'): return a if a in _FONT_LOADED else fb
 def FI(a, fb='Helvetica-Oblique'): return a if a in _FONT_LOADED else fb
