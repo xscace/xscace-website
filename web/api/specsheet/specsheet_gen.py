@@ -4,7 +4,8 @@ Usage:
   python3 specsheet_gen.py --product data.json --out out.pdf  # API mode
 """
 import math, sys, argparse, json, os
-_SCRIPT_DIR = os.environ.get('XSCACE_CHART_DIR') or os.path.dirname(os.path.abspath(__file__))
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+_CHART_DIR = os.environ.get('XSCACE_CHART_DIR', _SCRIPT_DIR)
 sys.path.insert(0, '/usr/local/lib/python3.12/dist-packages')
 
 def _parse_args():
@@ -110,13 +111,17 @@ if _args.product:
         'eq': _eq,
         'eq_profile': _d.get('eqProfileName', 'Default') or 'Default',
         'confidence': _d.get('specConfidence', 'Lab Verified') or 'Lab Verified',
+        'proprietaryTechBadges': _d.get('proprietaryTechBadges', '') or '',
     }
 
 
 # ── MAGMAWAVE IMAGES (pre-rendered PNGs) ──────────────────────────────────────
 # MagmaWave font path -- loaded from same fonts/ dir as brochure
 _MAGMA_OTF = None
-for _d in [_SCRIPT_DIR, os.path.join(_SCRIPT_DIR,'fonts'), '/var/task/api/specsheet/fonts']:
+for _d in [_SCRIPT_DIR, os.path.join(_SCRIPT_DIR,'fonts'),
+            '/var/task/api/specsheet/fonts',
+            '/var/task/api/brochure/fonts',
+            '/var/task/public/fonts']:
     _p = os.path.join(_d, 'MagmaWave.otf')
     if os.path.exists(_p): _MAGMA_OTF = _p; break
 
@@ -143,7 +148,9 @@ from reportlab.pdfbase import pdfmetrics as _pm
 from reportlab.pdfbase.ttfonts import TTFont as _TTF
 _FONT_LOADED = set()
 def _rf(alias, fname):
-    for _d in [_SCRIPT_DIR, os.path.join(_SCRIPT_DIR,'fonts'), '/var/task/api/specsheet/fonts']:
+    for _d in [_SCRIPT_DIR, os.path.join(_SCRIPT_DIR,'fonts'),
+               '/var/task/api/specsheet/fonts',
+               '/var/task/api/brochure/fonts']:
         _p = os.path.join(_d, fname)
         if os.path.exists(_p):
             try: _pm.registerFont(_TTF(alias, _p)); _FONT_LOADED.add(alias); return
@@ -162,7 +169,16 @@ def FB(a, fb='Helvetica-Bold'): return a if a in _FONT_LOADED else fb
 def FI(a, fb='Helvetica-Oblique'): return a if a in _FONT_LOADED else fb
 
 # ── Tech icon PNGs from public/tech-icons/ ─────────────────────────────────────
-_PUBLIC = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(_SCRIPT_DIR))), 'public')
+# On Vercel: script is at /var/task/api/specsheet/specsheet_gen.py
+# public/ is at /var/task/public/
+_PUBLIC = '/var/task/public'
+if not os.path.exists(_PUBLIC):
+    # Local dev fallback — walk up from script dir to find public/
+    _d = _SCRIPT_DIR
+    for _ in range(5):
+        _d = os.path.dirname(_d)
+        _try = os.path.join(_d, 'public')
+        if os.path.exists(_try): _PUBLIC = _try; break
 _TECH_ICON_MAP = {
     'psysculpt':            'psysculpt.png',
     'xs-flow':              'xs-flow.png',
@@ -175,7 +191,8 @@ def get_tech_icon_path(badge_name):
     key = badge_name.lower().replace('™','').replace('\u2122','').replace('  ',' ').strip()
     for k, fname in _TECH_ICON_MAP.items():
         if k in key or key.split(' ')[0] in k:
-            for base in [os.path.join(_PUBLIC,'tech-icons'), '/var/task/public/tech-icons']:
+            for base in [os.path.join(_PUBLIC,'tech-icons'), '/var/task/public/tech-icons',
+                 os.path.join(os.path.dirname(_SCRIPT_DIR), '..', 'public', 'tech-icons')]:
                 p = os.path.join(base, fname)
                 if os.path.exists(p): return p
     return None
@@ -314,7 +331,7 @@ def page_freq(c):
         f'{PRODUCT["freq_low"]} Hz \u2013 {PRODUCT["freq_high"]//1000} kHz  {PRODUCT["freq_qual"]}  \u00b7  On-axis, 1W / 1m, anechoic  \u00b7  1/12-octave smoothed')
     img_w = COL
     img_h = img_w * (6.4/7.2)
-    c.drawImage(os.path.join(_SCRIPT_DIR, 'chart_fr.png'), MARGIN, yt-20*mm-img_h,
+    c.drawImage(os.path.join(_CHART_DIR, 'chart_fr.png'), MARGIN, yt-20*mm-img_h,
                 width=img_w, height=img_h)
     c.setFillColor(MUTED); c.setFont(F('DMM'), 6.5)
     c.drawString(MARGIN, yt-27*mm-img_h,
@@ -332,7 +349,7 @@ def page_polar(c):
         f'Normalised polar response, 0 dB = on-axis  \u00b7  H {PRODUCT["dir_h"]}\u00b0 / V {PRODUCT["dir_v"]}\u00b0 (\u22126 dB @ 1 kHz)  \u00b7  4 \u00d7 1.25" line source')
     img_w = COL
     img_h = img_w * (7.8/7.2)
-    c.drawImage(os.path.join(_SCRIPT_DIR, 'chart_polar.png'), MARGIN, yt-17*mm-img_h,
+    c.drawImage(os.path.join(_CHART_DIR, 'chart_polar.png'), MARGIN, yt-17*mm-img_h,
                 width=img_w, height=img_h)
     c.setFillColor(MUTED); c.setFont(F('DMM'), 6.5)
     c.drawString(MARGIN, yt-23*mm-img_h,
@@ -418,7 +435,7 @@ def page_eq(c):
     img_w = COL
     img_h = img_w * (4.4/7.2)
     img_y = yt-18*mm-img_h
-    c.drawImage(os.path.join(_SCRIPT_DIR, 'chart_eq.png'), MARGIN, img_y,
+    c.drawImage(os.path.join(_CHART_DIR, 'chart_eq.png'), MARGIN, img_y,
                 width=img_w, height=img_h)
 
     ty = img_y - 14*mm
@@ -471,7 +488,8 @@ def page_tech(c):
     }
 
     # Get badges from product data
-    raw_badges = PRODUCT.get('proprietaryTechBadges', '') or ''
+    # Try both key names
+    raw_badges = PRODUCT.get('proprietaryTechBadges', '') or PRODUCT.get('tech_badges', '') or ''
     badges = [b.strip().replace('\u2122','').replace('™','').replace('  ',' ').strip()
               for b in raw_badges.split(',') if b.strip()]
 
