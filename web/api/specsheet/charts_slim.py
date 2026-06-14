@@ -443,7 +443,37 @@ def make_eq_chart(eq_filters=None, dpi=150):
 
 # ── Run ───────────────────────────────────────────────────────────────────────
 if __name__ == '__main__':
-    make_fr_chart()
-    make_polar_chart()
-    make_eq_chart()
+    import argparse, json as _json
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--product', default=None)
+    args = ap.parse_args()
+
+    # Defaults (Cane-like)
+    sens=92; f_lo=150; dir_h=140; dir_v=25; eq_filters=None
+
+    if args.product:
+        try:
+            with open(args.product) as _f:
+                _d = _json.load(_f)
+            sens  = _d.get('sensitivityDb', 92) or 92
+            f_lo  = _d.get('freqLowHz', 150) or 150
+            dir_h = _d.get('directivityHDeg', 140) or 140
+            dir_v = _d.get('directivityVDeg', 25) or 25
+            # Parse EQ filters from eqData CSV
+            eq_filters = []
+            if _d.get('eqData'):
+                for line in _d['eqData'].strip().split('\n')[1:]:
+                    p = line.strip().split(',')
+                    if len(p) < 2: continue
+                    if p[0] in ('HP','LP'):
+                        eq_filters.append((p[0], float(p[1]), 0, float(p[2]) if len(p)>2 else 0.7, p[0]+' filter'))
+                    else:
+                        eq_filters.append((p[2] if len(p)>2 else 'PK', float(p[0]), float(p[1]),
+                                          float(p[3]) if len(p)>3 else 1.0, 'EQ'))
+        except Exception as e:
+            print(f'[charts] product load error: {e}')
+
+    make_fr_chart(sens=sens, f_lo=f_lo)
+    make_polar_chart(dir_h=dir_h, dir_v=dir_v)
+    make_eq_chart(eq_filters=eq_filters)
     print("All charts done")

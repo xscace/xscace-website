@@ -50,7 +50,8 @@ def spec_hash(p: dict) -> str:
         'heightMm','widthMm','depthMm','weightKg',
         'driverDescription','crossoverType','housingMaterial','grilleMaterial','ipRating',
     ]}
-    return hashlib.md5(json.dumps(fields, sort_keys=True).encode()).hexdigest()[:12]
+    salt = 'v2charts'  # bump to bust cache
+    return hashlib.md5((salt + json.dumps(fields, sort_keys=True)).encode()).hexdigest()[:12]
 
 # ── PDF generation ─────────────────────────────────────────────────────────────
 def generate_pdf(product: dict, tmp_dir: str) -> bytes:
@@ -68,7 +69,7 @@ def generate_pdf(product: dict, tmp_dir: str) -> bytes:
         json.dump(product, f)
 
     env = {**os.environ, 'XSCACE_CHART_DIR': tmp_dir}
-    r1 = subprocess.run([sys.executable, charts_py], env=env, timeout=60, capture_output=True, text=True)
+    r1 = subprocess.run([sys.executable, charts_py, '--product', json_path], env=env, timeout=60, capture_output=True, text=True)
     if r1.returncode != 0:
         raise RuntimeError(f'charts failed: {r1.stdout} {r1.stderr}')
     r2 = subprocess.run([sys.executable, gen_py, '--product', json_path, '--out', out_path], env=env, timeout=60, capture_output=True, text=True)
