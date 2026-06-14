@@ -1,4 +1,4 @@
-"""XSCACE Spec Sheet Generator — v2
+"""XSCACE Spec Sheet Generator -- v2
 Usage:
   python3 specsheet_gen.py                          # uses built-in PRODUCT dict (Cane demo)
   python3 specsheet_gen.py --product data.json --out out.pdf  # API mode
@@ -114,7 +114,7 @@ if _args.product:
 
 
 # ── MAGMAWAVE IMAGES (pre-rendered PNGs) ──────────────────────────────────────
-# MagmaWave font path — loaded from same fonts/ dir as brochure
+# MagmaWave font path -- loaded from same fonts/ dir as brochure
 _MAGMA_OTF = None
 for _d in [_SCRIPT_DIR, os.path.join(_SCRIPT_DIR,'fonts'), '/var/task/api/specsheet/fonts']:
     _p = os.path.join(_d, 'MagmaWave.otf')
@@ -462,9 +462,9 @@ def page_tech(c):
 
     # Full tech descriptions keyed by normalised badge name
     TECH_DESC = {
-        'nano resonance':       ('Nano Resonance', 'By engineering an intentionally heavy cone mass, Nano Resonance forces the system's natural resonant frequency (Fs) well below the target passband. This counters Hoffman's Iron Law — the trade-off between bass extension, enclosure size, and efficiency — allowing genuine low-frequency extension from an enclosure only 12–23mm deep.'),
-        'powerdense dynamics':  ('PowerDense Dynamics', 'The voice coil is wound with a copper-silver composite conductor — copper for electrical conductivity, silver for reduced skin effect at high frequencies. This allows the coil to handle significantly higher continuous power in the same former diameter, raising the thermal ceiling without increasing coil mass or inductance.'),
-        'aeroframe chassis':    ('AeroFrame Chassis', '6061 aerospace-grade aluminium is machined to form the speaker's structural chassis. Beyond providing rigidity under excursion, the chassis acts as a passive heatsink — drawing heat away from the voice coil through direct thermal coupling to the body.'),
+        'nano resonance':       ('Nano Resonance', 'By engineering an intentionally heavy cone mass, Nano Resonance forces the system's natural resonant frequency (Fs) well below the target passband. This counters Hoffman's Iron Law -- the trade-off between bass extension, enclosure size, and efficiency -- allowing genuine low-frequency extension from an enclosure only 12–23mm deep.'),
+        'powerdense dynamics':  ('PowerDense Dynamics', 'The voice coil is wound with a copper-silver composite conductor -- copper for electrical conductivity, silver for reduced skin effect at high frequencies. This allows the coil to handle significantly higher continuous power in the same former diameter, raising the thermal ceiling without increasing coil mass or inductance.'),
+        'aeroframe chassis':    ('AeroFrame Chassis', '6061 aerospace-grade aluminium is machined to form the speaker's structural chassis. Beyond providing rigidity under excursion, the chassis acts as a passive heatsink -- drawing heat away from the voice coil through direct thermal coupling to the body.'),
         'precisionxover array': ('PrecisionXover Array', 'Each crossover network is assembled with air-core inductors (no ferrous saturation), polypropylene film capacitors (low ESR, stable across temperature), and metal-film resistors. Component matching is held to ±0.5 dB.'),
         'xs-flow':              ('XS-Flow', 'Micro-waveguide geometry is precision-machined into the internal face of each enclosure. XS-Flow channels the rearward acoustic wave around the magnet structure, reducing compression and harmonic distortion at high excursion.'),
         'psysculpt':            ('PsySculpt', 'Built on the ADAU1701 DSP, PsySculpt implements a psychoacoustically aware EQ curve based on Fletcher-Munson equal-loudness contours, applying dynamic pre-compensation so tonal balance stays consistent from background listening levels to concert SPL.'),
@@ -509,7 +509,7 @@ def page_tech(c):
         c.setFillColor(CHAMP); c.setFont(FB('DMSB'), 8)
         c.drawString(text_x, y, title)
 
-        # Description — word wrap
+        # Description -- word wrap
         c.setFillColor(MUTED); c.setFont(F('DMS'), 7.5)
         words = desc.split(); line = ''; dy = y - 5.5*mm
         for w in words:
@@ -530,7 +530,7 @@ def page_tech(c):
 
 
 cv = canvas.Canvas(out, pagesize=A4)
-cv.setTitle(f'{PRODUCT["full_name"]} — Technical Specification Sheet')
+cv.setTitle(f'{PRODUCT["full_name"]} -- Technical Specification Sheet')
 cv.setAuthor('XSCACE'); cv.setSubject('Speaker Specification Sheet')
 
 page_cover(cv);  cv.showPage()
