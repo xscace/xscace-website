@@ -5,38 +5,6 @@ Usage:
 """
 import math, sys, argparse, json, os
 _SCRIPT_DIR = os.environ.get('XSCACE_CHART_DIR') or os.path.dirname(os.path.abspath(__file__))
-
-# ── Register brand fonts if available ─────────────────────────────────────────
-# Place TTF files in api/specsheet/fonts/ — same dir as this script
-_FONT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fonts')
-_FONTS_LOADED = False
-try:
-    from reportlab.pdfbase import pdfmetrics
-    from reportlab.pdfbase.ttfonts import TTFont
-    _fmap = {
-        'Cormorant':       'CormorantGaramond-Regular.ttf',
-        'Cormorant-Bold':  'CormorantGaramond-Bold.ttf',
-        'Cormorant-Italic':'CormorantGaramond-Italic.ttf',
-        'DMSans':          'DMSans-Regular.ttf',
-        'DMSans-Bold':     'DMSans-Bold.ttf',
-        'DMMono':          'DMMono-Regular.ttf',
-    }
-    for name, fname in _fmap.items():
-        path = os.path.join(_FONT_DIR, fname)
-        if os.path.exists(path):
-            pdfmetrics.registerFont(TTFont(name, path))
-    _FONTS_LOADED = all(os.path.exists(os.path.join(_FONT_DIR, f)) for f in _fmap.values())
-except Exception as _fe:
-    print(f'Font registration skipped: {_fe}', file=sys.stderr)
-
-def _font(name, fallback='Helvetica'):
-    return name if _FONTS_LOADED else fallback
-
-def _font_bold(name, fallback='Helvetica-Bold'):
-    return name if _FONTS_LOADED else fallback
-
-def _font_mono(fallback='Helvetica'):
-    return 'DMMono' if _FONTS_LOADED else fallback
 sys.path.insert(0, '/usr/local/lib/python3.12/dist-packages')
 
 def _parse_args():
@@ -146,11 +114,29 @@ if _args.product:
 
 
 # ── MAGMAWAVE IMAGES (pre-rendered PNGs) ──────────────────────────────────────
-# Logo images — looked up relative to this script's directory
-_IMG_DIR  = os.environ.get('XSCACE_CHART_DIR') or os.path.dirname(os.path.abspath(__file__))
-MW_LARGE  = os.path.join(_IMG_DIR, 'mw_cane_large.png')
-MW_XSCACE = os.path.join(_IMG_DIR, 'mw_xscace.png')
-MW_SMALL  = os.path.join(_IMG_DIR, 'mw_cane_small.png')
+# MagmaWave font path — loaded from same fonts/ dir as brochure
+_MAGMA_OTF = None
+for _d in [_SCRIPT_DIR, os.path.join(_SCRIPT_DIR,'fonts'), '/var/task/api/specsheet/fonts']:
+    _p = os.path.join(_d, 'MagmaWave.otf')
+    if os.path.exists(_p): _MAGMA_OTF = _p; break
+
+def _reg_magma():
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+    if _MAGMA_OTF:
+        try: pdfmetrics.registerFont(TTFont('MagmaWave', _MAGMA_OTF)); return True
+        except: pass
+    return False
+_HAS_MAGMA = _reg_magma()
+
+def draw_magma_text(c, text, x, y, size, color):
+    """Draw text in MagmaWave if available, else Helvetica-Bold."""
+    c.setFillColor(color)
+    if _HAS_MAGMA:
+        c.setFont('MagmaWave', size)
+    else:
+        c.setFont('Helvetica-Bold', size)
+    c.drawString(x, y, text)
 
 def page_bg(c):
     c.setFillColor(BG); c.rect(0,0,W,H,fill=1,stroke=0)
@@ -163,7 +149,7 @@ def footer(c, n, total=7):
     y = 11*mm
     c.setStrokeColor(BORDER); c.setLineWidth(0.4)
     c.line(MARGIN, y+4*mm, W-MARGIN, y+4*mm)
-    c.setFillColor(MUTED); c.setFont(_font('DMSans'),6.5)
+    c.setFillColor(MUTED); c.setFont('Helvetica',6.5)
     c.drawString(MARGIN, y, 'XSCACE  ·  xscace.com')
     c.drawCentredString(W/2, y, PRODUCT['full_name'].upper())
     c.drawRightString(W-MARGIN, y, f'{n} / {total}')
@@ -183,7 +169,7 @@ def row2(c, y, l1,v1, l2,v2, rh=9.5*mm):
         val(c, xi+3*mm, y+5*mm, va, 8.5)
 
 def section_head(c, y, t):
-    c.setFillColor(CHAMP); c.setFont(_font_bold('DMSans-Bold'),7)
+    c.setFillColor(CHAMP); c.setFont('Helvetica-Bold',7)
     c.drawString(MARGIN, y, t)
     c.setStrokeColor(CHAMP2); c.setLineWidth(0.3)
     c.line(MARGIN, y-2*mm, W-MARGIN, y-2*mm)
@@ -194,52 +180,26 @@ def page_cover(c):
     # Top champagne bar
     c.setFillColor(CHAMP); c.rect(0,H-1.2*mm,W,1.2*mm,fill=1,stroke=0)
 
-    # XSCACE logo (skip if PNG not present)
-    if os.path.exists(MW_XSCACE):
-        c.drawImage(MW_XSCACE, MARGIN, H-22*mm, width=28*mm, height=11*mm,
-                    mask='auto', preserveAspectRatio=True)
-    else:
-        c.setFillColor(TEXT); c.setFont('Helvetica-Bold', 14)
-        c.drawString(MARGIN, H-22*mm, 'XSCACE')
+    # XSCACE in MagmaWave
+    draw_magma_text(c, 'XSCACE', MARGIN, H-18*mm, 16, CHAMP)
 
-    c.setFillColor(MUTED); c.setFont(_font('DMSans'),7)
+    c.setFillColor(MUTED); c.setFont('Helvetica',7)
     c.drawString(MARGIN, H-27*mm, 'SIZE DEFYING SOUND')
 
-    # Product name large (skip if PNG not present)
-    if os.path.exists(MW_LARGE):
-        c.drawImage(MW_LARGE, MARGIN, H-72*mm, width=64*mm, height=22*mm,
-                    mask='auto', preserveAspectRatio=True)
-    else:
-        c.setFillColor(CHAMP); c.setFont('Helvetica-Bold', 28)
-        c.drawString(MARGIN, H-72*mm, PRODUCT.get('name','Speaker').upper())
+    # Product name in MagmaWave
+    draw_magma_text(c, PRODUCT['name'], MARGIN, H-62*mm, 36, TEXT)
 
-    c.setFont(_font('DMSans'),10); c.setFillColor(MUTED)
+    c.setFillColor(MUTED); c.setFont('Helvetica',10)
     c.drawString(MARGIN, H-79*mm, PRODUCT['full_name'])
     hline(c, H-84*mm)
 
-    # Hero image from Sanity (if available)
-    _hero = PRODUCT.get('_hero_img_bytes')
-    if _hero:
-        from reportlab.lib.utils import ImageReader
-        import io as _io
-        try:
-            _img = ImageReader(_io.BytesIO(_hero))
-            _iw, _ih = _img.getSize()
-            _max_w, _max_h = COL * 0.55, H * 0.32
-            _scale = min(_max_w/_iw, _max_h/_ih)
-            _dw, _dh = _iw*_scale, _ih*_scale
-            c.drawImage(_img, W - MARGIN - _dw, H - 84*mm - _dh,
-                        width=_dw, height=_dh, preserveAspectRatio=True, mask='auto')
-        except Exception as _e:
-            pass
-
     # Description word-wrap
-    c.setFillColor(TEXT); c.setFont(_font('DMSans'),8.5)
+    c.setFillColor(TEXT); c.setFont('Helvetica',8.5)
     words = PRODUCT['description'].split()
     line_words, lines = [], []
     for w in words:
         t = ' '.join(line_words+[w])
-        if c.stringWidth(t,_font('DMSans'),8.5) > COL: lines.append(' '.join(line_words)); line_words=[w]
+        if c.stringWidth(t,'Helvetica',8.5) > COL: lines.append(' '.join(line_words)); line_words=[w]
         else: line_words.append(w)
     if line_words: lines.append(' '.join(line_words))
     dy = H-94*mm
@@ -259,13 +219,13 @@ def page_cover(c):
         c.rect(cx, cy-14*mm, cw2-3*mm, 17*mm, fill=1, stroke=0)
         c.setStrokeColor(CHAMP); c.setLineWidth(0.4)
         c.line(cx, cy+2*mm, cx+cw2-3*mm, cy+2*mm)
-        c.setFillColor(CHAMP); c.setFont(_font_bold('Cormorant-Bold'),14)
+        c.setFillColor(CHAMP); c.setFont('Helvetica-Bold',13)
         c.drawString(cx+3*mm, cy-6*mm, va)
-        c.setFillColor(MUTED); c.setFont(_font('DMSans'),6.5)
+        c.setFillColor(MUTED); c.setFont('Helvetica',6.5)
         c.drawString(cx+3*mm, cy-12*mm, la.upper())
 
     sy = ky-52*mm; hline(c, sy)
-    c.setFillColor(MUTED); c.setFont(_font('DMSans'),7)
+    c.setFillColor(MUTED); c.setFont('Helvetica',7)
     c.drawString(MARGIN, sy-6*mm, f'SKU  {PRODUCT["sku"]}   ·   {PRODUCT["series"]}   ·   Since {PRODUCT["year"]}')
     c.setFillColor(CHAMP); c.rect(0,0,W,3.5*mm,fill=1,stroke=0)
     footer(c,1)
@@ -274,10 +234,10 @@ def page_cover(c):
 def page_specs(c):
     page_bg(c)
     yt = H-18*mm
-    c.setFillColor(TEXT); c.setFont(_font_bold('Cormorant-Bold'),20)
+    c.setFillColor(TEXT); c.setFont('Helvetica-Bold',18)
     c.drawString(MARGIN, yt, 'Technical Specifications')
     hline(c, yt-5*mm)
-    c.setFillColor(MUTED); c.setFont(_font('DMSans'),7)
+    c.setFillColor(MUTED); c.setFont('Helvetica',7)
     c.drawString(MARGIN, yt-11*mm, f'{PRODUCT["confidence"].upper()}  ·  {PRODUCT["full_name"].upper()}')
 
     rh = 10*mm; y = yt-22*mm
@@ -305,16 +265,16 @@ def page_specs(c):
 def page_freq(c):
     page_bg(c)
     yt = H-18*mm
-    c.setFillColor(TEXT); c.setFont(_font_bold('Cormorant-Bold'),20); c.drawString(MARGIN,yt,'Frequency Response & Impedance')
+    c.setFillColor(TEXT); c.setFont('Helvetica-Bold',18); c.drawString(MARGIN,yt,'Frequency Response & Impedance')
     hline(c, yt-5*mm)
-    c.setFillColor(MUTED); c.setFont(_font('DMSans'),7)
+    c.setFillColor(MUTED); c.setFont('Helvetica',7)
     c.drawString(MARGIN,yt-11*mm,
         f'{PRODUCT["freq_low"]} Hz \u2013 {PRODUCT["freq_high"]//1000} kHz  {PRODUCT["freq_qual"]}  \u00b7  On-axis, 1W / 1m, anechoic  \u00b7  1/12-octave smoothed')
     img_w = COL
     img_h = img_w * (6.4/7.2)
     c.drawImage(os.path.join(_SCRIPT_DIR, 'chart_fr.png'), MARGIN, yt-20*mm-img_h,
                 width=img_w, height=img_h)
-    c.setFillColor(MUTED); c.setFont(_font('DMSans'),6.5)
+    c.setFillColor(MUTED); c.setFont('Helvetica',6.5)
     c.drawString(MARGIN, yt-27*mm-img_h,
         'Impedance: free-air model \u00b7 Re 6.4 \u03a9 \u00b7 Fs 158 Hz \u00b7 minimum 6.9 \u03a9 \u2014 a benign load for any 8 \u03a9-rated amplifier.')
     footer(c,3)
@@ -323,16 +283,16 @@ def page_freq(c):
 def page_polar(c):
     page_bg(c)
     yt = H-18*mm
-    c.setFillColor(TEXT); c.setFont(_font_bold('Cormorant-Bold'),20); c.drawString(MARGIN,yt,'Directivity')
+    c.setFillColor(TEXT); c.setFont('Helvetica-Bold',18); c.drawString(MARGIN,yt,'Directivity')
     hline(c, yt-5*mm)
-    c.setFillColor(MUTED); c.setFont(_font('DMSans'),7)
+    c.setFillColor(MUTED); c.setFont('Helvetica',7)
     c.drawString(MARGIN, yt-11*mm,
         f'Normalised polar response, 0 dB = on-axis  \u00b7  H {PRODUCT["dir_h"]}\u00b0 / V {PRODUCT["dir_v"]}\u00b0 (\u22126 dB @ 1 kHz)  \u00b7  4 \u00d7 1.25" line source')
     img_w = COL
     img_h = img_w * (7.8/7.2)
     c.drawImage(os.path.join(_SCRIPT_DIR, 'chart_polar.png'), MARGIN, yt-17*mm-img_h,
                 width=img_w, height=img_h)
-    c.setFillColor(MUTED); c.setFont(_font('DMSans'),6.5)
+    c.setFillColor(MUTED); c.setFont('Helvetica',6.5)
     c.drawString(MARGIN, yt-23*mm-img_h,
         'Vertical plane shows the characteristic line-source sidelobe structure (first sidelobe \u221213 dB). Wide horizontal coverage holds to 4 kHz.')
     footer(c,4)
@@ -341,9 +301,9 @@ def page_polar(c):
 def page_spl(c):
     page_bg(c)
     yt = H-18*mm
-    c.setFillColor(TEXT); c.setFont(_font_bold('Cormorant-Bold'),20); c.drawString(MARGIN,yt,'SPL vs Distance')
+    c.setFillColor(TEXT); c.setFont('Helvetica-Bold',18); c.drawString(MARGIN,yt,'SPL vs Distance')
     hline(c, yt-5*mm)
-    c.setFillColor(MUTED); c.setFont(_font('DMSans'),7)
+    c.setFillColor(MUTED); c.setFont('Helvetica',7)
     c.drawString(MARGIN,yt-11*mm,
         f'Inverse square law  ·  Ref: {PRODUCT["sensitivity"]} dB @ 1m/1W  ·  Max: {PRODUCT["power_peak"]}W')
 
@@ -357,11 +317,11 @@ def page_spl(c):
         gy=sy2(db); lw=0.5 if db%10==0 else 0.25
         c.setStrokeColor(BORDER); c.setLineWidth(lw); c.line(cx,gy,cx+cw,gy)
         if db%10==0:
-            c.setFillColor(MUTED); c.setFont(_font('DMMono'),6); c.drawRightString(cx-2*mm,gy-2,str(db))
+            c.setFillColor(MUTED); c.setFont('Helvetica',6); c.drawRightString(cx-2*mm,gy-2,str(db))
 
     for d in [1,2,3,4,5,6,8,10,12,15,20]:
         gx=dx(d); c.setStrokeColor(BORDER); c.setLineWidth(0.25); c.line(gx,cy,gx,cy+ch)
-        c.setFillColor(MUTED); c.setFont(_font('DMSans'),6.5); c.drawCentredString(gx,cy-5*mm,f'{d}m')
+        c.setFillColor(MUTED); c.setFont('Helvetica',6.5); c.drawCentredString(gx,cy-5*mm,f'{d}m')
 
     def spl_curve(pw, col, lw, dash=None):
         pts=[]
@@ -385,10 +345,10 @@ def page_spl(c):
         if cy<gy<cy+ch:
             c.setStrokeColor(col); c.setLineWidth(0.5); c.setDash(4,4)
             c.line(cx,gy,cx+cw,gy); c.setDash()
-            c.setFillColor(col); c.setFont(_font('DMSans'),6.5); c.drawString(cx+2*mm,gy+1.5*mm,lbl_t)
+            c.setFillColor(col); c.setFont('Helvetica',6.5); c.drawString(cx+2*mm,gy+1.5*mm,lbl_t)
 
     c.setStrokeColor(BORDER); c.setLineWidth(0.5); c.rect(cx,cy,cw,ch,fill=0,stroke=1)
-    c.setFillColor(MUTED); c.setFont(_font('DMSans'),7)
+    c.setFillColor(MUTED); c.setFont('Helvetica',7)
     c.drawCentredString(cx+cw/2, cy-11*mm,'Distance (m)')
     c.saveState(); c.translate(cx-10*mm,cy+ch/2); c.rotate(90)
     c.drawCentredString(0,0,'SPL (dB)'); c.restoreState()
@@ -400,7 +360,7 @@ def page_spl(c):
         c.setStrokeColor(col); c.setLineWidth(1.4)
         if dash: c.setDash(*dash)
         c.line(lx,ly,lx+12*mm,ly); c.setDash()
-        c.setFillColor(TEXT); c.setFont(_font('DMSans'),7)
+        c.setFillColor(TEXT); c.setFont('Helvetica',7)
         c.drawString(lx+15*mm,ly-2,lbl_t); lx+=58*mm
     footer(c,5)
 
@@ -408,9 +368,9 @@ def page_spl(c):
 def page_eq(c):
     page_bg(c)
     yt = H-18*mm
-    c.setFillColor(TEXT); c.setFont(_font_bold('Cormorant-Bold'),20); c.drawString(MARGIN,yt,'EQ & Filter Profile')
+    c.setFillColor(TEXT); c.setFont('Helvetica-Bold',18); c.drawString(MARGIN,yt,'EQ & Filter Profile')
     hline(c, yt-5*mm)
-    c.setFillColor(MUTED); c.setFont(_font('DMSans'),7)
+    c.setFillColor(MUTED); c.setFont('Helvetica',7)
     c.drawString(MARGIN,yt-11*mm,
         f'Profile: {PRODUCT["eq_profile"]}  \u00b7  RBJ biquad cascade evaluated at fs = 48 kHz (ADAU1701)  \u00b7  Recommended DSP preset')
     img_w = COL
@@ -423,7 +383,7 @@ def page_eq(c):
     section_head(c, ty, 'APPLIED FILTERS'); ty -= 7*mm
     cols_x=[MARGIN, MARGIN+14*mm, MARGIN+42*mm, MARGIN+70*mm, MARGIN+94*mm, MARGIN+120*mm]
     for i,h in enumerate(['#','Type','Frequency','Gain','Q / Slope','Function']):
-        c.setFillColor(MUTED); c.setFont(_font_bold('DMSans-Bold'),6.5); c.drawString(cols_x[i],ty,h.upper())
+        c.setFillColor(MUTED); c.setFont('Helvetica-Bold',6.5); c.drawString(cols_x[i],ty,h.upper())
     ty -= 2.5*mm; c.setStrokeColor(BORDER); c.setLineWidth(0.3); c.line(MARGIN,ty,W-MARGIN,ty); ty -= 5.5*mm
 
     rows = [
@@ -435,13 +395,13 @@ def page_eq(c):
     for idx,row in enumerate(rows):
         if idx%2==0:
             c.setFillColor(MID); c.rect(MARGIN,ty-2*mm,COL,7.5*mm,fill=1,stroke=0)
-        c.setFillColor(TEXT); c.setFont(_font('DMSans'),7.5)
+        c.setFillColor(TEXT); c.setFont('Helvetica',7.5)
         for xi,txt in zip(cols_x,row):
             c.drawString(xi,ty+0.5*mm,txt)
         ty -= 8.5*mm
 
     ty -= 3*mm
-    c.setFillColor(MUTED); c.setFont(_font('DMSans'),6.5)
+    c.setFillColor(MUTED); c.setFont('Helvetica',6.5)
     c.drawString(MARGIN, ty,
         'Coefficients per the Audio EQ Cookbook (RBJ). Apply via XSCACE Controller or any DSP supporting standard biquads.')
     footer(c,6)
@@ -450,10 +410,10 @@ def page_eq(c):
 def page_tech(c):
     page_bg(c)
     yt = H-18*mm
-    c.setFillColor(TEXT); c.setFont(_font_bold('Cormorant-Bold'),20)
+    c.setFillColor(TEXT); c.setFont('Helvetica-Bold',18)
     c.drawString(MARGIN,yt,'Proprietary Technologies')
     hline(c, yt-5*mm)
-    c.setFillColor(MUTED); c.setFont(_font('DMSans'),7)
+    c.setFillColor(MUTED); c.setFont('Helvetica',7)
     c.drawString(MARGIN,yt-11*mm,'Exclusive engineering innovations inside every XSCACE product.')
 
     techs = [
@@ -500,18 +460,18 @@ def page_tech(c):
         c.setFillColor(MID); c.circle(MARGIN+icon_size/2, y-icon_size/2+3*mm, icon_size/2, fill=1, stroke=0)
         c.setStrokeColor(CHAMP); c.setLineWidth(0.4)
         c.circle(MARGIN+icon_size/2, y-icon_size/2+3*mm, icon_size/2, fill=0, stroke=1)
-        c.setFillColor(CHAMP); c.setFont(_font_bold('DMSans-Bold'),7)
+        c.setFillColor(CHAMP); c.setFont('Helvetica-Bold',7)
         c.drawCentredString(MARGIN+icon_size/2, y-icon_size/2+1.5*mm, abbr)
 
         # Name
         tx = MARGIN + icon_size + 5*mm
         name_lines = name.split('\n')
-        c.setFillColor(TEXT); c.setFont(_font_bold('Cormorant-Bold'),11)
+        c.setFillColor(TEXT); c.setFont('Helvetica-Bold',10)
         c.drawString(tx, y+1*mm, name_lines[0])
         if len(name_lines)>1:
-            c.setFillColor(CHAMP); c.setFont(_font_bold('Cormorant-Bold'),11)
+            c.setFillColor(CHAMP); c.setFont('Helvetica-Bold',10)
             c.drawString(tx + c.stringWidth(name_lines[0],'Helvetica-Bold',10)+2, y+1*mm, name_lines[1])
-        c.setFillColor(TEXT); c.setFont(_font_bold('Cormorant-Bold'),11)
+        c.setFillColor(TEXT); c.setFont('Helvetica-Bold',10)
 
         # Description — word wrap in remaining width
         desc_x = tx + 52*mm
