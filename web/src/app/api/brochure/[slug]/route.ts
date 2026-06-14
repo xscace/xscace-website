@@ -146,7 +146,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{slug
       : ''
     const fontCss = loadFontCss() + '\n' + magmaCss
 
-    const fontCss = loadFontCss()
     const coverPage = coverPageB64('cover')
     const backPage  = coverPageB64('back')
 
