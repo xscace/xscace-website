@@ -529,6 +529,7 @@ def page_tech(c):
     footer(c, 7)
 
 
+out = _args.out or 'specsheet.pdf'
 cv = canvas.Canvas(out, pagesize=A4)
 cv.setTitle(f'{PRODUCT["full_name"]} -- Technical Specification Sheet')
 cv.setAuthor('XSCACE'); cv.setSubject('Speaker Specification Sheet')
