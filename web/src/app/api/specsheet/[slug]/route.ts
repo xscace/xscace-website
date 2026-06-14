@@ -335,8 +335,8 @@ function chartSPL(sens: number, powerRms: number, powerPeak: number, splMax: num
 function chartEQ(eq: any[]): string {
   const W=1120,H=380,PL=52,PR=24,PT=24,PB=44,gw=W-PL-PR,gh=H-PT-PB
   const FMIN=20,FMAX=25000
-  // ±8dB range — keeps typical ±3 to ±6dB EQ looking proportionate, not dramatic
-  const DBRANGE=8
+  // ±20dB range as requested
+  const DBRANGE=20
   const fx=(f:number)=>PL+logX(f,FMIN,FMAX,gw)
   const fy=(db:number)=>PT+(gh/2)-(db/DBRANGE)*(gh/2)
   const cy=(db:number)=>Math.max(PT+2, Math.min(PT+gh-2, fy(db)))
@@ -354,7 +354,7 @@ function chartEQ(eq: any[]): string {
     gridSvg+=`<line x1="${x}" y1="${PT}" x2="${x}" y2="${PT+gh}" stroke="${isMajor?GRID2:GRID}" stroke-width="${isMajor?'0.8':'0.4'}"/>`
     gridSvg+=`<text x="${x}" y="${PT+gh+16}" text-anchor="middle" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">${f>=1000?f/1000+'k':f}</text>`
   }
-  for(const db of [-6,-3,0,3,6]){
+  for(const db of [-18,-12,-6,0,6,12,18]){
     const y=fy(db).toFixed(1)
     const inRange=parseFloat(y)>=PT&&parseFloat(y)<=PT+gh
     if(!inRange) continue
