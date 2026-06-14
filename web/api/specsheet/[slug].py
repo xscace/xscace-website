@@ -58,10 +58,12 @@ def generate_pdf(product: dict, tmp_dir: str) -> bytes:
     import subprocess
     # On Vercel, cwd = project root. Scripts sit at project root (web/).
     # Locally __file__ dir also works. Try cwd first, then file dir.
-    cwd        = os.getcwd()
+    # ALWAYS use the scripts that sit next to this handler — never cwd.
+    # cwd on Vercel is /var/task and may contain stale copies.
     base       = os.path.dirname(os.path.abspath(__file__))
-    charts_py  = os.path.join(cwd, 'charts_slim.py') if os.path.exists(os.path.join(cwd,'charts_slim.py')) else os.path.join(base,'charts_slim.py')
-    gen_py     = os.path.join(cwd, 'specsheet_gen.py') if os.path.exists(os.path.join(cwd,'specsheet_gen.py')) else os.path.join(base,'specsheet_gen.py')
+    charts_py  = os.path.join(base, 'charts_slim.py')
+    gen_py     = os.path.join(base, 'specsheet_gen.py')
+    print(f'[specsheet] base={base} charts={os.path.exists(charts_py)} gen={os.path.exists(gen_py)} fonts={os.path.exists(os.path.join(base,"fonts"))}', file=sys.stderr)
     json_path  = os.path.join(tmp_dir, 'product.json')
     out_path   = os.path.join(tmp_dir, 'specsheet.pdf')
 
@@ -73,6 +75,10 @@ def generate_pdf(product: dict, tmp_dir: str) -> bytes:
     if r1.returncode != 0:
         raise RuntimeError(f'charts failed: {r1.stdout} {r1.stderr}')
     r2 = subprocess.run([sys.executable, gen_py, '--product', json_path, '--out', out_path], env=env, timeout=60, capture_output=True, text=True)
+    # Always surface gen diagnostics (font loading, tech icons) in logs
+    if r2.stderr: print(f'[gen stderr] {r2.stderr}', file=sys.stderr)
+    if r2.stdout: print(f'[gen stdout] {r2.stdout}', file=sys.stderr)
+    if r1.stderr: print(f'[charts stderr] {r1.stderr}', file=sys.stderr)
     if r2.returncode != 0:
         raise RuntimeError(f'gen failed: {r2.stdout} {r2.stderr}')
 
