@@ -50,7 +50,7 @@ def spec_hash(p: dict) -> str:
         'heightMm','widthMm','depthMm','weightKg',
         'driverDescription','crossoverType','housingMaterial','grilleMaterial','ipRating',
     ]}
-    salt = 'v2charts'  # bump to bust cache
+    salt = 'v3fonts'  # bump to bust cache
     return hashlib.md5((salt + json.dumps(fields, sort_keys=True)).encode()).hexdigest()[:12]
 
 # ── PDF generation ─────────────────────────────────────────────────────────────
