@@ -436,7 +436,7 @@ ${backPage ? `
     })
     const page = await browser.newPage()
     await page.setViewport({ width: 1587, height: 1123, deviceScaleFactor: 1 })
-    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 45000 })
+    await page.setContent(html, { waitUntil: 'networkidle2', timeout: 30000 })
     await page.emulateMediaType('print')
     const pdf = Buffer.from(await page.pdf({
       width: '297mm', height: '210mm', printBackground: true,
