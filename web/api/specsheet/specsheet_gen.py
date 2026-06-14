@@ -135,8 +135,50 @@ def draw_magma_text(c, text, x, y, size, color):
     if _HAS_MAGMA:
         c.setFont('MagmaWave', size)
     else:
-        c.setFont('Helvetica-Bold', size)
+        c.setFont(FB('DMSB'), size)
     c.drawString(x, y, text)
+
+# ── Brand fonts ────────────────────────────────────────────────────────────────
+from reportlab.pdfbase import pdfmetrics as _pm
+from reportlab.pdfbase.ttfonts import TTFont as _TTF
+_FONT_LOADED = set()
+def _rf(alias, fname):
+    for _d in [_SCRIPT_DIR, os.path.join(_SCRIPT_DIR,'fonts'), '/var/task/api/specsheet/fonts']:
+        _p = os.path.join(_d, fname)
+        if os.path.exists(_p):
+            try: _pm.registerFont(_TTF(alias, _p)); _FONT_LOADED.add(alias); return
+            except: pass
+_rf('Cor',  'Cormorant-Light.ttf')
+_rf('CorR', 'Cormorant-Regular.ttf')
+_rf('CorSB','Cormorant-SemiBold.ttf')
+_rf('CorI', 'Cormorant-Italic.ttf')
+_rf('DMS',  'DMSans-Reg.ttf')
+_rf('DMSM', 'DMSans-Med.ttf')
+_rf('DMSB', 'DMSans-Bold.ttf')
+_rf('DMM',  'DMMono-Regular.ttf')
+_rf('DMMM', 'DMMono-Medium.ttf')
+def F(a, fb='Helvetica'):      return a if a in _FONT_LOADED else fb
+def FB(a, fb='Helvetica-Bold'): return a if a in _FONT_LOADED else fb
+def FI(a, fb='Helvetica-Oblique'): return a if a in _FONT_LOADED else fb
+
+# ── Tech icon PNGs from public/tech-icons/ ─────────────────────────────────────
+_PUBLIC = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(_SCRIPT_DIR))), 'public')
+_TECH_ICON_MAP = {
+    'psysculpt':            'psysculpt.png',
+    'xs-flow':              'xs-flow.png',
+    'nano resonance':       'nano-resonance.png',
+    'precisionxover array': 'precisionxover-array.png',
+    'aeroframe chassis':    'aeroframe-chassis.png',
+    'powerdense dynamics':  'powerdense-dynamics.png',
+}
+def get_tech_icon_path(badge_name):
+    key = badge_name.lower().replace('™','').replace('\u2122','').replace('  ',' ').strip()
+    for k, fname in _TECH_ICON_MAP.items():
+        if k in key or key.split(' ')[0] in k:
+            for base in [os.path.join(_PUBLIC,'tech-icons'), '/var/task/public/tech-icons']:
+                p = os.path.join(base, fname)
+                if os.path.exists(p): return p
+    return None
 
 def page_bg(c):
     c.setFillColor(BG); c.rect(0,0,W,H,fill=1,stroke=0)
@@ -149,16 +191,16 @@ def footer(c, n, total=7):
     y = 11*mm
     c.setStrokeColor(BORDER); c.setLineWidth(0.4)
     c.line(MARGIN, y+4*mm, W-MARGIN, y+4*mm)
-    c.setFillColor(MUTED); c.setFont('Helvetica',6.5)
+    c.setFillColor(MUTED); c.setFont(F('DMM'), 6.5)
     c.drawString(MARGIN, y, 'XSCACE  ·  xscace.com')
     c.drawCentredString(W/2, y, PRODUCT['full_name'].upper())
     c.drawRightString(W-MARGIN, y, f'{n} / {total}')
 
 def lbl(c,x,y,t,sz=6.5,col=MUTED):
-    c.setFillColor(col); c.setFont('Helvetica',sz); c.drawString(x,y,t.upper())
+    c.setFillColor(col); c.setFont(F('DMM'),sz); c.drawString(x,y,t.upper())
 
 def val(c,x,y,t,sz=9,col=TEXT):
-    c.setFillColor(col); c.setFont('Helvetica-Bold',sz); c.drawString(x,y,t)
+    c.setFillColor(col); c.setFont(FB('DMSB'),sz); c.drawString(x,y,t)
 
 def row2(c, y, l1,v1, l2,v2, rh=9.5*mm):
     half = COL/2
@@ -169,7 +211,7 @@ def row2(c, y, l1,v1, l2,v2, rh=9.5*mm):
         val(c, xi+3*mm, y+5*mm, va, 8.5)
 
 def section_head(c, y, t):
-    c.setFillColor(CHAMP); c.setFont('Helvetica-Bold',7)
+    c.setFillColor(CHAMP); c.setFont(FB('DMSB'), 7)
     c.drawString(MARGIN, y, t)
     c.setStrokeColor(CHAMP2); c.setLineWidth(0.3)
     c.line(MARGIN, y-2*mm, W-MARGIN, y-2*mm)
@@ -183,18 +225,18 @@ def page_cover(c):
     # XSCACE in MagmaWave
     draw_magma_text(c, 'XSCACE', MARGIN, H-18*mm, 16, CHAMP)
 
-    c.setFillColor(MUTED); c.setFont('Helvetica',7)
+    c.setFillColor(MUTED); c.setFont(F('DMM'), 7)
     c.drawString(MARGIN, H-27*mm, 'SIZE DEFYING SOUND')
 
     # Product name in MagmaWave
     draw_magma_text(c, PRODUCT['name'], MARGIN, H-62*mm, 36, TEXT)
 
-    c.setFillColor(MUTED); c.setFont('Helvetica',10)
+    c.setFillColor(MUTED); c.setFont(F('DMS'), 10)
     c.drawString(MARGIN, H-79*mm, PRODUCT['full_name'])
     hline(c, H-84*mm)
 
     # Description word-wrap
-    c.setFillColor(TEXT); c.setFont('Helvetica',8.5)
+    c.setFillColor(TEXT); c.setFont(F('DMS'), 8.5)
     words = PRODUCT['description'].split()
     line_words, lines = [], []
     for w in words:
@@ -219,13 +261,13 @@ def page_cover(c):
         c.rect(cx, cy-14*mm, cw2-3*mm, 17*mm, fill=1, stroke=0)
         c.setStrokeColor(CHAMP); c.setLineWidth(0.4)
         c.line(cx, cy+2*mm, cx+cw2-3*mm, cy+2*mm)
-        c.setFillColor(CHAMP); c.setFont('Helvetica-Bold',13)
+        c.setFillColor(CHAMP); c.setFont(FB('CorSB'), 13)
         c.drawString(cx+3*mm, cy-6*mm, va)
-        c.setFillColor(MUTED); c.setFont('Helvetica',6.5)
+        c.setFillColor(MUTED); c.setFont(F('DMM'), 6.5)
         c.drawString(cx+3*mm, cy-12*mm, la.upper())
 
     sy = ky-52*mm; hline(c, sy)
-    c.setFillColor(MUTED); c.setFont('Helvetica',7)
+    c.setFillColor(MUTED); c.setFont(F('DMM'), 7)
     c.drawString(MARGIN, sy-6*mm, f'SKU  {PRODUCT["sku"]}   ·   {PRODUCT["series"]}   ·   Since {PRODUCT["year"]}')
     c.setFillColor(CHAMP); c.rect(0,0,W,3.5*mm,fill=1,stroke=0)
     footer(c,1)
@@ -234,10 +276,10 @@ def page_cover(c):
 def page_specs(c):
     page_bg(c)
     yt = H-18*mm
-    c.setFillColor(TEXT); c.setFont('Helvetica-Bold',18)
+    c.setFillColor(TEXT); c.setFont(FB('CorSB'), 18)
     c.drawString(MARGIN, yt, 'Technical Specifications')
     hline(c, yt-5*mm)
-    c.setFillColor(MUTED); c.setFont('Helvetica',7)
+    c.setFillColor(MUTED); c.setFont(F('DMM'), 7)
     c.drawString(MARGIN, yt-11*mm, f'{PRODUCT["confidence"].upper()}  ·  {PRODUCT["full_name"].upper()}')
 
     rh = 10*mm; y = yt-22*mm
@@ -265,16 +307,16 @@ def page_specs(c):
 def page_freq(c):
     page_bg(c)
     yt = H-18*mm
-    c.setFillColor(TEXT); c.setFont('Helvetica-Bold',18); c.drawString(MARGIN,yt,'Frequency Response & Impedance')
+    c.setFillColor(TEXT); c.setFont(FB('CorSB'), 18); c.drawString(MARGIN,yt,'Frequency Response & Impedance')
     hline(c, yt-5*mm)
-    c.setFillColor(MUTED); c.setFont('Helvetica',7)
+    c.setFillColor(MUTED); c.setFont(F('DMM'), 7)
     c.drawString(MARGIN,yt-11*mm,
         f'{PRODUCT["freq_low"]} Hz \u2013 {PRODUCT["freq_high"]//1000} kHz  {PRODUCT["freq_qual"]}  \u00b7  On-axis, 1W / 1m, anechoic  \u00b7  1/12-octave smoothed')
     img_w = COL
     img_h = img_w * (6.4/7.2)
     c.drawImage(os.path.join(_SCRIPT_DIR, 'chart_fr.png'), MARGIN, yt-20*mm-img_h,
                 width=img_w, height=img_h)
-    c.setFillColor(MUTED); c.setFont('Helvetica',6.5)
+    c.setFillColor(MUTED); c.setFont(F('DMM'), 6.5)
     c.drawString(MARGIN, yt-27*mm-img_h,
         'Impedance: free-air model \u00b7 Re 6.4 \u03a9 \u00b7 Fs 158 Hz \u00b7 minimum 6.9 \u03a9 \u2014 a benign load for any 8 \u03a9-rated amplifier.')
     footer(c,3)
@@ -283,16 +325,16 @@ def page_freq(c):
 def page_polar(c):
     page_bg(c)
     yt = H-18*mm
-    c.setFillColor(TEXT); c.setFont('Helvetica-Bold',18); c.drawString(MARGIN,yt,'Directivity')
+    c.setFillColor(TEXT); c.setFont(FB('CorSB'), 18); c.drawString(MARGIN,yt,'Directivity')
     hline(c, yt-5*mm)
-    c.setFillColor(MUTED); c.setFont('Helvetica',7)
+    c.setFillColor(MUTED); c.setFont(F('DMM'), 7)
     c.drawString(MARGIN, yt-11*mm,
         f'Normalised polar response, 0 dB = on-axis  \u00b7  H {PRODUCT["dir_h"]}\u00b0 / V {PRODUCT["dir_v"]}\u00b0 (\u22126 dB @ 1 kHz)  \u00b7  4 \u00d7 1.25" line source')
     img_w = COL
     img_h = img_w * (7.8/7.2)
     c.drawImage(os.path.join(_SCRIPT_DIR, 'chart_polar.png'), MARGIN, yt-17*mm-img_h,
                 width=img_w, height=img_h)
-    c.setFillColor(MUTED); c.setFont('Helvetica',6.5)
+    c.setFillColor(MUTED); c.setFont(F('DMM'), 6.5)
     c.drawString(MARGIN, yt-23*mm-img_h,
         'Vertical plane shows the characteristic line-source sidelobe structure (first sidelobe \u221213 dB). Wide horizontal coverage holds to 4 kHz.')
     footer(c,4)
@@ -301,9 +343,9 @@ def page_polar(c):
 def page_spl(c):
     page_bg(c)
     yt = H-18*mm
-    c.setFillColor(TEXT); c.setFont('Helvetica-Bold',18); c.drawString(MARGIN,yt,'SPL vs Distance')
+    c.setFillColor(TEXT); c.setFont(FB('CorSB'), 18); c.drawString(MARGIN,yt,'SPL vs Distance')
     hline(c, yt-5*mm)
-    c.setFillColor(MUTED); c.setFont('Helvetica',7)
+    c.setFillColor(MUTED); c.setFont(F('DMM'), 7)
     c.drawString(MARGIN,yt-11*mm,
         f'Inverse square law  ·  Ref: {PRODUCT["sensitivity"]} dB @ 1m/1W  ·  Max: {PRODUCT["power_peak"]}W')
 
@@ -317,11 +359,11 @@ def page_spl(c):
         gy=sy2(db); lw=0.5 if db%10==0 else 0.25
         c.setStrokeColor(BORDER); c.setLineWidth(lw); c.line(cx,gy,cx+cw,gy)
         if db%10==0:
-            c.setFillColor(MUTED); c.setFont('Helvetica',6); c.drawRightString(cx-2*mm,gy-2,str(db))
+            c.setFillColor(MUTED); c.setFont(F('DMM'), 6); c.drawRightString(cx-2*mm,gy-2,str(db))
 
     for d in [1,2,3,4,5,6,8,10,12,15,20]:
         gx=dx(d); c.setStrokeColor(BORDER); c.setLineWidth(0.25); c.line(gx,cy,gx,cy+ch)
-        c.setFillColor(MUTED); c.setFont('Helvetica',6.5); c.drawCentredString(gx,cy-5*mm,f'{d}m')
+        c.setFillColor(MUTED); c.setFont(F('DMM'), 6.5); c.drawCentredString(gx,cy-5*mm,f'{d}m')
 
     def spl_curve(pw, col, lw, dash=None):
         pts=[]
@@ -345,10 +387,10 @@ def page_spl(c):
         if cy<gy<cy+ch:
             c.setStrokeColor(col); c.setLineWidth(0.5); c.setDash(4,4)
             c.line(cx,gy,cx+cw,gy); c.setDash()
-            c.setFillColor(col); c.setFont('Helvetica',6.5); c.drawString(cx+2*mm,gy+1.5*mm,lbl_t)
+            c.setFillColor(col); c.setFont(F('DMM'), 6.5); c.drawString(cx+2*mm,gy+1.5*mm,lbl_t)
 
     c.setStrokeColor(BORDER); c.setLineWidth(0.5); c.rect(cx,cy,cw,ch,fill=0,stroke=1)
-    c.setFillColor(MUTED); c.setFont('Helvetica',7)
+    c.setFillColor(MUTED); c.setFont(F('DMM'), 7)
     c.drawCentredString(cx+cw/2, cy-11*mm,'Distance (m)')
     c.saveState(); c.translate(cx-10*mm,cy+ch/2); c.rotate(90)
     c.drawCentredString(0,0,'SPL (dB)'); c.restoreState()
@@ -360,7 +402,7 @@ def page_spl(c):
         c.setStrokeColor(col); c.setLineWidth(1.4)
         if dash: c.setDash(*dash)
         c.line(lx,ly,lx+12*mm,ly); c.setDash()
-        c.setFillColor(TEXT); c.setFont('Helvetica',7)
+        c.setFillColor(TEXT); c.setFont(F('DMM'), 7)
         c.drawString(lx+15*mm,ly-2,lbl_t); lx+=58*mm
     footer(c,5)
 
@@ -368,9 +410,9 @@ def page_spl(c):
 def page_eq(c):
     page_bg(c)
     yt = H-18*mm
-    c.setFillColor(TEXT); c.setFont('Helvetica-Bold',18); c.drawString(MARGIN,yt,'EQ & Filter Profile')
+    c.setFillColor(TEXT); c.setFont(FB('CorSB'), 18); c.drawString(MARGIN,yt,'EQ & Filter Profile')
     hline(c, yt-5*mm)
-    c.setFillColor(MUTED); c.setFont('Helvetica',7)
+    c.setFillColor(MUTED); c.setFont(F('DMM'), 7)
     c.drawString(MARGIN,yt-11*mm,
         f'Profile: {PRODUCT["eq_profile"]}  \u00b7  RBJ biquad cascade evaluated at fs = 48 kHz (ADAU1701)  \u00b7  Recommended DSP preset')
     img_w = COL
@@ -383,7 +425,7 @@ def page_eq(c):
     section_head(c, ty, 'APPLIED FILTERS'); ty -= 7*mm
     cols_x=[MARGIN, MARGIN+14*mm, MARGIN+42*mm, MARGIN+70*mm, MARGIN+94*mm, MARGIN+120*mm]
     for i,h in enumerate(['#','Type','Frequency','Gain','Q / Slope','Function']):
-        c.setFillColor(MUTED); c.setFont('Helvetica-Bold',6.5); c.drawString(cols_x[i],ty,h.upper())
+        c.setFillColor(MUTED); c.setFont(FB('DMMM'),6.5); c.drawString(cols_x[i],ty,h.upper())
     ty -= 2.5*mm; c.setStrokeColor(BORDER); c.setLineWidth(0.3); c.line(MARGIN,ty,W-MARGIN,ty); ty -= 5.5*mm
 
     rows = [
@@ -395,13 +437,13 @@ def page_eq(c):
     for idx,row in enumerate(rows):
         if idx%2==0:
             c.setFillColor(MID); c.rect(MARGIN,ty-2*mm,COL,7.5*mm,fill=1,stroke=0)
-        c.setFillColor(TEXT); c.setFont('Helvetica',7.5)
+        c.setFillColor(TEXT); c.setFont(F('DMS'),7.5)
         for xi,txt in zip(cols_x,row):
             c.drawString(xi,ty+0.5*mm,txt)
         ty -= 8.5*mm
 
     ty -= 3*mm
-    c.setFillColor(MUTED); c.setFont('Helvetica',6.5)
+    c.setFillColor(MUTED); c.setFont(F('DMM'), 6.5)
     c.drawString(MARGIN, ty,
         'Coefficients per the Audio EQ Cookbook (RBJ). Apply via XSCACE Controller or any DSP supporting standard biquads.')
     footer(c,6)
@@ -409,93 +451,84 @@ def page_eq(c):
 # ── PAGE 7: PROPRIETARY TECHNOLOGIES ─────────────────────────────────────────
 def page_tech(c):
     page_bg(c)
-    yt = H-18*mm
-    c.setFillColor(TEXT); c.setFont('Helvetica-Bold',18)
-    c.drawString(MARGIN,yt,'Proprietary Technologies')
-    hline(c, yt-5*mm)
-    c.setFillColor(MUTED); c.setFont('Helvetica',7)
-    c.drawString(MARGIN,yt-11*mm,'Exclusive engineering innovations inside every XSCACE product.')
+    yt = H - 18*mm
 
-    techs = [
-        ('NR','Nano\nResonance',
-         'By engineering an intentionally heavy cone mass, Nano Resonance forces the system\'s '
-         'natural resonant frequency (Fs) well below the target passband. This counters Hoffman\'s Iron Law — '
-         'the trade-off between bass extension, enclosure size, and efficiency — allowing genuine low-frequency '
-         'extension from an enclosure only 12–23mm deep. The result is bass that defies the physics of its cabinet.'),
-        ('PD','PowerDense\nDynamics',
-         'The voice coil is wound with a copper-silver composite conductor — copper for electrical conductivity, '
-         'silver for reduced skin effect at high frequencies. This allows the coil to handle significantly higher '
-         'continuous power in the same former diameter, raising the thermal ceiling without increasing coil mass '
-         'or inductance. More power in, less distortion out.'),
-        ('AF','AeroFrame\nChassis',
-         '6061 aerospace-grade aluminium is machined to form the speaker\'s structural chassis. Beyond providing '
-         'rigidity under excursion, the chassis acts as a passive heatsink — drawing heat away from the voice coil '
-         'through direct thermal coupling to the body. In outdoor and high-SPL scenarios, this eliminates thermal '
-         'compression without fans or active cooling.'),
-        ('PX','PrecisionXover\nArray',
-         'Each crossover network is assembled with air-core inductors (no ferrous saturation), polypropylene '
-         'film capacitors (low ESR, stable across temperature), and metal-film resistors. Component matching is '
-         'held to ±0.5 dB. At this tolerance, channel-to-channel variation is inaudible in stereo and '
-         'near-field arrays — critical for Cane\'s four-driver line array configuration.'),
-        ('XF','XS-Flow',
-         'Micro-waveguide geometry is precision-machined into the internal face of each enclosure. In a 12mm '
-         'depth, there is virtually no room for standing waves — but without management, internal reflections '
-         'and turbulence create coloration above 2kHz. XS-Flow channels the rearward acoustic wave around the '
-         'magnet structure and out through the terminal plate, reducing compression and harmonic distortion '
-         'at high excursion.'),
-        ('PS','PsySculpt',
-         'Built on the ADAU1701 DSP, PsySculpt implements a psychoacoustically aware EQ curve based on '
-         'Fletcher-Munson equal-loudness contours. At low listening levels the human ear perceives bass and '
-         'treble as relatively quieter. PsySculpt applies a dynamic pre-compensation curve — boosting low and '
-         'high frequencies proportionally as volume decreases — so tonal balance stays consistent from '
-         'background listening levels to concert SPL.'),
-    ]
+    # Heading
+    c.setFillColor(TEXT); c.setFont(FB('CorSB'), 22)
+    c.drawString(MARGIN, yt, 'Proprietary Technologies')
+    hline(c, yt - 5*mm)
+    c.setFillColor(MUTED); c.setFont(F('DMS'), 8)
+    c.drawString(MARGIN, yt - 11*mm, 'Exclusive engineering innovations inside every XSCACE product.')
 
-    icon_size = 11*mm
+    # Full tech descriptions keyed by normalised badge name
+    TECH_DESC = {
+        'nano resonance':       ('Nano Resonance', 'By engineering an intentionally heavy cone mass, Nano Resonance forces the system's natural resonant frequency (Fs) well below the target passband. This counters Hoffman's Iron Law — the trade-off between bass extension, enclosure size, and efficiency — allowing genuine low-frequency extension from an enclosure only 12–23mm deep.'),
+        'powerdense dynamics':  ('PowerDense Dynamics', 'The voice coil is wound with a copper-silver composite conductor — copper for electrical conductivity, silver for reduced skin effect at high frequencies. This allows the coil to handle significantly higher continuous power in the same former diameter, raising the thermal ceiling without increasing coil mass or inductance.'),
+        'aeroframe chassis':    ('AeroFrame Chassis', '6061 aerospace-grade aluminium is machined to form the speaker's structural chassis. Beyond providing rigidity under excursion, the chassis acts as a passive heatsink — drawing heat away from the voice coil through direct thermal coupling to the body.'),
+        'precisionxover array': ('PrecisionXover Array', 'Each crossover network is assembled with air-core inductors (no ferrous saturation), polypropylene film capacitors (low ESR, stable across temperature), and metal-film resistors. Component matching is held to ±0.5 dB.'),
+        'xs-flow':              ('XS-Flow', 'Micro-waveguide geometry is precision-machined into the internal face of each enclosure. XS-Flow channels the rearward acoustic wave around the magnet structure, reducing compression and harmonic distortion at high excursion.'),
+        'psysculpt':            ('PsySculpt', 'Built on the ADAU1701 DSP, PsySculpt implements a psychoacoustically aware EQ curve based on Fletcher-Munson equal-loudness contours, applying dynamic pre-compensation so tonal balance stays consistent from background listening levels to concert SPL.'),
+    }
+
+    # Get badges from product data
+    raw_badges = PRODUCT.get('proprietaryTechBadges', '') or ''
+    badges = [b.strip().replace('\u2122','').replace('™','').replace('  ',' ').strip()
+              for b in raw_badges.split(',') if b.strip()]
+
+    icon_w = 10*mm
+    icon_h = 10*mm
+    text_x = MARGIN + icon_w + 4*mm
+    text_w = COL - icon_w - 4*mm
     y = yt - 26*mm
-    row_h = (y - 20*mm) / len(techs)
 
-    for abbr, name, desc in techs:
-        # Icon circle
-        c.setFillColor(MID); c.circle(MARGIN+icon_size/2, y-icon_size/2+3*mm, icon_size/2, fill=1, stroke=0)
-        c.setStrokeColor(CHAMP); c.setLineWidth(0.4)
-        c.circle(MARGIN+icon_size/2, y-icon_size/2+3*mm, icon_size/2, fill=0, stroke=1)
-        c.setFillColor(CHAMP); c.setFont('Helvetica-Bold',7)
-        c.drawCentredString(MARGIN+icon_size/2, y-icon_size/2+1.5*mm, abbr)
+    for badge in badges:
+        key = badge.lower()
+        title, desc = None, None
+        for k, (t, d) in TECH_DESC.items():
+            if k in key or key.split(' ')[0] in k:
+                title, desc = t, d; break
+        if not title: title, desc = badge, ''
 
-        # Name
-        tx = MARGIN + icon_size + 5*mm
-        name_lines = name.split('\n')
-        c.setFillColor(TEXT); c.setFont('Helvetica-Bold',10)
-        c.drawString(tx, y+1*mm, name_lines[0])
-        if len(name_lines)>1:
-            c.setFillColor(CHAMP); c.setFont('Helvetica-Bold',10)
-            c.drawString(tx + c.stringWidth(name_lines[0],'Helvetica-Bold',10)+2, y+1*mm, name_lines[1])
-        c.setFillColor(TEXT); c.setFont('Helvetica-Bold',10)
+        # Icon from PNG
+        icon_path = get_tech_icon_path(badge)
+        if icon_path:
+            try:
+                c.drawImage(icon_path, MARGIN, y - icon_h + 3*mm, width=icon_w, height=icon_h,
+                            preserveAspectRatio=True, mask='auto')
+            except:
+                # Fallback circle
+                c.setFillColor(MID); c.circle(MARGIN + icon_w/2, y - icon_h/2 + 3*mm, icon_w/2, fill=1, stroke=0)
+                c.setStrokeColor(CHAMP); c.setLineWidth(0.4)
+                c.circle(MARGIN + icon_w/2, y - icon_h/2 + 3*mm, icon_w/2, fill=0, stroke=1)
+        else:
+            c.setFillColor(MID); c.circle(MARGIN + icon_w/2, y - icon_h/2 + 3*mm, icon_w/2, fill=1, stroke=0)
+            c.setStrokeColor(CHAMP); c.setLineWidth(0.4)
+            c.circle(MARGIN + icon_w/2, y - icon_h/2 + 3*mm, icon_w/2, fill=0, stroke=1)
 
-        # Description — word wrap in remaining width
-        desc_x = tx + 52*mm
-        desc_w = W - MARGIN - desc_x
-        c.setFillColor(HexColor('#a8a59f')); c.setFont('Helvetica',7.2)
-        words = desc.split(); line_words=[]; dy = y+1.5*mm; line_h=4.5*mm
+        # Badge title
+        c.setFillColor(CHAMP); c.setFont(FB('DMSB'), 8)
+        c.drawString(text_x, y, title)
+
+        # Description — word wrap
+        c.setFillColor(MUTED); c.setFont(F('DMS'), 7.5)
+        words = desc.split(); line = ''; dy = y - 5.5*mm
         for w in words:
-            t=' '.join(line_words+[w])
-            if c.stringWidth(t,'Helvetica',7.2)>desc_w:
-                if line_words: c.drawString(desc_x,dy,' '.join(line_words)); dy-=line_h
-                line_words=[w]
-            else: line_words.append(w)
-        if line_words: c.drawString(desc_x,dy,' '.join(line_words))
+            t2 = (line + ' ' + w).strip()
+            if c.stringWidth(t2, F('DMS'), 7.5) <= text_w: line = t2
+            else:
+                if line: c.drawString(text_x, dy, line); dy -= 4.5*mm
+                line = w
+        if line: c.drawString(text_x, dy, line); dy -= 4.5*mm
 
-        # Separator
-        sep_y = y - row_h + 4*mm
-        c.setStrokeColor(BORDER); c.setLineWidth(0.25)
-        c.line(MARGIN, sep_y, W-MARGIN, sep_y)
-        y -= row_h
+        y = dy - 4*mm
+        hline(c, y + 1*mm, color=BORDER, lw=0.3)
+        y -= 3*mm
 
-    footer(c,7)
+        if y < 20*mm: break  # safety
 
-# ── BUILD ─────────────────────────────────────────────────────────────────────
-out = _args.out if _args.out else '/mnt/user-data/outputs/xscace/cane_specsheet.pdf'
+    footer(c, 7)
+
+
 cv = canvas.Canvas(out, pagesize=A4)
 cv.setTitle(f'{PRODUCT["full_name"]} — Technical Specification Sheet')
 cv.setAuthor('XSCACE'); cv.setSubject('Speaker Specification Sheet')
