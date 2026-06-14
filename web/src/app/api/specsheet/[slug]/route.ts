@@ -106,71 +106,69 @@ function logX(f: number, fMin: number, fMax: number, w: number, offX=0): number 
 const CH='#c9a96e', CH2='rgba(201,169,110,0.08)', BLU='#5b8db8', GRID='#151412', GRID2='#1e1c1a', MUTED='#6b6760', BG='#0c0b0a'
 
 // ── FREQ RESPONSE ─────────────────────────────────────────────────────────────
+// Uses high-order biquad cascade for smooth, realistic rolloffs — no kinks.
 function chartFreqResponse(sens: number, fLow: number, fHigh: number): string {
   const W=1120,H=480,PL=52,PR=24,PT=24,PB=44,gw=W-PL-PR,gh=H-PT-PB
-  const FMIN=20,FMAX=25000,DBMIN=58,DBMAX=108
+  const FMIN=20,FMAX=25000,DBMIN=55,DBMAX=105
   const fx=(f:number)=>PL+logX(f,FMIN,FMAX,gw)
   const fy=(db:number)=>PT+gh-(db-DBMIN)/(DBMAX-DBMIN)*gh
-  const cy=(db:number)=>Math.max(PT+1,Math.min(PT+gh-1,fy(db)))
+  const cy=(db:number)=>Math.max(PT+2,Math.min(PT+gh-2,fy(db)))
 
-  // 800 log-spaced frequencies for very smooth curve
-  const N=800
+  // 1200 log-spaced frequencies — dense enough that bezier is truly smooth
+  const N=1200
   const freqs=Array.from({length:N},(_,i)=>FMIN*Math.pow(FMAX/FMIN,i/(N-1)))
 
-  // Acoustic response model
-  // Low-end: 12dB/oct Butterworth rolloff centred at fLow
-  // High-end: gentle air absorption rolloff above fHigh
-  // Baffle step: +1.5dB around 600Hz-2kHz for wall-mount speaker
+  // Smooth acoustic model:
+  // - Butterworth 4th-order HP at fLow (two cascaded 2nd-order stages)
+  //   This gives a smooth S-curve rolloff with no kink at fLow
+  // - Gentle Butterworth 2nd-order LP starting 1 octave above fHigh
+  // - Very mild (0.8dB) baffle-step broad Gaussian centred at 800Hz
+  const loCoefs1 = biquadCoefs('HP', fLow, 0, 0.54)   // 1st stage
+  const loCoefs2 = biquadCoefs('HP', fLow, 0, 1.31)   // 2nd stage (Butterworth 4th order)
+  const hiCoefs  = biquadCoefs('LP', fHigh * 1.4, 0, 0.6)  // gentle HF rolloff
+
   const acousticDb=(f:number)=>{
-    let db=sens
-    // Low end 2nd-order high-pass at fLow
-    const normLo=f/fLow
-    db+=10*Math.log10(Math.pow(normLo,4)/(1+Math.pow(normLo,4)))
-    // Gentle high end rolloff
-    if(f>fHigh*0.7){
-      const normHi=f/fHigh
-      db-=Math.max(0,10*Math.log10(1+Math.pow(normHi*0.9,4)))
-    }
-    // Slight baffle step / room interaction peak
-    if(f>300&&f<4000){
-      const peak=Math.exp(-0.5*Math.pow(Math.log(f/900)/Math.log(3),2))
-      db+=1.2*peak
-    }
+    // Cascaded HP stages give proper 4th-order rolloff (24dB/oct)
+    let db = biquadMagDb(loCoefs1, f) + biquadMagDb(loCoefs2, f)
+    // Add HF rolloff
+    db += biquadMagDb(hiCoefs, f)
+    // Offset to sensitivity reference
+    db += sens
+    // Very mild broad baffle-step bump — Gaussian centred at 800Hz, 0.8dB peak
+    db += 0.8 * Math.exp(-0.5 * Math.pow(Math.log2(f/800), 2))
     return db
   }
 
-  // Pure acoustic response — no EQ applied (raw speaker response)
-  const totalDb=(f:number)=>acousticDb(f)
+  // Compute all points
+  const pts: [number,number][] = freqs.map(f=>[fx(f), cy(acousticDb(f))])
+  // Subsample uniformly: ~250 bezier nodes gives perfectly smooth curve
+  const step = Math.max(1, Math.floor(N/250))
+  const sampled: [number,number][] = pts.filter((_,i)=>i%step===0 || i===pts.length-1)
 
-  // Sample points — every 4th for path, all for fill
-  const pts: [number,number][] = freqs.map(f=>[fx(f),cy(totalDb(f))])
-  // Subsample to ~200 points for smoother bezier (too many points = overfitting)
-  const step=Math.max(1,Math.floor(pts.length/200))
-  const sampled: [number,number][] = pts.filter((_,i)=>i%step===0||i===pts.length-1)
+  const curvePath = catmullRomPath(sampled, 0.4)
+  const fillPath  = `${curvePath} L${(PL+gw).toFixed(1)},${(PT+gh).toFixed(1)} L${PL},${(PT+gh).toFixed(1)} Z`
 
-  const curvePath=catmullRomPath(sampled)
-  const fillPath=`${curvePath} L${(PL+gw).toFixed(1)},${(PT+gh).toFixed(1)} L${PL},${(PT+gh).toFixed(1)} Z`
-
-  // Grid
-  const gridFs=[20,30,50,100,200,500,1000,2000,5000,10000,20000]
-  const gridDBs=[60,65,70,75,80,85,90,95,100,105]
+  // Grid lines and labels
+  const gridFs = [20,50,100,200,500,1000,2000,5000,10000,20000]
+  const gridDBs = [60,65,70,75,80,85,90,95,100]
   let gridSvg=''
   for(const f of gridFs){
     const x=fx(f).toFixed(1)
-    const isMajor=f===20||f===100||f===1000||f===10000
+    const isMajor = f===100||f===1000||f===10000
     gridSvg+=`<line x1="${x}" y1="${PT}" x2="${x}" y2="${PT+gh}" stroke="${isMajor?GRID2:GRID}" stroke-width="${isMajor?'0.8':'0.4'}"/>`
-    const lbl=f>=1000?`${f/1000}k`:String(f)
+    const lbl = f>=1000 ? `${f/1000}k` : String(f)
     gridSvg+=`<text x="${x}" y="${PT+gh+16}" text-anchor="middle" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">${lbl}</text>`
   }
   for(const db of gridDBs){
     const y=fy(db).toFixed(1)
-    const isMajor=db%10===0
+    const inRange = parseFloat(y)>=PT && parseFloat(y)<=PT+gh
+    if(!inRange) continue
+    const isMajor = db%10===0
     gridSvg+=`<line x1="${PL}" y1="${y}" x2="${PL+gw}" y2="${y}" stroke="${isMajor?GRID2:GRID}" stroke-width="${isMajor?'0.8':'0.4'}"/>`
     if(isMajor) gridSvg+=`<text x="${PL-8}" y="${parseFloat(y)+4}" text-anchor="end" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">${db}</text>`
   }
 
-  // Sensitivity reference dashed
-  const sensY=fy(sens).toFixed(1)
+  const sensY = fy(sens).toFixed(1)
 
   return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
   <rect width="${W}" height="${H}" fill="${BG}"/>
@@ -178,12 +176,12 @@ function chartFreqResponse(sens: number, fLow: number, fHigh: number): string {
   ${gridSvg}
   <g clip-path="url(#clip-fr)">
     <path d="${fillPath}" fill="${CH2}"/>
-    <line x1="${PL}" y1="${sensY}" x2="${PL+gw}" y2="${sensY}" stroke="${CH}" stroke-width="0.6" stroke-dasharray="8,5" opacity="0.35"/>
+    <line x1="${PL}" y1="${sensY}" x2="${PL+gw}" y2="${sensY}" stroke="${CH}" stroke-width="0.6" stroke-dasharray="8,5" opacity="0.3"/>
     <path d="${curvePath}" fill="none" stroke="${CH}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
   <text x="${PL}" y="${H-6}" fill="${MUTED}" font-size="10" font-family="DM Mono,monospace">Hz</text>
   <text x="12" y="${PT+gh/2}" fill="${MUTED}" font-size="10" font-family="DM Mono,monospace" transform="rotate(-90,12,${PT+gh/2})">dB SPL</text>
-  <text x="${PL+gw}" y="${parseFloat(sensY)-6}" text-anchor="end" fill="${CH}" fill-opacity="0.5" font-size="10" font-family="DM Mono,monospace">${sens} dB ref</text>
+  <text x="${PL+gw-4}" y="${parseFloat(sensY)-5}" text-anchor="end" fill="${CH}" fill-opacity="0.45" font-size="10" font-family="DM Mono,monospace">${sens} dB ref</text>
 </svg>`
 }
 
@@ -263,25 +261,34 @@ function chartPolar(dirH: number, dirV: number): string {
 // ── SPL vs DISTANCE ───────────────────────────────────────────────────────────
 function chartSPL(sens: number, powerRms: number, powerPeak: number, splMax: number): string {
   const W=1120,H=480,PL=54,PR=24,PT=24,PB=44,gw=W-PL-PR,gh=H-PT-PB
-  const DMIN=0.3,DMAX=25,DBMIN=48,DBMAX=128
+  const DMIN=0.5,DMAX=20
+  // Y axis range: from (splMax+5) at top down to (splAt(20m,rms)-5) at bottom
+  // This makes the curves fill the chart properly rather than floating in dead space
+  const splAt1m = sens + 10*Math.log10(Math.max(powerRms,1))
+  const DBMAX = splMax>0 ? Math.max(splMax+4, splAt1m+4) : splAt1m+6
+  const DBMIN = Math.max(40, sens + 10*Math.log10(Math.max(powerRms,1)) - 20*Math.log10(DMAX) - 8)
   const dx=(d:number)=>PL+logX(d,DMIN,DMAX,gw)
   const dy=(db:number)=>PT+gh-(db-DBMIN)/(DBMAX-DBMIN)*gh
   const cy=(db:number)=>Math.max(PT+1,Math.min(PT+gh-1,dy(db)))
 
-  const dists=[0.3,0.5,0.75,1,1.5,2,3,4,5,6,8,10,12,15,20,25]
+  const dists=[0.5,0.75,1,1.5,2,3,4,5,6,8,10,12,15,20]
   const splAt=(d:number,pwr:number)=>sens+10*Math.log10(pwr)-20*Math.log10(d)
 
   // Grid
   let gridSvg=''
-  for(const d of [0.5,1,2,5,10,20]){
+  for(const d of [1,2,5,10,20]){
     const x=dx(d).toFixed(1)
     gridSvg+=`<line x1="${x}" y1="${PT}" x2="${x}" y2="${PT+gh}" stroke="${GRID2}" stroke-width="0.8"/>`
     gridSvg+=`<text x="${x}" y="${PT+gh+16}" text-anchor="middle" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">${d}m</text>`
   }
-  for(const db of [60,70,80,90,100,110,120]){
+  // Draw dB grid lines dynamically within the range
+  for(let db=Math.ceil(DBMIN/5)*5; db<=DBMAX; db+=5){
     const y=dy(db).toFixed(1)
-    gridSvg+=`<line x1="${PL}" y1="${y}" x2="${PL+gw}" y2="${y}" stroke="${db===90||db===100?GRID2:GRID}" stroke-width="${db===90||db===100?'0.8':'0.4'}"/>`
-    gridSvg+=`<text x="${PL-8}" y="${parseFloat(y)+4}" text-anchor="end" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">${db}</text>`
+    const inRange=parseFloat(y)>=PT&&parseFloat(y)<=PT+gh
+    if(!inRange) continue
+    const isMajor=db%10===0
+    gridSvg+=`<line x1="${PL}" y1="${y}" x2="${PL+gw}" y2="${y}" stroke="${isMajor?GRID2:GRID}" stroke-width="${isMajor?'0.8':'0.4'}"/>`
+    if(isMajor) gridSvg+=`<text x="${PL-8}" y="${parseFloat(y)+4}" text-anchor="end" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">${db}</text>`
   }
 
   // Curve points
@@ -328,20 +335,16 @@ function chartSPL(sens: number, powerRms: number, powerPeak: number, splMax: num
 function chartEQ(eq: any[]): string {
   const W=1120,H=380,PL=52,PR=24,PT=24,PB=44,gw=W-PL-PR,gh=H-PT-PB
   const FMIN=20,FMAX=25000
-  // ±10dB range — EQ bands are typically ±6dB, don't need ±18
-  const DBRANGE=10  // symmetric ±DBRANGE
+  // ±8dB range — keeps typical ±3 to ±6dB EQ looking proportionate, not dramatic
+  const DBRANGE=8
   const fx=(f:number)=>PL+logX(f,FMIN,FMAX,gw)
   const fy=(db:number)=>PT+(gh/2)-(db/DBRANGE)*(gh/2)
-  // Soft-clamp: don't hard-clip, let extreme values be partially visible
-  const cy=(db:number)=>{
-    const y=fy(db)
-    if(y<PT) return PT+2
-    if(y>PT+gh) return PT+gh-2
-    return y
-  }
+  const cy=(db:number)=>Math.max(PT+2, Math.min(PT+gh-2, fy(db)))
   const zeroY=(PT+gh/2).toFixed(1)
 
-  const N=600
+  // 800 points uniformly spaced in log-frequency → equal node spacing in px
+  // This is critical: non-uniform log spacing causes bezier kinks at HF
+  const N=800
   const freqs=Array.from({length:N},(_,i)=>FMIN*Math.pow(FMAX/FMIN,i/(N-1)))
 
   let gridSvg=''
@@ -351,11 +354,11 @@ function chartEQ(eq: any[]): string {
     gridSvg+=`<line x1="${x}" y1="${PT}" x2="${x}" y2="${PT+gh}" stroke="${isMajor?GRID2:GRID}" stroke-width="${isMajor?'0.8':'0.4'}"/>`
     gridSvg+=`<text x="${x}" y="${PT+gh+16}" text-anchor="middle" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">${f>=1000?f/1000+'k':f}</text>`
   }
-  for(const db of [-9,-6,-3,0,3,6,9]){
+  for(const db of [-6,-3,0,3,6]){
     const y=fy(db).toFixed(1)
     const inRange=parseFloat(y)>=PT&&parseFloat(y)<=PT+gh
     if(!inRange) continue
-    gridSvg+=`<line x1="${PL}" y1="${y}" x2="${PL+gw}" y2="${y}" stroke="${db===0?'#2a2826':GRID}" stroke-width="${db===0?'1':'0.4'}"/>`
+    gridSvg+=`<line x1="${PL}" y1="${y}" x2="${PL+gw}" y2="${y}" stroke="${db===0?'#252320':GRID}" stroke-width="${db===0?'1.2':'0.4'}"/>`
     gridSvg+=`<text x="${PL-8}" y="${parseFloat(y)+4}" text-anchor="end" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">${db>0?'+':''}${db}</text>`
   }
 
@@ -379,14 +382,15 @@ function chartEQ(eq: any[]): string {
   const bandCols=['rgba(201,169,110,0.65)','rgba(91,141,184,0.65)','rgba(160,111,192,0.65)','rgba(111,172,96,0.65)']
   let bandSvg=''
   allCoefs.forEach(({coef,band},bi)=>{
+    // Sample ~200 uniformly log-spaced points — avoids bezier kinks
     const bpts: [number,number][]=[]
-    const step=Math.max(1,Math.floor(freqs.length/150))
-    freqs.filter((_,i)=>i%step===0||i===freqs.length-1).forEach(f=>{
+    const bstep=Math.max(1,Math.floor(freqs.length/200))
+    freqs.filter((_,i)=>i%bstep===0||i===freqs.length-1).forEach(f=>{
       bpts.push([fx(f),cy(biquadMagDb(coef,f))])
     })
-    const bpath=catmullRomPath(bpts,0.45)
+    const bpath=catmullRomPath(bpts,0.38)
     const col=bandCols[bi%bandCols.length]
-    bandSvg+=`<path d="${bpath}" fill="none" stroke="${col}" stroke-width="0.9" stroke-dasharray="10,5" opacity="0.7"/>`
+    bandSvg+=`<path d="${bpath}" fill="none" stroke="${col}" stroke-width="0.8" stroke-dasharray="12,6" opacity="0.55"/>`
     // Label at the band frequency
     const labelX=fx(band.freq), labelDb=band.gain!=null?band.gain:0
     const labelY=cy(labelDb*0.5)
@@ -395,14 +399,14 @@ function chartEQ(eq: any[]): string {
     bandSvg+=`<text x="${labelX.toFixed(1)}" y="${(labelY-8).toFixed(1)}" text-anchor="middle" fill="${col}" font-size="9.5" font-family="DM Mono,monospace">${lbl}</text>`
   })
 
-  // Total combined response
+  // Total combined response — 250 uniform log-spaced nodes
   const totalPts: [number,number][]=[]
-  const step=Math.max(1,Math.floor(freqs.length/200))
-  freqs.filter((_,i)=>i%step===0||i===freqs.length-1).forEach(f=>{
+  const tstep=Math.max(1,Math.floor(freqs.length/250))
+  freqs.filter((_,i)=>i%tstep===0||i===freqs.length-1).forEach(f=>{
     const db=allCoefs.reduce((sum,{coef})=>sum+biquadMagDb(coef,f),0)
     totalPts.push([fx(f),cy(db)])
   })
-  const totalPath=catmullRomPath(totalPts,0.45)
+  const totalPath=catmullRomPath(totalPts,0.38)
   const fillPath=`${totalPath} L${(PL+gw).toFixed(1)},${zeroY} L${PL},${zeroY} Z`
 
   return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
@@ -649,7 +653,6 @@ body{font-family:'DM Sans',Helvetica,sans-serif;background:#090909;color:#eeebe5
         ${sr('Crossover',P.crossoverType||'—')}
         ${sr('Crossover Freq',P.crossoverFrequency?`${P.crossoverFrequency} Hz`:(P.recommendedCrossoverHz?`${P.recommendedCrossoverHz} Hz (rec.)`:'—'))}
         ${sr('EQ Profile',P.eqProfileName||'Default')}
-        ${sr('Spec Confidence',P.specConfidence||'—')}
         <div class="sg">Connectivity</div>
         ${sr('Connector',P.speakerWireConnector||'—')}
         ${sr('Wire Gauge',P.wireGaugeRecommended||'—')}
@@ -663,10 +666,9 @@ body{font-family:'DM Sans',Helvetica,sans-serif;background:#090909;color:#eeebe5
         ${sr('Paintable Grille',P.paintableGrille!=null?(P.paintableGrille?'Yes':'No'):'—')}
         <div class="sg">Environmental</div>
         ${sr('IP Rating',P.ipRating||'—')}
-        ${sr('Fire Rating',P.fireRating||'—')}
         ${sr('Mounting',P.mountingMethods||'—')}
         <div class="sg">Colour & Finish</div>
-        ${sr('Finishes',P.colorsStandard||'—')}
+        ${sr('Finishes',(P.colorsStandard||'—')+(P.customRalAvailable?' · Custom RAL':''))}
         <div class="sg">Product</div>
         ${sr('Series',P.series||'—')}
         ${sr('SKU',P.skuBase||'—')}
