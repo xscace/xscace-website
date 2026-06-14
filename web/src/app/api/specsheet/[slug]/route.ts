@@ -106,7 +106,7 @@ function logX(f: number, fMin: number, fMax: number, w: number, offX=0): number 
 const CH='#c9a96e', CH2='rgba(201,169,110,0.08)', BLU='#5b8db8', GRID='#151412', GRID2='#1e1c1a', MUTED='#6b6760', BG='#0c0b0a'
 
 // ── FREQ RESPONSE ─────────────────────────────────────────────────────────────
-function chartFreqResponse(sens: number, fLow: number, fHigh: number, eq: any[]): string {
+function chartFreqResponse(sens: number, fLow: number, fHigh: number): string {
   const W=1120,H=480,PL=52,PR=24,PT=24,PB=44,gw=W-PL-PR,gh=H-PT-PB
   const FMIN=20,FMAX=25000,DBMIN=58,DBMAX=108
   const fx=(f:number)=>PL+logX(f,FMIN,FMAX,gw)
@@ -139,18 +139,8 @@ function chartFreqResponse(sens: number, fLow: number, fHigh: number, eq: any[])
     return db
   }
 
-  // Apply EQ filters
-  const filterCoefsList = eq.map(b=>{
-    if(b.type==='HP') return biquadCoefs('HP',b.freq,0,b.q||0.707)
-    if(b.type==='LP') return biquadCoefs('LP',b.freq,0,b.q||0.707)
-    return biquadCoefs(b.type||'PK',b.freq,b.gain||0,b.q||1)
-  })
-
-  const totalDb=(f:number)=>{
-    let db=acousticDb(f)
-    for(const c of filterCoefsList) db+=biquadMagDb(c,f)
-    return db
-  }
+  // Pure acoustic response — no EQ applied (raw speaker response)
+  const totalDb=(f:number)=>acousticDb(f)
 
   // Sample points — every 4th for path, all for fill
   const pts: [number,number][] = freqs.map(f=>[fx(f),cy(totalDb(f))])
@@ -271,7 +261,7 @@ function chartPolar(dirH: number, dirV: number): string {
 }
 
 // ── SPL vs DISTANCE ───────────────────────────────────────────────────────────
-function chartSPL(sens: number, powerRms: number, powerPeak: number): string {
+function chartSPL(sens: number, powerRms: number, powerPeak: number, splMax: number): string {
   const W=1120,H=480,PL=54,PR=24,PT=24,PB=44,gw=W-PL-PR,gh=H-PT-PB
   const DMIN=0.3,DMAX=25,DBMIN=48,DBMAX=128
   const dx=(d:number)=>PL+logX(d,DMIN,DMAX,gw)
@@ -308,6 +298,10 @@ function chartSPL(sens: number, powerRms: number, powerPeak: number): string {
   // Hearing damage ref
   const damageY=dy(85).toFixed(1)
 
+  // Max SPL line — where the curves clip at the speaker's rated limit
+  const maxSplY = splMax > 0 ? dy(splMax) : -1
+  const maxSplInRange = splMax > 0 && maxSplY >= PT && maxSplY <= PT+gh
+
   return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
   <rect width="${W}" height="${H}" fill="${BG}"/>
   <clipPath id="clip-spl"><rect x="${PL}" y="${PT}" width="${gw}" height="${gh}"/></clipPath>
@@ -316,11 +310,13 @@ function chartSPL(sens: number, powerRms: number, powerPeak: number): string {
     <path d="${rmsFill}" fill="${CH2}"/>
     <path d="${rmsCurve}" fill="none" stroke="${CH}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="${peakCurve}" fill="none" stroke="#dfc060" stroke-width="1.5" stroke-dasharray="10,4" stroke-linecap="round"/>
+    ${maxSplInRange ? `<line x1="${PL}" y1="${maxSplY.toFixed(1)}" x2="${PL+gw}" y2="${maxSplY.toFixed(1)}" stroke="#e05050" stroke-width="1" stroke-dasharray="12,5" opacity="0.7"/>` : ''}
   </g>
   <text x="${PL}" y="${H-6}" fill="${MUTED}" font-size="10" font-family="DM Mono,monospace">Distance</text>
   <text x="12" y="${PT+gh/2}" fill="${MUTED}" font-size="10" font-family="DM Mono,monospace" transform="rotate(-90,12,${PT+gh/2})">dB SPL</text>
   <line x1="${PL}" y1="${damageY}" x2="${PL+gw}" y2="${damageY}" stroke="${CH}" stroke-width="0.7" stroke-dasharray="10,6" opacity="0.18"/>
   <text x="${(PL+gw-4).toFixed(0)}" y="${(parseFloat(damageY)-4).toFixed(0)}" text-anchor="end" fill="${MUTED}" font-size="9" font-family="DM Mono,monospace" opacity="0.4">85 dB — hearing risk</text>
+  ${maxSplInRange ? `<text x="${(PL+4).toFixed(0)}" y="${(maxSplY - 4).toFixed(0)}" fill="#e05050" font-size="9" font-family="DM Mono,monospace" opacity="0.8">Max SPL ${splMax} dB</text>` : ''}
   <rect x="40" y="${H-18}" width="28" height="2.5" fill="${CH}"/>
   <text x="74" y="${H-13}" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">RMS ${powerRms}W · ${splRms} dB @ 1m</text>
   <rect x="380" y="${H-18}" width="22" height="2.5" fill="#dfc060"/>
@@ -331,10 +327,18 @@ function chartSPL(sens: number, powerRms: number, powerPeak: number): string {
 // ── EQ RESPONSE ───────────────────────────────────────────────────────────────
 function chartEQ(eq: any[]): string {
   const W=1120,H=380,PL=52,PR=24,PT=24,PB=44,gw=W-PL-PR,gh=H-PT-PB
-  const FMIN=20,FMAX=25000,DBMIN=-18,DBMAX=12
+  const FMIN=20,FMAX=25000
+  // ±10dB range — EQ bands are typically ±6dB, don't need ±18
+  const DBRANGE=10  // symmetric ±DBRANGE
   const fx=(f:number)=>PL+logX(f,FMIN,FMAX,gw)
-  const fy=(db:number)=>PT+(gh/2)-(db/((DBMAX-DBMIN)/2))*(gh/2)
-  const cy=(db:number)=>Math.max(PT+1,Math.min(PT+gh-1,fy(db)))
+  const fy=(db:number)=>PT+(gh/2)-(db/DBRANGE)*(gh/2)
+  // Soft-clamp: don't hard-clip, let extreme values be partially visible
+  const cy=(db:number)=>{
+    const y=fy(db)
+    if(y<PT) return PT+2
+    if(y>PT+gh) return PT+gh-2
+    return y
+  }
   const zeroY=(PT+gh/2).toFixed(1)
 
   const N=600
@@ -347,8 +351,10 @@ function chartEQ(eq: any[]): string {
     gridSvg+=`<line x1="${x}" y1="${PT}" x2="${x}" y2="${PT+gh}" stroke="${isMajor?GRID2:GRID}" stroke-width="${isMajor?'0.8':'0.4'}"/>`
     gridSvg+=`<text x="${x}" y="${PT+gh+16}" text-anchor="middle" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">${f>=1000?f/1000+'k':f}</text>`
   }
-  for(const db of [-12,-9,-6,-3,0,3,6,9]){
+  for(const db of [-9,-6,-3,0,3,6,9]){
     const y=fy(db).toFixed(1)
+    const inRange=parseFloat(y)>=PT&&parseFloat(y)<=PT+gh
+    if(!inRange) continue
     gridSvg+=`<line x1="${PL}" y1="${y}" x2="${PL+gw}" y2="${y}" stroke="${db===0?'#2a2826':GRID}" stroke-width="${db===0?'1':'0.4'}"/>`
     gridSvg+=`<text x="${PL-8}" y="${parseFloat(y)+4}" text-anchor="end" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">${db>0?'+':''}${db}</text>`
   }
@@ -380,12 +386,12 @@ function chartEQ(eq: any[]): string {
     })
     const bpath=catmullRomPath(bpts,0.45)
     const col=bandCols[bi%bandCols.length]
-    bandSvg+=`<path d="${bpath}" fill="none" stroke="${col}" stroke-width="1.2" stroke-dasharray="8,4"/>`
+    bandSvg+=`<path d="${bpath}" fill="none" stroke="${col}" stroke-width="0.9" stroke-dasharray="10,5" opacity="0.7"/>`
     // Label at the band frequency
     const labelX=fx(band.freq), labelDb=band.gain!=null?band.gain:0
     const labelY=cy(labelDb*0.5)
     const lbl=band.type==='HP'?`HP`:band.type==='LP'?`LP`:(band.gain>0?'+':'')+band.gain+'dB'
-    bandSvg+=`<circle cx="${labelX.toFixed(1)}" cy="${cy(biquadMagDb(coef,band.freq)).toFixed(1)}" r="3.5" fill="${col}"/>`
+    bandSvg+=`<circle cx="${labelX.toFixed(1)}" cy="${cy(biquadMagDb(coef,band.freq)).toFixed(1)}" r="2.5" fill="${col}" opacity="0.8"/>`
     bandSvg+=`<text x="${labelX.toFixed(1)}" y="${(labelY-8).toFixed(1)}" text-anchor="middle" fill="${col}" font-size="9.5" font-family="DM Mono,monospace">${lbl}</text>`
   })
 
@@ -461,7 +467,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{slug
     const P: any = await sanity.fetch(`*[_type=="product"&&slug.current=="${slug}"&&status=="Active"][0]{
       _id,productName,productFullName,tagline,shortDescription,series,skuBase,skuVariants,slug,
       sensitivityDb,powerRmsW,powerPeakW,impedanceOhms,splMaxDb,thdN,
-      freqLowHz,freqHighHz,freqQualifier,directivityHDeg,directivityVDeg,
+      freqLowHz,freqHighHz,freqQualifier,directivityHDeg,directivityVDeg,recommendedCrossoverHz,
       heightMm,widthMm,depthMm,diameterMm,weightKg,driverDescription,crossoverType,crossoverFrequency,
       housingMaterial,grilleMaterial,speakerWireConnector,wireGaugeRecommended,
       ipRating,mountingMethods,launchYear,fireRating,paintableGrille,
@@ -503,9 +509,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{slug
 
     // Charts — SVG-based (smooth bezier, same math as product page)
     const sens=P.sensitivityDb||90
-    const frChart=chartFreqResponse(sens,P.freqLowHz||100,P.freqHighHz||20000,eq)
+    const frChart=chartFreqResponse(sens,P.freqLowHz||100,P.freqHighHz||20000)
     const polChart=chartPolar(P.directivityHDeg||140,P.directivityVDeg||25)
-    const splChart=chartSPL(sens,P.powerRmsW||1,P.powerPeakW||2)
+    const splChart=chartSPL(sens,P.powerRmsW||1,P.powerPeakW||2,P.splMaxDb||0)
     const eqChart=chartEQ(eq)
     const eqTable=eqFilterTable(eq,P.eqProfileName||'Default')
 
@@ -641,7 +647,7 @@ body{font-family:'DM Sans',Helvetica,sans-serif;background:#090909;color:#eeebe5
         ${sr('Directivity V',P.directivityVDeg?`${P.directivityVDeg}° (−6 dB, 1 kHz)`:'—')}
         ${sr('Driver Config',P.driverDescription||'—')}
         ${sr('Crossover',P.crossoverType||'—')}
-        ${sr('Crossover Freq',P.crossoverFrequency?`${P.crossoverFrequency} Hz`:'—')}
+        ${sr('Crossover Freq',P.crossoverFrequency?`${P.crossoverFrequency} Hz`:(P.recommendedCrossoverHz?`${P.recommendedCrossoverHz} Hz (rec.)`:'—'))}
         ${sr('EQ Profile',P.eqProfileName||'Default')}
         ${sr('Spec Confidence',P.specConfidence||'—')}
         <div class="sg">Connectivity</div>
@@ -661,8 +667,6 @@ body{font-family:'DM Sans',Helvetica,sans-serif;background:#090909;color:#eeebe5
         ${sr('Mounting',P.mountingMethods||'—')}
         <div class="sg">Colour & Finish</div>
         ${sr('Finishes',P.colorsStandard||'—')}
-        ${sr('Custom RAL',P.customRalAvailable?'Available':'—')}
-        ${sr('Marine Treat.',P.marineTreatable?'Available':'—')}
         <div class="sg">Product</div>
         ${sr('Series',P.series||'—')}
         ${sr('SKU',P.skuBase||'—')}
@@ -681,7 +685,7 @@ body{font-family:'DM Sans',Helvetica,sans-serif;background:#090909;color:#eeebe5
   ${pageHdr(P.productName,3,TOTAL)}
   <div class="chart-body">
     <div class="chart-h">Frequency Response</div>
-    <div class="chart-sub">On-axis · 1W / 1m · anechoic · ${P.freqLowHz}Hz – ${Math.round((P.freqHighHz||20000)/1000)}kHz ${P.freqQualifier||''} · ${P.sensitivityDb}dB sensitivity · recommended EQ applied</div>
+    <div class="chart-sub">On-axis · 1W / 1m · anechoic · ${P.freqLowHz}Hz – ${Math.round((P.freqHighHz||20000)/1000)}kHz ${P.freqQualifier||''} · ${P.sensitivityDb}dB sensitivity · raw acoustic response, no EQ</div>
     <div class="chart-wrap">${frChart}</div>
   </div>
   ${pageFtr()}
