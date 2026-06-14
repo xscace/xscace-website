@@ -1,7 +1,8 @@
 {
   "functions": {
     "api/specsheet/[slug].py": {
-      "maxDuration": 60
+      "maxDuration": 60,
+      "includeFiles": "api/specsheet/fonts/**"
     }
   }
 }
