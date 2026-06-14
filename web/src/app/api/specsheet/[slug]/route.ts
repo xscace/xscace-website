@@ -9,19 +9,20 @@ export const maxDuration = 300
 const PROJECT = '7r0kq57d', DATASET = 'production'
 const sanity = createClient({ projectId: PROJECT, dataset: DATASET, apiVersion: '2024-01-01', useCdn: false, token: process.env.SANITY_API_TOKEN })
 
+// ── Utilities ─────────────────────────────────────────────────────────────────
 function fileCdn(id: string) {
-  const b = id.replace('file-', ''), i = b.lastIndexOf('-')
+  const b = id.replace('file-',''), i = b.lastIndexOf('-')
   return `https://cdn.sanity.io/files/${PROJECT}/${DATASET}/${b.slice(0,i)}.${b.slice(i+1)}`
 }
-function publicFileB64(relPath: string, mime = 'image/png'): string {
+function publicFileB64(relPath: string, mime='image/png'): string {
   try {
-    const p = path.join(process.cwd(), 'public', relPath)
+    const p = path.join(process.cwd(),'public',relPath)
     if (!fs.existsSync(p)) return ''
     return `data:${mime};base64,${fs.readFileSync(p).toString('base64')}`
   } catch { return '' }
 }
 function loadFontCss(): string {
-  const fontDir = path.join(path.dirname(new URL(import.meta.url).pathname), 'fonts')
+  const fontDir = path.join(path.dirname(new URL(import.meta.url).pathname),'fonts')
   const map: [string,string,string,string][] = [
     ['Cormorant Garamond','300','normal','Cormorant-Light.ttf'],
     ['Cormorant Garamond','400','italic','Cormorant-Italic.ttf'],
@@ -33,12 +34,10 @@ function loadFontCss(): string {
   ]
   let css = ''
   for (const [family,weight,style,fname] of map) {
-    const p = path.join(fontDir, fname)
-    if (fs.existsSync(p)) {
-      css += `@font-face{font-family:'${family}';font-weight:${weight};font-style:${style};src:url('data:font/truetype;base64,${fs.readFileSync(p).toString('base64')}') format('truetype');}\n`
-    }
+    const p = path.join(fontDir,fname)
+    if (fs.existsSync(p)) css += `@font-face{font-family:'${family}';font-weight:${weight};font-style:${style};src:url('data:font/truetype;base64,${fs.readFileSync(p).toString('base64')}') format('truetype');}\n`
   }
-  const mw = path.join(process.cwd(), 'public', 'fonts', 'MagmaWave.otf')
+  const mw = path.join(process.cwd(),'public','fonts','MagmaWave.otf')
   if (fs.existsSync(mw)) css += `@font-face{font-family:'MagmaWave';src:url('data:font/otf;base64,${fs.readFileSync(mw).toString('base64')}') format('opentype');}\n`
   return css
 }
@@ -56,699 +55,728 @@ function techIconB64(badge: string): string {
 async function imgB64(ref: string|null, w=600): Promise<string> {
   if (!ref) return ''
   try {
-    const b = ref.replace(/^image-/,'').split('-'), ext=b.pop()!, dims=b.pop()!, hash=b.join('-')
-    const r = await fetch(`https://cdn.sanity.io/images/${PROJECT}/${DATASET}/${hash}-${dims}.${ext}?w=${w}&auto=format&q=75`)
+    const b=ref.replace(/^image-/,'').split('-'), ext=b.pop()!, dims=b.pop()!, hash=b.join('-')
+    const r = await fetch(`https://cdn.sanity.io/images/${PROJECT}/${DATASET}/${hash}-${dims}.${ext}?w=${w}&auto=format&q=80`)
     if (!r.ok) return ''
     return `data:${r.headers.get('content-type')||'image/jpeg'};base64,${Buffer.from(await r.arrayBuffer()).toString('base64')}`
   } catch { return '' }
 }
 function getRef(o: any): string { return o?.asset?._ref||'' }
 
-// ── RBJ Biquad filters (proper physics) ────────────────────────────────────────
-function rbj(kind: string, f0: number, gainDb: number, Q: number, fs=48000): number[] {
-  const A = Math.pow(10, gainDb/40)
-  const w0 = 2*Math.PI*f0/fs
-  const cw = Math.cos(w0), sw = Math.sin(w0)
-  const alpha = sw/(2*Q)
+// ── RBJ Biquad ────────────────────────────────────────────────────────────────
+function biquadCoefs(kind: string, f0: number, gainDb: number, Q: number, fs=48000): number[] {
+  const A=Math.pow(10,gainDb/40), w0=2*Math.PI*f0/fs, cw=Math.cos(w0), sw=Math.sin(w0), alpha=sw/(2*Q)
   let b0=1,b1=0,b2=0,a0=1,a1=0,a2=0
-  if (kind==='HP') {
-    b0=(1+cw)/2; b1=-(1+cw); b2=(1+cw)/2
-    a0=1+alpha;  a1=-2*cw;   a2=1-alpha
-  } else if (kind==='LP') {
-    b0=(1-cw)/2; b1=(1-cw); b2=(1-cw)/2
-    a0=1+alpha;  a1=-2*cw;  a2=1-alpha
-  } else if (kind==='PK') {
-    b0=1+alpha*A; b1=-2*cw; b2=1-alpha*A
-    a0=1+alpha/A; a1=-2*cw; a2=1-alpha/A
-  } else if (kind==='LS') {
-    const s2A=2*Math.sqrt(A)*alpha
-    b0=A*((A+1)-(A-1)*cw+s2A); b1=2*A*((A-1)-(A+1)*cw); b2=A*((A+1)-(A-1)*cw-s2A)
-    a0=(A+1)+(A-1)*cw+s2A;     a1=-2*((A-1)+(A+1)*cw);  a2=(A+1)+(A-1)*cw-s2A
-  } else if (kind==='HS') {
-    const s2A=2*Math.sqrt(A)*alpha
-    b0=A*((A+1)+(A-1)*cw+s2A); b1=-2*A*((A-1)+(A+1)*cw); b2=A*((A+1)+(A-1)*cw-s2A)
-    a0=(A+1)-(A-1)*cw+s2A;     a1=2*((A-1)-(A+1)*cw);    a2=(A+1)-(A-1)*cw-s2A
-  }
-  return [b0/a0, b1/a0, b2/a0, 1, a1/a0, a2/a0]
+  if (kind==='HP'){b0=(1+cw)/2;b1=-(1+cw);b2=(1+cw)/2;a0=1+alpha;a1=-2*cw;a2=1-alpha}
+  else if (kind==='LP'){b0=(1-cw)/2;b1=(1-cw);b2=(1-cw)/2;a0=1+alpha;a1=-2*cw;a2=1-alpha}
+  else if (kind==='PK'){b0=1+alpha*A;b1=-2*cw;b2=1-alpha*A;a0=1+alpha/A;a1=-2*cw;a2=1-alpha/A}
+  else if (kind==='LS'){const s=2*Math.sqrt(A)*alpha;b0=A*((A+1)-(A-1)*cw+s);b1=2*A*((A-1)-(A+1)*cw);b2=A*((A+1)-(A-1)*cw-s);a0=(A+1)+(A-1)*cw+s;a1=-2*((A-1)+(A+1)*cw);a2=(A+1)+(A-1)*cw-s}
+  else if (kind==='HS'){const s=2*Math.sqrt(A)*alpha;b0=A*((A+1)+(A-1)*cw+s);b1=-2*A*((A-1)+(A+1)*cw);b2=A*((A+1)+(A-1)*cw-s);a0=(A+1)-(A-1)*cw+s;a1=2*((A-1)-(A+1)*cw);a2=(A+1)-(A-1)*cw-s}
+  return [b0/a0,b1/a0,b2/a0,1,a1/a0,a2/a0]
 }
-function biquadResponse(coefs: number[], freqs: number[], fs=48000): number[] {
-  const [b0,b1,b2,,a1,a2] = coefs
-  return freqs.map(f => {
-    const w = 2*Math.PI*f/fs
-    const re_h = b0+b1*Math.cos(w)+b2*Math.cos(2*w)
-    const im_h = -b1*Math.sin(w)-b2*Math.sin(2*w)
-    const re_d = 1+a1*Math.cos(w)+a2*Math.cos(2*w)
-    const im_d = -a1*Math.sin(w)-a2*Math.sin(2*w)
-    const mag2 = (re_h*re_h+im_h*im_h)/(re_d*re_d+im_d*im_d)
-    return 10*Math.log10(Math.max(mag2, 1e-30))
-  })
+function biquadMagDb(coefs: number[], f: number, fs=48000): number {
+  const [b0,b1,b2,,a1,a2]=coefs, w=2*Math.PI*f/fs
+  const rh=b0+b1*Math.cos(w)+b2*Math.cos(2*w), ih=-b1*Math.sin(w)-b2*Math.sin(2*w)
+  const rd=1+a1*Math.cos(w)+a2*Math.cos(2*w), id=-a1*Math.sin(w)-a2*Math.sin(2*w)
+  return 10*Math.log10(Math.max((rh*rh+ih*ih)/(rd*rd+id*id),1e-30))
 }
 
-// ── SVG Chart helpers ──────────────────────────────────────────────────────────
-const C = { bg:'#090909', panel:'#0e0e0d', champ:'#c9a96e', champ2:'#8a6d3f',
-             text:'#eeebe5', muted:'#6b6760', border:'#1f1e1c', grid:'#181715',
-             blue:'#5b8db8', gold2:'#dfc060' }
-
-function logScale(f: number, fMin: number, fMax: number, w: number): number {
-  return Math.log10(f/fMin)/Math.log10(fMax/fMin)*w
-}
-
-// Smooth polyline using cubic bezier through points
-function smoothPath(pts: [number,number][]): string {
-  if (pts.length < 2) return ''
-  let d = `M ${pts[0][0].toFixed(2)},${pts[0][1].toFixed(2)}`
-  for (let i=1; i<pts.length; i++) {
-    const prev = pts[i-1], curr = pts[i]
-    const prev2 = pts[Math.max(0,i-2)]
-    const next = pts[Math.min(pts.length-1,i+1)]
-    const cp1x = prev[0]+(curr[0]-prev2[0])/6
-    const cp1y = prev[1]+(curr[1]-prev2[1])/6
-    const cp2x = curr[0]-(next[0]-prev[0])/6
-    const cp2y = curr[1]-(next[1]-prev[1])/6
-    d += ` C ${cp1x.toFixed(2)},${cp1y.toFixed(2)} ${cp2x.toFixed(2)},${cp2y.toFixed(2)} ${curr[0].toFixed(2)},${curr[1].toFixed(2)}`
+// ── Smooth bezier path (Catmull-Rom → cubic bezier) ──────────────────────────
+// This is exactly the same algorithm as the product page canvas charts
+function catmullRomPath(pts: [number,number][], tension=0.5): string {
+  if (pts.length<2) return ''
+  let d=`M${pts[0][0].toFixed(2)},${pts[0][1].toFixed(2)}`
+  for (let i=0;i<pts.length-1;i++) {
+    const p0=pts[Math.max(0,i-1)], p1=pts[i], p2=pts[i+1], p3=pts[Math.min(pts.length-1,i+2)]
+    const cp1x=p1[0]+(p2[0]-p0[0])*tension/3
+    const cp1y=p1[1]+(p2[1]-p0[1])*tension/3
+    const cp2x=p2[0]-(p3[0]-p1[0])*tension/3
+    const cp2y=p2[1]-(p3[1]-p1[1])*tension/3
+    d+=` C${cp1x.toFixed(2)},${cp1y.toFixed(2)} ${cp2x.toFixed(2)},${cp2y.toFixed(2)} ${p2[0].toFixed(2)},${p2[1].toFixed(2)}`
   }
   return d
 }
 
-// ── CHART: Frequency Response ──────────────────────────────────────────────────
-function chartFreq(sensDb: number, fLow: number, fHigh: number, eq: any[]): string {
-  const W=800,H=320,PL=50,PR=20,PT=20,PB=40
-  const gw=W-PL-PR, gh=H-PT-PB
-  const FMIN=20,FMAX=25000,DBMIN=55,DBMAX=105
-  const fx=(f:number)=>PL+logScale(f,FMIN,FMAX,gw)
-  const fy=(db:number)=>PT+gh-(db-DBMIN)/(DBMAX-DBMIN)*gh
-  const clampY=(db:number)=>Math.max(PT,Math.min(PT+gh,fy(db)))
+// Log-frequency x mapping
+function logX(f: number, fMin: number, fMax: number, w: number, offX=0): number {
+  return offX+Math.log10(f/fMin)/Math.log10(fMax/fMin)*w
+}
 
-  // Generate 400 frequency points
-  const N=400
+// ── CHART COLORS ──────────────────────────────────────────────────────────────
+const CH='#c9a96e', CH2='rgba(201,169,110,0.08)', BLU='#5b8db8', GRID='#151412', GRID2='#1e1c1a', MUTED='#6b6760', BG='#0c0b0a'
+
+// ── FREQ RESPONSE ─────────────────────────────────────────────────────────────
+function chartFreqResponse(sens: number, fLow: number, fHigh: number, eq: any[]): string {
+  const W=1120,H=480,PL=52,PR=24,PT=24,PB=44,gw=W-PL-PR,gh=H-PT-PB
+  const FMIN=20,FMAX=25000,DBMIN=58,DBMAX=108
+  const fx=(f:number)=>PL+logX(f,FMIN,FMAX,gw)
+  const fy=(db:number)=>PT+gh-(db-DBMIN)/(DBMAX-DBMIN)*gh
+  const cy=(db:number)=>Math.max(PT+1,Math.min(PT+gh-1,fy(db)))
+
+  // 800 log-spaced frequencies for very smooth curve
+  const N=800
   const freqs=Array.from({length:N},(_,i)=>FMIN*Math.pow(FMAX/FMIN,i/(N-1)))
 
-  // Acoustic rolloff model — smooth Butterworth-like rolloffs
-  const baseResp=freqs.map(f=>{
-    let db=sensDb
-    // Low-end 2nd order rolloff
-    const flo=fLow*0.7
-    if(f<flo*2) db+=20*Math.log10(Math.pow(f/flo,2)/Math.sqrt(1+Math.pow(f/flo,4)))
-    // High-end smooth rolloff
-    const fhi=fHigh*1.1
-    if(f>fhi*0.5) db-=Math.max(0,12*Math.log10(f/fhi))
-    // Slight baffle step
-    if(f>400&&f<2000) db+=0.8
+  // Acoustic response model
+  // Low-end: 12dB/oct Butterworth rolloff centred at fLow
+  // High-end: gentle air absorption rolloff above fHigh
+  // Baffle step: +1.5dB around 600Hz-2kHz for wall-mount speaker
+  const acousticDb=(f:number)=>{
+    let db=sens
+    // Low end 2nd-order high-pass at fLow
+    const normLo=f/fLow
+    db+=10*Math.log10(Math.pow(normLo,4)/(1+Math.pow(normLo,4)))
+    // Gentle high end rolloff
+    if(f>fHigh*0.7){
+      const normHi=f/fHigh
+      db-=Math.max(0,10*Math.log10(1+Math.pow(normHi*0.9,4)))
+    }
+    // Slight baffle step / room interaction peak
+    if(f>300&&f<4000){
+      const peak=Math.exp(-0.5*Math.pow(Math.log(f/900)/Math.log(3),2))
+      db+=1.2*peak
+    }
     return db
+  }
+
+  // Apply EQ filters
+  const filterCoefsList = eq.map(b=>{
+    if(b.type==='HP') return biquadCoefs('HP',b.freq,0,b.q||0.707)
+    if(b.type==='LP') return biquadCoefs('LP',b.freq,0,b.q||0.707)
+    return biquadCoefs(b.type||'PK',b.freq,b.gain||0,b.q||1)
   })
 
-  // Apply actual EQ filters
-  let totalResp=[...baseResp]
-  const filterCoefs: number[][] = []
-  for(const band of eq) {
-    if(band.type==='HP') {
-      const c=rbj('HP',band.freq,0,band.q||0.707)
-      const r=biquadResponse(c,freqs)
-      totalResp=totalResp.map((v,i)=>v+r[i])
-      filterCoefs.push(c)
-    } else if(band.type==='LP') {
-      const c=rbj('LP',band.freq,0,band.q||0.707)
-      const r=biquadResponse(c,freqs)
-      totalResp=totalResp.map((v,i)=>v+r[i])
-    } else if(band.gain!=null) {
-      const c=rbj(band.type||'PK',band.freq,band.gain,band.q||1)
-      const r=biquadResponse(c,freqs)
-      totalResp=totalResp.map((v,i)=>v+r[i])
-    }
+  const totalDb=(f:number)=>{
+    let db=acousticDb(f)
+    for(const c of filterCoefsList) db+=biquadMagDb(c,f)
+    return db
   }
 
+  // Sample points — every 4th for path, all for fill
+  const pts: [number,number][] = freqs.map(f=>[fx(f),cy(totalDb(f))])
+  // Subsample to ~200 points for smoother bezier (too many points = overfitting)
+  const step=Math.max(1,Math.floor(pts.length/200))
+  const sampled: [number,number][] = pts.filter((_,i)=>i%step===0||i===pts.length-1)
+
+  const curvePath=catmullRomPath(sampled)
+  const fillPath=`${curvePath} L${(PL+gw).toFixed(1)},${(PT+gh).toFixed(1)} L${PL},${(PT+gh).toFixed(1)} Z`
+
   // Grid
-  let gridLines='', gridLabels=''
-  for(const f of [30,50,100,200,500,1000,2000,5000,10000,20000]) {
+  const gridFs=[20,30,50,100,200,500,1000,2000,5000,10000,20000]
+  const gridDBs=[60,65,70,75,80,85,90,95,100,105]
+  let gridSvg=''
+  for(const f of gridFs){
     const x=fx(f).toFixed(1)
-    gridLines+=`<line x1="${x}" y1="${PT}" x2="${x}" y2="${PT+gh}" stroke="${C.grid}" stroke-width="0.8"/>`
+    const isMajor=f===20||f===100||f===1000||f===10000
+    gridSvg+=`<line x1="${x}" y1="${PT}" x2="${x}" y2="${PT+gh}" stroke="${isMajor?GRID2:GRID}" stroke-width="${isMajor?'0.8':'0.4'}"/>`
     const lbl=f>=1000?`${f/1000}k`:String(f)
-    gridLabels+=`<text x="${x}" y="${PT+gh+16}" text-anchor="middle" fill="${C.muted}" font-size="9" font-family="DM Mono,monospace">${lbl}</text>`
+    gridSvg+=`<text x="${x}" y="${PT+gh+16}" text-anchor="middle" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">${lbl}</text>`
   }
-  for(const db of [60,65,70,75,80,85,90,95,100]) {
+  for(const db of gridDBs){
     const y=fy(db).toFixed(1)
     const isMajor=db%10===0
-    gridLines+=`<line x1="${PL}" y1="${y}" x2="${PL+gw}" y2="${y}" stroke="${isMajor?C.border:C.grid}" stroke-width="${isMajor?0.8:0.4}"/>`
-    if(isMajor) gridLabels+=`<text x="${PL-6}" y="${parseFloat(y)+3}" text-anchor="end" fill="${C.muted}" font-size="9" font-family="DM Mono,monospace">${db}</text>`
+    gridSvg+=`<line x1="${PL}" y1="${y}" x2="${PL+gw}" y2="${y}" stroke="${isMajor?GRID2:GRID}" stroke-width="${isMajor?'0.8':'0.4'}"/>`
+    if(isMajor) gridSvg+=`<text x="${PL-8}" y="${parseFloat(y)+4}" text-anchor="end" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">${db}</text>`
   }
 
-  // Main curve
-  const pts: [number,number][] = freqs.map((f,i)=>[fx(f),clampY(totalResp[i])])
-  const curvePath=smoothPath(pts)
-  const fillPts=`${PL},${PT+gh} ${pts.map(p=>`${p[0].toFixed(2)},${p[1].toFixed(2)}`).join(' ')} ${PL+gw},${PT+gh}`
+  // Sensitivity reference dashed
+  const sensY=fy(sens).toFixed(1)
 
-  // Reference line at sensitivity
-  const sensY=fy(sensDb).toFixed(1)
-
-  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
-    <rect width="${W}" height="${H}" fill="${C.panel}"/>
-    ${gridLines}
-    <polygon points="${fillPts}" fill="${C.champ}" fill-opacity="0.07"/>
-    <path d="${curvePath}" fill="none" stroke="${C.champ}" stroke-width="2" stroke-linejoin="round"/>
-    <line x1="${PL}" y1="${sensY}" x2="${PL+gw}" y2="${sensY}" stroke="${C.champ}" stroke-width="0.5" stroke-dasharray="4,4" opacity="0.4"/>
-    ${gridLabels}
-    <text x="${PL}" y="${H-4}" fill="${C.muted}" font-size="8" font-family="DM Mono,monospace">Hz</text>
-    <text x="8" y="${PT+gh/2}" fill="${C.muted}" font-size="8" font-family="DM Mono,monospace" transform="rotate(-90,8,${PT+gh/2})">dB SPL</text>
-    <text x="${PL+gw}" y="${parseFloat(sensY)-4}" text-anchor="end" fill="${C.champ}" fill-opacity="0.6" font-size="8" font-family="DM Mono,monospace">${sensDb}dB ref</text>
-  </svg>`
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
+  <rect width="${W}" height="${H}" fill="${BG}"/>
+  <clipPath id="clip-fr"><rect x="${PL}" y="${PT}" width="${gw}" height="${gh}"/></clipPath>
+  ${gridSvg}
+  <g clip-path="url(#clip-fr)">
+    <path d="${fillPath}" fill="${CH2}"/>
+    <line x1="${PL}" y1="${sensY}" x2="${PL+gw}" y2="${sensY}" stroke="${CH}" stroke-width="0.6" stroke-dasharray="8,5" opacity="0.35"/>
+    <path d="${curvePath}" fill="none" stroke="${CH}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="${PL}" y="${H-6}" fill="${MUTED}" font-size="10" font-family="DM Mono,monospace">Hz</text>
+  <text x="12" y="${PT+gh/2}" fill="${MUTED}" font-size="10" font-family="DM Mono,monospace" transform="rotate(-90,12,${PT+gh/2})">dB SPL</text>
+  <text x="${PL+gw}" y="${parseFloat(sensY)-6}" text-anchor="end" fill="${CH}" fill-opacity="0.5" font-size="10" font-family="DM Mono,monospace">${sens} dB ref</text>
+</svg>`
 }
 
-// ── CHART: Polar Directivity ───────────────────────────────────────────────────
+// ── POLAR DIRECTIVITY ─────────────────────────────────────────────────────────
 function chartPolar(dirH: number, dirV: number): string {
-  const W=800, H=380, CX=W/2, CY=H/2, R=150
-  const toRad=(d:number)=>d*Math.PI/180
+  const W=1120,H=520,CX=W/2,CY=H/2+10,R=210
+  const toR=(d:number)=>d*Math.PI/180
 
-  // Generate smooth polar beam — use a raised cosine model
-  function beamPattern(bw6dB: number, freqPoints=180): [number,number][][] {
-    const sigma=bw6dB/2
-    const pts: [number,number][] = []
-    for(let i=0; i<=freqPoints; i++) {
-      const angleDeg=-90+i*(180/freqPoints)
-      const angleRad=toRad(angleDeg)
-      // Gaussian beam model
-      const mag=Math.exp(-0.5*Math.pow(angleDeg/sigma,2))
-      // Smooth to zero at edges with raised cosine window
-      const win=0.5+0.5*Math.cos(toRad(angleDeg)*180/bw6dB)
-      const r=R*Math.min(1,Math.max(0,mag))
-      pts.push([CX+r*Math.sin(angleRad), CY-r*Math.cos(angleRad)])
+  // Gaussian beam at given half-angle bandwidth (-6dB points)
+  // sigma = bw/(2*sqrt(2*ln(2))) for true -6dB Gaussian
+  const beamPath=(bwDeg: number, col: string, fillOp: number, strokeOp: number, sw: number)=>{
+    const sigma=bwDeg/2/1.1775  // convert -6dB half-angle to gaussian sigma
+    const pts: string[]=[]
+    // Front hemisphere 180 degrees
+    for(let i=0;i<=360;i++){
+      const deg=i-180
+      const rad=toR(deg)
+      const mag=Math.exp(-0.5*Math.pow(deg/sigma,2))
+      const r=R*Math.max(0,mag)
+      pts.push(`${(CX+r*Math.sin(rad)).toFixed(2)},${(CY-r*Math.cos(rad)).toFixed(2)}`)
     }
-    pts.unshift([CX,CY])
-    pts.push([CX,CY])
-    return [pts]
+    return `<path d="M ${pts.join(' L ')} Z" fill="${col}" fill-opacity="${fillOp}" stroke="${col}" stroke-width="${sw}" stroke-opacity="${strokeOp}" stroke-linejoin="round"/>`
   }
 
-  // Multiple frequency rings for H (250Hz, 1kHz, 4kHz, 8kHz) — narrowing with frequency
-  function hBeamAtFreq(f: number): string {
-    const narrowing=Math.min(1,1000/f)
-    const bw=dirH*Math.sqrt(narrowing)
-    const sigma=bw/2
-    const pts: string[] = []
-    for(let i=0; i<=180; i++) {
-      const a=-90+i
-      const r=R*Math.exp(-0.5*Math.pow(a/sigma,2))
-      const rad=toRad(a)
-      pts.push(`${(CX+r*Math.sin(rad)).toFixed(1)},${(CY-r*Math.cos(rad)).toFixed(1)}`)
+  // Multi-frequency overlay: 500Hz (widest), 1kHz, 2kHz, 4kHz, 8kHz (narrowest)
+  // Beamwidth narrows with frequency — approx proportional to sqrt(1000/f)
+  const hFreqs=[{f:8000,factor:0.35},{f:4000,factor:0.5},{f:2000,factor:0.65},{f:1000,factor:1.0}]
+  const vFreqs=[{f:4000,factor:0.4},{f:1000,factor:1.0}]
+
+  let beams=''
+  for(const {factor} of hFreqs.slice().reverse()){
+    const bw=Math.min(170,dirH*Math.sqrt(factor))
+    beams+=beamPath(bw,CH,0.04,0.3,0.6)
+  }
+  // Main 1kHz H beam
+  beams+=beamPath(dirH,CH,0.14,0.95,2.2)
+  // V beams (blue)
+  for(const {factor} of vFreqs.slice().reverse()){
+    const bw=Math.min(170,dirV*Math.sqrt(factor))
+    beams+=beamPath(bw,BLU,0.03,0.25,0.5)
+  }
+  beams+=beamPath(dirV,BLU,0.10,0.85,1.6)
+
+  // Grid rings
+  let gridSvg=''
+  for(const r of [R*0.25,R*0.5,R*0.75,R]){
+    gridSvg+=`<circle cx="${CX}" cy="${CY}" r="${r.toFixed(1)}" fill="none" stroke="${GRID2}" stroke-width="0.6"/>`
+    if(r<R){
+      const dbLabel=Math.round(-20*Math.log10(R/r))
+      gridSvg+=`<text x="${(CX+r+4).toFixed(1)}" y="${(CY+3).toFixed(1)}" fill="${MUTED}" font-size="9" font-family="DM Mono,monospace">${dbLabel}dB</text>`
     }
-    return `M ${CX},${CY} L ${pts.join(' L ')} Z`
   }
-  function vBeamAtFreq(f: number): string {
-    const narrowing=Math.min(1,1000/f)
-    const bw=dirV*Math.sqrt(narrowing)
-    const sigma=bw/2
-    const pts: string[] = []
-    for(let i=0; i<=180; i++) {
-      const a=-90+i
-      const r=R*Math.exp(-0.5*Math.pow(a/sigma,2))
-      const rad=toRad(a)
-      pts.push(`${(CX+r*Math.sin(rad)).toFixed(1)},${(CY-r*Math.cos(rad)).toFixed(1)}`)
-    }
-    return `M ${CX},${CY} L ${pts.join(' L ')} Z`
+  for(let a=0;a<360;a+=30){
+    const rad=toR(a)
+    gridSvg+=`<line x1="${CX.toFixed(1)}" y1="${CY.toFixed(1)}" x2="${(CX+R*Math.sin(rad)).toFixed(1)}" y2="${(CY-R*Math.cos(rad)).toFixed(1)}" stroke="${GRID}" stroke-width="0.5"/>`
   }
-
-  // Grid
-  let rings='',spokeLines='',ringLabels=''
-  for(const r of [R*0.25,R*0.5,R*0.75,R]) {
-    rings+=`<circle cx="${CX}" cy="${CY}" r="${r.toFixed(1)}" fill="none" stroke="${C.grid}" stroke-width="0.6"/>`
-    const db=Math.round(-6*(R/r-1))
-    if(r<R) ringLabels+=`<text x="${CX+r+3}" y="${CY+3}" fill="${C.muted}" font-size="7.5" font-family="DM Mono,monospace">${db}dB</text>`
-  }
-  for(let a=0; a<360; a+=30) {
-    const rad=toRad(a)
-    spokeLines+=`<line x1="${CX}" y1="${CY}" x2="${(CX+R*Math.sin(rad)).toFixed(1)}" y2="${(CY-R*Math.cos(rad)).toFixed(1)}" stroke="${C.grid}" stroke-width="0.5"/>`
-  }
-  // Angle labels
-  let angleLabels=''
-  for(const [a,lbl] of [[-90,'-90°'],[0,'0°'],[90,'90°']] as [number,string][]) {
-    const rad=toRad(a), rx=CX+(R+18)*Math.sin(rad), ry=CY-(R+18)*Math.cos(rad)
-    angleLabels+=`<text x="${rx.toFixed(1)}" y="${ry.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="${C.muted}" font-size="9" font-family="DM Mono,monospace">${lbl}</text>`
-  }
-
-  // Frequency-dependent beams (1kHz main, faded high freq)
-  const hMain=hBeamAtFreq(1000), h4k=hBeamAtFreq(4000), h8k=hBeamAtFreq(8000)
-  const vMain=vBeamAtFreq(1000), v4k=vBeamAtFreq(4000)
+  // Axis labels
+  gridSvg+=`<text x="${CX}" y="${CY-R-10}" text-anchor="middle" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">0°</text>`
+  gridSvg+=`<text x="${CX+R+14}" y="${CY+4}" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">90°</text>`
+  gridSvg+=`<text x="${CX-R-14}" y="${CY+4}" text-anchor="end" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">−90°</text>`
 
   // Legend
-  const legY=H-14
-  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
-    <rect width="${W}" height="${H}" fill="${C.panel}"/>
-    ${rings}${spokeLines}${ringLabels}${angleLabels}
-    <path d="${h8k}" fill="${C.champ}" fill-opacity="0.04" stroke="${C.champ}" stroke-width="0.4" stroke-opacity="0.3"/>
-    <path d="${h4k}" fill="${C.champ}" fill-opacity="0.07" stroke="${C.champ}" stroke-width="0.6" stroke-opacity="0.5"/>
-    <path d="${hMain}" fill="${C.champ}" fill-opacity="0.13" stroke="${C.champ}" stroke-width="1.8" stroke-opacity="0.9"/>
-    <path d="${v4k}" fill="${C.blue}" fill-opacity="0.05" stroke="${C.blue}" stroke-width="0.6" stroke-opacity="0.4"/>
-    <path d="${vMain}" fill="${C.blue}" fill-opacity="0.10" stroke="${C.blue}" stroke-width="1.4" stroke-opacity="0.8"/>
-    <line x1="${CX}" y1="20" x2="${CX}" y2="${H-20}" stroke="${C.border}" stroke-width="0.6"/>
-    <text x="${CX+8}" y="${CY-R-4}" fill="${C.muted}" font-size="8" font-family="DM Mono,monospace">0°</text>
-    <rect x="30" y="${legY-8}" width="20" height="2" fill="${C.champ}"/>
-    <text x="56" y="${legY+1}" fill="${C.muted}" font-size="9" font-family="DM Mono,monospace">H ${dirH}° (1kHz)</text>
-    <rect x="180" y="${legY-8}" width="20" height="2" fill="${C.blue}"/>
-    <text x="206" y="${legY+1}" fill="${C.muted}" font-size="9" font-family="DM Mono,monospace">V ${dirV}° (1kHz)</text>
-    <text x="${W-30}" y="${legY+1}" text-anchor="end" fill="${C.muted}" font-size="8" font-family="DM Mono,monospace">Gaussian beam model · –6dB points</text>
-  </svg>`
+  const legY=H-16
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
+  <rect width="${W}" height="${H}" fill="${BG}"/>
+  ${gridSvg}
+  ${beams}
+  <line x1="${CX}" y1="${CY-R-6}" x2="${CX}" y2="${CY+R+6}" stroke="${GRID2}" stroke-width="0.7"/>
+  <rect x="40" y="${legY-9}" width="26" height="2.5" fill="${CH}"/>
+  <text x="72" y="${legY+1}" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">H ${dirH}° (−6dB, 1 kHz)</text>
+  <rect x="320" y="${legY-9}" width="20" height="2.5" fill="${BLU}"/>
+  <text x="346" y="${legY+1}" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">V ${dirV}° (−6dB, 1 kHz)</text>
+  <text x="${W-40}" y="${legY+1}" text-anchor="end" fill="${MUTED}" font-size="10" font-family="DM Mono,monospace">Gaussian beam model · multi-frequency overlay</text>
+</svg>`
 }
 
-// ── CHART: SPL vs Distance ────────────────────────────────────────────────────
+// ── SPL vs DISTANCE ───────────────────────────────────────────────────────────
 function chartSPL(sens: number, powerRms: number, powerPeak: number): string {
-  const W=800,H=320,PL=52,PR=20,PT=20,PB=40
-  const gw=W-PL-PR, gh=H-PT-PB
-  const DMIN=0.5,DMAX=20,DBMIN=50,DBMAX=122
-  const dx=(d:number)=>PL+logScale(d,DMIN,DMAX,gw)
+  const W=1120,H=480,PL=54,PR=24,PT=24,PB=44,gw=W-PL-PR,gh=H-PT-PB
+  const DMIN=0.3,DMAX=25,DBMIN=48,DBMAX=128
+  const dx=(d:number)=>PL+logX(d,DMIN,DMAX,gw)
   const dy=(db:number)=>PT+gh-(db-DBMIN)/(DBMAX-DBMIN)*gh
-  const clamp=(db:number)=>Math.max(PT,Math.min(PT+gh,dy(db)))
+  const cy=(db:number)=>Math.max(PT+1,Math.min(PT+gh-1,dy(db)))
 
-  const dists=[0.5,0.75,1,1.5,2,3,4,5,6,8,10,12,15,20]
-  let gridLines='',gridLabels=''
-  for(const d of [0.5,1,2,5,10,20]) {
+  const dists=[0.3,0.5,0.75,1,1.5,2,3,4,5,6,8,10,12,15,20,25]
+  const splAt=(d:number,pwr:number)=>sens+10*Math.log10(pwr)-20*Math.log10(d)
+
+  // Grid
+  let gridSvg=''
+  for(const d of [0.5,1,2,5,10,20]){
     const x=dx(d).toFixed(1)
-    gridLines+=`<line x1="${x}" y1="${PT}" x2="${x}" y2="${PT+gh}" stroke="${C.grid}" stroke-width="0.8"/>`
-    gridLabels+=`<text x="${x}" y="${PT+gh+16}" text-anchor="middle" fill="${C.muted}" font-size="9" font-family="DM Mono,monospace">${d}m</text>`
+    gridSvg+=`<line x1="${x}" y1="${PT}" x2="${x}" y2="${PT+gh}" stroke="${GRID2}" stroke-width="0.8"/>`
+    gridSvg+=`<text x="${x}" y="${PT+gh+16}" text-anchor="middle" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">${d}m</text>`
   }
-  for(const db of [60,70,80,90,100,110,120]) {
+  for(const db of [60,70,80,90,100,110,120]){
     const y=dy(db).toFixed(1)
-    gridLines+=`<line x1="${PL}" y1="${y}" x2="${PL+gw}" y2="${y}" stroke="${db===90||db===100?C.border:C.grid}" stroke-width="${db===90||db===100?'0.8':'0.4'}"/>`
-    gridLabels+=`<text x="${PL-6}" y="${parseFloat(y)+3}" text-anchor="end" fill="${C.muted}" font-size="9" font-family="DM Mono,monospace">${db}</text>`
+    gridSvg+=`<line x1="${PL}" y1="${y}" x2="${PL+gw}" y2="${y}" stroke="${db===90||db===100?GRID2:GRID}" stroke-width="${db===90||db===100?'0.8':'0.4'}"/>`
+    gridSvg+=`<text x="${PL-8}" y="${parseFloat(y)+4}" text-anchor="end" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">${db}</text>`
   }
 
-  function curve(pwr: number): string {
-    const pts: [number,number][] = dists.map(d=>{
-      const db=sens+10*Math.log10(pwr)-20*Math.log10(d)
-      return [dx(d), clamp(db)]
-    })
-    return smoothPath(pts)
-  }
+  // Curve points
+  const rmsP: [number,number][]=dists.map(d=>[dx(d),cy(splAt(d,powerRms))])
+  const peakP: [number,number][]=dists.map(d=>[dx(d),cy(splAt(d,powerPeak))])
 
-  // Pain threshold & hearing damage lines
-  const painY=dy(120).toFixed(1)
+  const rmsCurve=catmullRomPath(rmsP,0.4)
+  const peakCurve=catmullRomPath(peakP,0.4)
+  const rmsFill=`${rmsCurve} L${(PL+gw).toFixed(1)},${(PT+gh).toFixed(1)} L${PL},${(PT+gh).toFixed(1)} Z`
+
+  const splRms=Math.round(splAt(1,powerRms))
+  const splPeak=Math.round(splAt(1,powerPeak))
+
+  // Hearing damage ref
   const damageY=dy(85).toFixed(1)
 
-  // SPL at 1m labels
-  const splRmsAt1=Math.round(sens+10*Math.log10(powerRms))
-  const splPeakAt1=Math.round(sens+10*Math.log10(powerPeak))
-
-  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
-    <rect width="${W}" height="${H}" fill="${C.panel}"/>
-    ${gridLines}
-    <line x1="${PL}" y1="${damageY}" x2="${PL+gw}" y2="${damageY}" stroke="#c9a96e" stroke-width="0.5" stroke-dasharray="6,4" opacity="0.25"/>
-    <text x="${PL+gw-4}" y="${parseFloat(damageY)-3}" text-anchor="end" fill="${C.muted}" font-size="7.5" font-family="DM Mono,monospace" opacity="0.5">85 dB — hearing risk</text>
-    <path d="${curve(powerRms)}" fill="none" stroke="${C.champ}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="${curve(powerPeak)}" fill="none" stroke="${C.gold2}" stroke-width="1.4" stroke-dasharray="7,3" stroke-linecap="round"/>
-    ${gridLabels}
-    <text x="${PL}" y="${H-4}" fill="${C.muted}" font-size="8" font-family="DM Mono,monospace">Distance</text>
-    <text x="10" y="${PT+gh/2}" fill="${C.muted}" font-size="8" font-family="DM Mono,monospace" transform="rotate(-90,10,${PT+gh/2})">dB SPL</text>
-    <rect x="30" y="${H-16}" width="22" height="2" fill="${C.champ}"/>
-    <text x="58" y="${H-12}" fill="${C.muted}" font-size="9" font-family="DM Mono,monospace">RMS — ${powerRms}W · ${splRmsAt1}dB @ 1m</text>
-    <rect x="280" y="${H-16}" width="18" height="2" fill="${C.gold2}" stroke-dasharray="4,3"/>
-    <text x="304" y="${H-12}" fill="${C.muted}" font-size="9" font-family="DM Mono,monospace">Peak — ${powerPeak}W · ${splPeakAt1}dB @ 1m</text>
-  </svg>`
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
+  <rect width="${W}" height="${H}" fill="${BG}"/>
+  <clipPath id="clip-spl"><rect x="${PL}" y="${PT}" width="${gw}" height="${gh}"/></clipPath>
+  ${gridSvg}
+  <g clip-path="url(#clip-spl)">
+    <line x1="${PL}" y1="${damageY}" x2="${PL+gw}" y2="${damageY}" stroke="${CH}" stroke-width="0.7" stroke-dasharray="10,6" opacity="0.2"/>
+    <path d="${rmsFill}" fill="${CH2}"/>
+    <path d="${rmsCurve}" fill="none" stroke="${CH}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="${peakCurve}" fill="none" stroke="#dfc060" stroke-width="1.5" stroke-dasharray="10,4" stroke-linecap="round"/>
+  </g>
+  ${gridSvg.match(/<text[^>]*>\d+m<\/text>/g)||[]}
+  <text x="${PL}" y="${H-6}" fill="${MUTED}" font-size="10" font-family="DM Mono,monospace">Distance</text>
+  <text x="12" y="${PT+gh/2}" fill="${MUTED}" font-size="10" font-family="DM Mono,monospace" transform="rotate(-90,12,${PT+gh/2})">dB SPL</text>
+  <text x="${parseFloat(damageY)}" y="${parseFloat(damageY)-5}" fill="${MUTED}" font-size="9" font-family="DM Mono,monospace" opacity="0.45">85 dB — hearing risk</text>
+  <rect x="40" y="${H-18}" width="28" height="2.5" fill="${CH}"/>
+  <text x="74" y="${H-13}" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">RMS ${powerRms}W · ${splRms} dB @ 1m</text>
+  <rect x="340" y="${H-18}" width="22" height="2.5" fill="#dfc060"/>
+  <text x="368" y="${H-13}" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">Peak ${powerPeak}W · ${splPeak} dB @ 1m</text>
+</svg>`
 }
 
-// ── CHART: EQ Response ─────────────────────────────────────────────────────────
+// ── EQ RESPONSE ───────────────────────────────────────────────────────────────
 function chartEQ(eq: any[]): string {
-  const W=800,H=320,PL=50,PR=20,PT=20,PB=40
-  const gw=W-PL-PR, gh=H-PT-PB
+  const W=1120,H=380,PL=52,PR=24,PT=24,PB=44,gw=W-PL-PR,gh=H-PT-PB
   const FMIN=20,FMAX=25000,DBMIN=-18,DBMAX=12
-  const fx=(f:number)=>PL+logScale(f,FMIN,FMAX,gw)
-  const fy=(db:number)=>PT+gh/2-(db/((DBMAX-DBMIN)/2))*(gh/2)
-  const clamp=(db:number)=>Math.max(PT,Math.min(PT+gh,fy(db)))
+  const fx=(f:number)=>PL+logX(f,FMIN,FMAX,gw)
+  const fy=(db:number)=>PT+(gh/2)-(db/((DBMAX-DBMIN)/2))*(gh/2)
+  const cy=(db:number)=>Math.max(PT+1,Math.min(PT+gh-1,fy(db)))
   const zeroY=(PT+gh/2).toFixed(1)
 
-  const N=500
+  const N=600
   const freqs=Array.from({length:N},(_,i)=>FMIN*Math.pow(FMAX/FMIN,i/(N-1)))
 
-  let gridLines='',gridLabels=''
-  for(const f of [30,50,100,200,500,1000,2000,5000,10000,20000]) {
+  let gridSvg=''
+  for(const f of [20,30,50,100,200,500,1000,2000,5000,10000,20000]){
     const x=fx(f).toFixed(1)
-    gridLines+=`<line x1="${x}" y1="${PT}" x2="${x}" y2="${PT+gh}" stroke="${C.grid}" stroke-width="0.8"/>`
-    gridLabels+=`<text x="${x}" y="${PT+gh+16}" text-anchor="middle" fill="${C.muted}" font-size="9" font-family="DM Mono,monospace">${f>=1000?f/1000+'k':f}</text>`
+    const isMajor=f===100||f===1000||f===10000
+    gridSvg+=`<line x1="${x}" y1="${PT}" x2="${x}" y2="${PT+gh}" stroke="${isMajor?GRID2:GRID}" stroke-width="${isMajor?'0.8':'0.4'}"/>`
+    gridSvg+=`<text x="${x}" y="${PT+gh+16}" text-anchor="middle" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">${f>=1000?f/1000+'k':f}</text>`
   }
-  for(const db of [-12,-9,-6,-3,0,3,6,9]) {
+  for(const db of [-12,-9,-6,-3,0,3,6,9]){
     const y=fy(db).toFixed(1)
-    gridLines+=`<line x1="${PL}" y1="${y}" x2="${PL+gw}" y2="${y}" stroke="${db===0?C.border:C.grid}" stroke-width="${db===0?'1':'0.4'}"/>`
-    gridLabels+=`<text x="${PL-6}" y="${parseFloat(y)+3}" text-anchor="end" fill="${C.muted}" font-size="9" font-family="DM Mono,monospace">${db>0?'+':''}${db}</text>`
+    gridSvg+=`<line x1="${PL}" y1="${y}" x2="${PL+gw}" y2="${y}" stroke="${db===0?'#2a2826':GRID}" stroke-width="${db===0?'1':'0.4'}"/>`
+    gridSvg+=`<text x="${PL-8}" y="${parseFloat(y)+4}" text-anchor="end" fill="${MUTED}" font-size="11" font-family="DM Mono,monospace">${db>0?'+':''}${db}</text>`
   }
 
-  if (!eq.length) {
-    return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
-      <rect width="${W}" height="${H}" fill="${C.panel}"/>
-      ${gridLines}${gridLabels}
-      <line x1="${PL}" y1="${zeroY}" x2="${PL+gw}" y2="${zeroY}" stroke="${C.champ}" stroke-width="2"/>
-      <text x="${W/2}" y="${H/2}" text-anchor="middle" fill="${C.muted}" font-size="11" font-family="DM Sans,sans-serif">Flat — No EQ applied</text>
-    </svg>`
+  if(!eq.length){
+    return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
+  <rect width="${W}" height="${H}" fill="${BG}"/>
+  ${gridSvg}
+  <line x1="${PL}" y1="${zeroY}" x2="${PL+gw}" y2="${zeroY}" stroke="${CH}" stroke-width="2.5"/>
+  <text x="${W/2}" y="${H/2+4}" text-anchor="middle" fill="${MUTED}" font-size="14" font-family="DM Sans,sans-serif">Flat — No EQ applied</text>
+</svg>`
   }
 
-  // Compute total response and individual bands
-  const totalDb=freqs.map((_,i)=>{
-    let db=0
-    for(const band of eq) {
-      if(band.type==='HP') {
-        const c=rbj('HP',band.freq,0,band.q||0.707)
-        db+=biquadResponse(c,[freqs[i]])[0]
-      } else if(band.type==='LP') {
-        const c=rbj('LP',band.freq,0,band.q||0.707)
-        db+=biquadResponse(c,[freqs[i]])[0]
-      } else if(band.gain!=null) {
-        const c=rbj(band.type||'PK',band.freq,band.gain,band.q||1)
-        db+=biquadResponse(c,[freqs[i]])[0]
-      }
-    }
-    return db
+  // Per-band coefs
+  const allCoefs=eq.map(b=>{
+    if(b.type==='HP') return {coef:biquadCoefs('HP',b.freq,0,b.q||0.707),band:b}
+    if(b.type==='LP') return {coef:biquadCoefs('LP',b.freq,0,b.q||0.707),band:b}
+    return {coef:biquadCoefs(b.type||'PK',b.freq,b.gain||0,b.q||1),band:b}
   })
 
-  // Individual band curves (dashed, faded)
-  const bandColors=['#c9a96e99','#5b8db899','#a06fc099','#6fac6099']
-  let bandPaths=''
-  eq.forEach((band,bi) => {
-    const bandDb=freqs.map((f)=>{
-      if(band.type==='HP') return biquadResponse(rbj('HP',band.freq,0,band.q||0.707),[f])[0]
-      if(band.type==='LP') return biquadResponse(rbj('LP',band.freq,0,band.q||0.707),[f])[0]
-      if(band.gain!=null) return biquadResponse(rbj(band.type||'PK',band.freq,band.gain,band.q||1),[f])[0]
-      return 0
+  // Individual band paths (dashed)
+  const bandCols=['rgba(201,169,110,0.65)','rgba(91,141,184,0.65)','rgba(160,111,192,0.65)','rgba(111,172,96,0.65)']
+  let bandSvg=''
+  allCoefs.forEach(({coef,band},bi)=>{
+    const bpts: [number,number][]=[]
+    const step=Math.max(1,Math.floor(freqs.length/150))
+    freqs.filter((_,i)=>i%step===0||i===freqs.length-1).forEach(f=>{
+      bpts.push([fx(f),cy(biquadMagDb(coef,f))])
     })
-    const bpts: [number,number][]=freqs.map((f,i)=>[fx(f),clamp(bandDb[i])])
-    const bpath=smoothPath(bpts)
-    const col=bandColors[bi%bandColors.length]
-    bandPaths+=`<path d="${bpath}" fill="none" stroke="${col}" stroke-width="1" stroke-dasharray="5,3"/>`
-    // Band label at peak frequency
-    const peakX=fx(band.freq).toFixed(1)
-    const peakY=clamp(band.gain||0)
-    const lbl=band.type==='HP'?`HP ${band.freq}Hz`:band.type==='LP'?`LP ${band.freq}Hz`:`${band.gain>0?'+':''}${band.gain}dB @ ${band.freq>=1000?band.freq/1000+'k':band.freq}Hz`
-    bandPaths+=`<circle cx="${peakX}" cy="${peakY.toFixed(1)}" r="3" fill="${col}"/>
-      <text x="${peakX}" y="${(peakY-6).toFixed(1)}" text-anchor="middle" fill="${col}" font-size="7.5" font-family="DM Mono,monospace">${lbl}</text>`
+    const bpath=catmullRomPath(bpts,0.45)
+    const col=bandCols[bi%bandCols.length]
+    bandSvg+=`<path d="${bpath}" fill="none" stroke="${col}" stroke-width="1.2" stroke-dasharray="8,4"/>`
+    // Label at the band frequency
+    const labelX=fx(band.freq), labelDb=band.gain!=null?band.gain:0
+    const labelY=cy(labelDb*0.5)
+    const lbl=band.type==='HP'?`HP`:band.type==='LP'?`LP`:(band.gain>0?'+':'')+band.gain+'dB'
+    bandSvg+=`<circle cx="${labelX.toFixed(1)}" cy="${cy(biquadMagDb(coef,band.freq)).toFixed(1)}" r="3.5" fill="${col}"/>`
+    bandSvg+=`<text x="${labelX.toFixed(1)}" y="${(labelY-8).toFixed(1)}" text-anchor="middle" fill="${col}" font-size="9.5" font-family="DM Mono,monospace">${lbl}</text>`
   })
 
-  const totalPts: [number,number][]=freqs.map((f,i)=>[fx(f),clamp(totalDb[i])])
-  const totalPath=smoothPath(totalPts)
-  const fillPts=`${PL},${zeroY} ${totalPts.map(p=>`${p[0].toFixed(2)},${p[1].toFixed(2)}`).join(' ')} ${PL+gw},${zeroY}`
+  // Total combined response
+  const totalPts: [number,number][]=[]
+  const step=Math.max(1,Math.floor(freqs.length/200))
+  freqs.filter((_,i)=>i%step===0||i===freqs.length-1).forEach(f=>{
+    const db=allCoefs.reduce((sum,{coef})=>sum+biquadMagDb(coef,f),0)
+    totalPts.push([fx(f),cy(db)])
+  })
+  const totalPath=catmullRomPath(totalPts,0.45)
+  const fillPath=`${totalPath} L${(PL+gw).toFixed(1)},${zeroY} L${PL},${zeroY} Z`
 
-  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
-    <rect width="${W}" height="${H}" fill="${C.panel}"/>
-    ${gridLines}
-    ${bandPaths}
-    <polygon points="${fillPts}" fill="${C.champ}" fill-opacity="0.08"/>
-    <path d="${totalPath}" fill="none" stroke="${C.champ}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <line x1="${PL}" y1="${zeroY}" x2="${PL+gw}" y2="${zeroY}" stroke="${C.border}" stroke-width="0.8"/>
-    ${gridLabels}
-    <text x="${PL}" y="${H-4}" fill="${C.muted}" font-size="8" font-family="DM Mono,monospace">Hz</text>
-    <text x="10" y="${PT+gh/2}" fill="${C.muted}" font-size="8" font-family="DM Mono,monospace" transform="rotate(-90,10,${PT+gh/2})">dB</text>
-  </svg>`
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
+  <rect width="${W}" height="${H}" fill="${BG}"/>
+  <clipPath id="clip-eq"><rect x="${PL}" y="${PT}" width="${gw}" height="${gh}"/></clipPath>
+  ${gridSvg}
+  <g clip-path="url(#clip-eq)">
+    ${bandSvg}
+    <path d="${fillPath}" fill="${CH2}"/>
+    <line x1="${PL}" y1="${zeroY}" x2="${PL+gw}" y2="${zeroY}" stroke="#2a2826" stroke-width="0.8"/>
+    <path d="${totalPath}" fill="none" stroke="${CH}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="${PL}" y="${H-6}" fill="${MUTED}" font-size="10" font-family="DM Mono,monospace">Hz</text>
+  <text x="12" y="${PT+gh/2}" fill="${MUTED}" font-size="10" font-family="DM Mono,monospace" transform="rotate(-90,12,${PT+gh/2})">dB</text>
+</svg>`
 }
 
-// ── Page chrome builders ───────────────────────────────────────────────────────
-function hdr(name: string, n: number, total: number) {
+// ── EQ FILTER TABLE ───────────────────────────────────────────────────────────
+function eqFilterTable(eq: any[], profileName: string): string {
+  if(!eq.length) return `<div class="eq-empty">No EQ filters defined — response is flat.</div>`
+  const rows=eq.map((b:any,i:number)=>{
+    const freqLabel=b.freq>=1000?`${(b.freq/1000).toFixed(1)} kHz`:`${b.freq} Hz`
+    const gainLabel=b.gain!=null?(b.gain>0?'+':'')+b.gain+' dB':'—'
+    return `<div class="eq-row">
+      <div class="eq-cell eq-num">${i+1}</div>
+      <div class="eq-cell">${b.type}</div>
+      <div class="eq-cell">${freqLabel}</div>
+      <div class="eq-cell">${gainLabel}</div>
+      <div class="eq-cell">${b.q||'—'}</div>
+    </div>`
+  }).join('')
+  return `<div class="eq-table">
+    <div class="eq-head">
+      <div class="eq-cell eq-num">#</div>
+      <div class="eq-cell">Type</div>
+      <div class="eq-cell">Frequency</div>
+      <div class="eq-cell">Gain</div>
+      <div class="eq-cell">Q</div>
+    </div>
+    ${rows}
+  </div>
+  <div class="eq-note">Profile: ${profileName} · RBJ biquad cascade · fs = 48 kHz (ADAU1701 DSP)</div>`
+}
+
+// ── PAGE CHROME ───────────────────────────────────────────────────────────────
+function pageHdr(name: string, n: number, total: number): string {
   return `<div class="ph"><span class="phl">XSCACE · ${name.toUpperCase()}</span><span class="phn">${n} / ${total}</span></div>`
 }
-function ftr() {
-  return `<div class="ft"><span class="ftl">XSCACE · Size Defying Sound · xscace.com</span><span class="ftr">Technical Specification Document</span></div>`
+function pageFtr(): string {
+  return `<div class="ft"><span class="ftl">XSCACE · xscace.com · support@xscace.com</span><span class="ftr">Technical Specification Document</span></div>`
 }
-function specRow(l: string, v: string) {
-  return `<div class="sr"><span class="sl">${l}</span><span class="sv">${v}</span></div>`
+function sr(label: string, value: string): string {
+  if(!value||value==='—') return `<div class="sr sr-empty"><span class="sl">${label}</span><span class="sv">—</span></div>`
+  return `<div class="sr"><span class="sl">${label}</span><span class="sv">${value}</span></div>`
 }
 
-// ── Main handler ───────────────────────────────────────────────────────────────
-export async function GET(_req: NextRequest, { params }: { params: Promise<{slug: string}> }) {
+// ── MAIN HANDLER ──────────────────────────────────────────────────────────────
+export async function GET(_req: NextRequest, { params }: { params: Promise<{slug:string}> }) {
   const { slug } = await params
   try {
     const P: any = await sanity.fetch(`*[_type=="product"&&slug.current=="${slug}"&&status=="Active"][0]{
-      _id, productName, productFullName, tagline, shortDescription, series, skuBase,
-      sensitivityDb, powerRmsW, powerPeakW, impedanceOhms, splMaxDb, thdN,
-      freqLowHz, freqHighHz, freqQualifier, directivityHDeg, directivityVDeg,
-      heightMm, widthMm, depthMm, weightKg, driverDescription, crossoverType,
-      housingMaterial, grilleMaterial, speakerWireConnector, wireGaugeRecommended,
-      ipRating, mountingMethods, launchYear, eqData, eqProfileName, specConfidence,
-      proprietaryTechBadges, heroImage, specSheetRef, specSheetHash
+      _id,productName,productFullName,tagline,shortDescription,series,skuBase,skuVariants,
+      sensitivityDb,powerRmsW,powerPeakW,impedanceOhms,splMaxDb,thdN,
+      freqLowHz,freqHighHz,freqQualifier,directivityHDeg,directivityVDeg,
+      heightMm,widthMm,depthMm,diameterMm,weightKg,driverDescription,crossoverType,crossoverFrequency,
+      housingMaterial,grilleMaterial,speakerWireConnector,wireGaugeRecommended,
+      ipRating,mountingMethods,launchYear,fireRating,paintableGrille,
+      eqData,eqProfileName,specConfidence,proprietaryTechBadges,
+      heroImage,specSheetRef,specSheetHash
     }`)
-    if (!P) return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+    if(!P) return NextResponse.json({error:'Product not found'},{status:404})
 
     // Cache
-    const h = Buffer.from(`${P.productName}${P.powerRmsW}${P.sensitivityDb}${P.eqData}v2ls`).toString('base64').replace(/\W/g,'').slice(0,12)
-    if (P.specSheetRef && P.specSheetHash === h) {
-      const cdn = fileCdn(P.specSheetRef)
-      const head = await fetch(cdn, { method: 'HEAD' }).catch(()=>null)
-      if (head && (head.ok || head.status===403)) return NextResponse.redirect(cdn, 302)
+    const h=Buffer.from(`${P.productName}${P.powerRmsW}${P.sensitivityDb}${P.eqData||''}v3ss`).toString('base64').replace(/\W/g,'').slice(0,12)
+    if(P.specSheetRef&&P.specSheetHash===h){
+      const cdn=fileCdn(P.specSheetRef)
+      const head=await fetch(cdn,{method:'HEAD'}).catch(()=>null)
+      if(head&&(head.ok||head.status===403)) return NextResponse.redirect(cdn,302)
     }
 
-    // Hero
-    const hero = await imgB64(getRef(P.heroImage), 500)
-
-    // Fonts
-    const fontCss = loadFontCss()
+    const hero=await imgB64(getRef(P.heroImage),600)
+    const fontCss=loadFontCss()
 
     // Parse EQ
-    const eq: any[] = []
-    for (const line of (P.eqData||'').split('\n').slice(1)) {
-      const p = line.trim().split(',')
-      if (p.length<2) continue
-      if (p[0]==='HP'||p[0]==='LP') eq.push({type:p[0],freq:parseFloat(p[1]),gain:null,q:parseFloat(p[2]||'0.707')})
-      else eq.push({type:p[2]||'PK',freq:parseFloat(p[0]),gain:parseFloat(p[1]),q:parseFloat(p[3]||'1')})
+    const eq: any[]=[]
+    for(const line of (P.eqData||'').split('\n').slice(1)){
+      const p=line.trim().split(',')
+      if(p.length<2) continue
+      if(p[0]==='HP'||p[0]==='LP') eq.push({type:p[0],freq:parseFloat(p[1]),gain:null,q:parseFloat(p[2]||'0.707')})
+      else if(!isNaN(parseFloat(p[0]))) eq.push({type:p[2]||'PK',freq:parseFloat(p[0]),gain:parseFloat(p[1]),q:parseFloat(p[3]||'1')})
     }
 
-    // Tech
-    const tech = (P.proprietaryTechBadges||'').split(',')
-      .map((b:string)=>b.trim().replace(/™/g,'').replace(/\s+/g,' ').trim()).filter(Boolean)
-    const techData = tech.map((badge:string)=>({name:badge, img:techIconB64(badge)}))
-
-    const TECH_DESC: Record<string,string> = {
-      'psysculpt':            'Built on the ADAU1701 DSP, PsySculpt implements a psychoacoustically aware EQ curve based on Fletcher-Munson equal-loudness contours, applying dynamic pre-compensation so tonal balance stays consistent from background listening levels to concert SPL.',
-      'xs-flow':              'Micro-waveguide geometry is precision-machined into the internal face of each enclosure. XS-Flow channels the rearward acoustic wave around the magnet structure, reducing compression and harmonic distortion at high excursion.',
-      'nano resonance':       'By engineering an intentionally heavy cone mass, Nano Resonance forces the natural resonant frequency well below the target passband, allowing genuine low-frequency extension from an enclosure only 12-23mm deep — defying the constraints of Hoffman\'s Iron Law.',
-      'precisionxover array': 'Each crossover network is assembled with air-core inductors (no ferrous saturation), polypropylene film capacitors (low ESR, stable across temperature), and metal-film resistors. Component matching is held to ±0.5 dB for inaudible channel-to-channel variation.',
-      'aeroframe chassis':    '6061 aerospace-grade aluminium is machined to form the speaker\'s structural chassis, acting as a passive heatsink that draws heat away from the voice coil through direct thermal coupling to the body — eliminating thermal compression without fans or active cooling.',
-      'powerdense dynamics':  'The voice coil is wound with a copper-silver composite conductor — copper for electrical conductivity, silver for reduced skin effect at high frequencies — allowing significantly higher continuous power in the same former diameter, raising the thermal ceiling without increasing coil mass.',
+    // Tech badges
+    const tech=(P.proprietaryTechBadges||'').split(',').map((b:string)=>b.trim().replace(/™/g,'').replace(/\s+/g,' ').trim()).filter(Boolean)
+    const TECH_DESC: Record<string,string>={
+      'psysculpt':'ADAU1701 DSP implementing Fletcher-Munson equal-loudness compensation. Pre-Comp → Loudness L&H → Post-Comp → Log-Decay Peak Detector → Dynamic Bass → DAC. Tonal balance stays consistent from background levels to concert SPL.',
+      'xs-flow':'Micro-waveguide geometry precision-machined into the enclosure interior. Channels the rearward acoustic wave around the magnet structure, reducing compression and harmonic distortion at high excursion.',
+      'nano resonance':'Intentionally heavy cone mass forces the natural resonant frequency well below the target passband — genuine low-frequency extension from an enclosure only 12–23 mm deep, defying Hoffman\'s Iron Law.',
+      'precisionxover array':'Air-core inductors, polypropylene film capacitors and metal-film resistors. Component matching held to ±0.5 dB for inaudible channel-to-channel variation across the array.',
+      'aeroframe chassis':'6061 aerospace aluminium machined as the structural chassis, acting as a passive heatsink drawing heat away from the voice coil through direct thermal coupling — no fans, no thermal compression.',
+      'powerdense dynamics':'Copper-silver composite voice coil conductor. Significantly higher continuous power in the same former diameter — higher thermal ceiling without increasing coil mass or inductance.',
     }
 
     // Charts
-    const sens = P.sensitivityDb||90
-    const frChart    = chartFreq(sens, P.freqLowHz||80, P.freqHighHz||20000, eq)
-    const polChart   = chartPolar(P.directivityHDeg||140, P.directivityVDeg||25)
-    const splChart   = chartSPL(sens, P.powerRmsW||1, P.powerPeakW||1)
-    const eqChart    = chartEQ(eq)
+    const sens=P.sensitivityDb||90
+    const frChart=chartFreqResponse(sens,P.freqLowHz||100,P.freqHighHz||20000,eq)
+    const polChart=chartPolar(P.directivityHDeg||140,P.directivityVDeg||25)
+    const splChart=chartSPL(sens,P.powerRmsW||1,P.powerPeakW||2)
+    const eqChart=chartEQ(eq)
+    const eqTable=eqFilterTable(eq,P.eqProfileName||'Default')
 
-    const TOTAL = 6
+    // Dimensions string
+    const dims=P.diameterMm?`⌀ ${P.diameterMm} mm`:`${P.heightMm||'—'} × ${P.widthMm||'—'} × ${P.depthMm||'—'} mm`
 
-    const css = `
+    const TOTAL=tech.length>0?7:6
+
+    // ── CSS ──────────────────────────────────────────────────────────────────
+    const css=`
 ${fontCss}
 *{margin:0;padding:0;box-sizing:border-box}
 @page{size:297mm 210mm;margin:0}
 body{font-family:'DM Sans',Helvetica,sans-serif;background:#090909;color:#eeebe5;width:297mm}
-.page{width:297mm;height:210mm;position:relative;overflow:hidden;background:#090909;page-break-after:always;display:flex;flex-direction:column}
+.page{width:297mm;height:210mm;overflow:hidden;background:#090909;page-break-after:always;display:flex;flex-direction:column}
 .page:last-child{page-break-after:auto}
+
+/* ── Cover ── */
+.cvr{position:relative;width:100%;height:100%;overflow:hidden;flex:1}
+.cvr-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.28}
+.cvr-grad{position:absolute;inset:0;background:linear-gradient(to right,#090909 42%,rgba(9,9,9,0.55) 72%,rgba(9,9,9,0.05) 100%)}
+.cvr-topbar{position:absolute;top:0;left:0;right:0;height:3px;background:#c9a96e;z-index:2}
+.cvr-botbar{position:absolute;bottom:0;left:0;right:0;height:3px;background:#c9a96e;z-index:2}
+.cvr-left{position:absolute;left:0;top:0;bottom:0;width:56%;padding:22px 0 20px 18mm;display:flex;flex-direction:column}
+.cvr-brand{font-family:'MagmaWave','DM Sans',sans-serif;font-size:15px;color:#c9a96e;letter-spacing:.05em;margin-bottom:5px}
+.cvr-eyebrow{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.2em;color:#7a776f;text-transform:uppercase;margin-bottom:auto}
+.cvr-name{font-family:'Cormorant Garamond',Georgia,serif;font-weight:300;font-size:76px;color:#eeebe5;line-height:1;margin-bottom:4px}
+.cvr-tag{font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;font-style:italic;color:#c9a96e;margin-bottom:16px}
+.cvr-rule{height:1px;background:rgba(201,169,110,0.38);width:260px;margin-bottom:16px}
+.cvr-stats{display:flex;gap:24px;margin-bottom:16px}
+.cvr-sv{font-family:'Cormorant Garamond',Georgia,serif;font-size:26px;font-weight:600;color:#c9a96e;line-height:1}
+.cvr-sl{font-family:'DM Mono',monospace;font-size:6.5px;letter-spacing:.18em;color:#7a776f;margin-top:3px;text-transform:uppercase}
+.cvr-meta{font-family:'DM Mono',monospace;font-size:7px;color:#7a776f;letter-spacing:.1em;text-transform:uppercase;margin-top:auto;padding-top:10px;border-top:.4px solid rgba(201,169,110,.15)}
+
+/* ── Page chrome ── */
 .topbar{height:3px;background:#c9a96e;flex-shrink:0}
 .botbar{height:3px;background:#c9a96e;flex-shrink:0;margin-top:auto}
-.ph{display:flex;justify-content:space-between;padding:7px 20mm 6px;border-bottom:.3px solid rgba(255,255,255,.05);flex-shrink:0}
+.ph{display:flex;justify-content:space-between;padding:7px 18mm 5px;border-bottom:.3px solid rgba(255,255,255,.05);flex-shrink:0}
 .phl{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.15em;color:#7a776f;text-transform:uppercase}
 .phn{font-family:'DM Mono',monospace;font-size:7px;color:#3a3835}
-.ft{display:flex;justify-content:space-between;padding:5px 20mm 7px;border-top:.3px solid rgba(255,255,255,.05);flex-shrink:0;margin-top:auto}
+.ft{display:flex;justify-content:space-between;padding:5px 18mm 7px;border-top:.3px solid rgba(255,255,255,.05);flex-shrink:0;margin-top:auto}
 .ftl,.ftr{font-family:'DM Mono',monospace;font-size:6.5px;color:#7a776f}
-.body{padding:8px 20mm 0;flex:1;min-height:0;display:flex;flex-direction:column}
-/* Cover */
-.cvr{position:relative;width:297mm;height:210mm;overflow:hidden;flex-shrink:0}
-.cvr-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.3}
-.cvr-grad{position:absolute;inset:0;background:linear-gradient(to right,#090909 45%,rgba(9,9,9,.6) 70%,rgba(9,9,9,.1) 100%)}
-.cvr-l{position:absolute;left:0;top:0;bottom:0;width:54%;padding:24px 0 20px 20mm;display:flex;flex-direction:column}
-.cvr-brand{font-family:'MagmaWave','DM Sans',sans-serif;font-size:16px;color:#c9a96e;letter-spacing:.05em;margin-bottom:4px}
-.cvr-sub{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.2em;color:#7a776f;text-transform:uppercase;margin-bottom:auto}
-.cvr-name{font-family:'Cormorant Garamond',Georgia,serif;font-weight:300;font-size:72px;color:#eeebe5;line-height:1;margin-bottom:4px}
-.cvr-tag{font-family:'Cormorant Garamond',Georgia,serif;font-size:17px;font-style:italic;color:#c9a96e;margin-bottom:14px}
-.cvr-rule{height:1px;background:rgba(201,169,110,.4);width:240px;margin-bottom:14px}
-.cvr-stats{display:flex;gap:22px;margin-bottom:16px}
-.cvr-sv{font-family:'Cormorant Garamond',Georgia,serif;font-size:24px;font-weight:600;color:#c9a96e;line-height:1}
-.cvr-sl{font-family:'DM Mono',monospace;font-size:6px;letter-spacing:.18em;color:#7a776f;margin-top:3px;text-transform:uppercase}
-.cvr-meta{font-family:'DM Mono',monospace;font-size:7px;color:#7a776f;letter-spacing:.1em;text-transform:uppercase;margin-top:auto;border-top:.5px solid rgba(201,169,110,.15);padding-top:8px}
-/* Specs */
-.spcols{display:flex;gap:16px;flex:1}
-.spcol{flex:1}
-.sg{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.18em;color:#c9a96e;text-transform:uppercase;border-bottom:.4px solid rgba(201,169,110,.2);padding-bottom:3px;margin:6px 0 3px}
+
+/* ── Specs page ── */
+.spec-body{padding:8px 18mm 0;flex:1;display:flex;flex-direction:column;min-height:0}
+.spec-title{font-family:'Cormorant Garamond',Georgia,serif;font-size:28px;font-weight:300;color:#eeebe5;margin-bottom:10px;line-height:1}
+.spec-cols{display:flex;gap:14px;flex:1;min-height:0}
+.spec-col{flex:1;overflow:hidden}
+.sg{font-family:'DM Mono',monospace;font-size:6.5px;letter-spacing:.2em;color:#c9a96e;text-transform:uppercase;border-bottom:.4px solid rgba(201,169,110,.18);padding-bottom:2.5px;margin:7px 0 2px}
 .sg:first-child{margin-top:0}
-.sr{display:flex;justify-content:space-between;align-items:baseline;padding:2.5px 0;border-bottom:.3px solid rgba(255,255,255,.04)}
-.sl{font-family:'DM Mono',monospace;font-size:7.5px;color:#7a776f;flex-shrink:0}
-.sv{font-family:'DM Mono',monospace;font-size:8px;color:#eeebe5;text-align:right;max-width:60%;word-break:break-word}
-/* Chart pages */
-.ch1{font-family:'Cormorant Garamond',Georgia,serif;font-size:26px;font-weight:300;color:#eeebe5;margin-bottom:3px}
-.ch2{font-family:'DM Mono',monospace;font-size:7px;color:#7a776f;margin-bottom:5px}
-.chart{flex:1;min-height:0;background:#0e0e0d;border:.4px solid rgba(201,169,110,.07);overflow:hidden;display:flex;align-items:stretch}
-.chart svg{width:100%;height:100%}
-/* Tech */
-.trow{display:flex;gap:10px;padding:6px 0;border-bottom:.3px solid rgba(255,255,255,.05)}
-.trow:last-child{border-bottom:none}
-.ticon{flex-shrink:0;width:11mm;display:flex;align-items:flex-start;padding-top:1px}
-.timg{width:11mm;height:11mm;object-fit:contain}
-.tph{width:11mm;height:11mm;background:rgba(201,169,110,.07);border:.4px solid rgba(201,169,110,.18)}
-.ttext{flex:1}
-.tname{font-family:'DM Sans',Helvetica,sans-serif;font-weight:700;font-size:8.5px;color:#c9a96e;margin-bottom:3px}
-.tdesc{font-family:'DM Sans',Helvetica,sans-serif;font-size:7.5px;color:#7a776f;line-height:1.6}
+.sr{display:flex;justify-content:space-between;align-items:baseline;padding:2px 0;border-bottom:.25px solid rgba(255,255,255,.04)}
+.sr-empty .sv{color:#3a3835}
+.sl{font-family:'DM Mono',monospace;font-size:7px;color:#7a776f;flex-shrink:0;padding-right:6px}
+.sv{font-family:'DM Mono',monospace;font-size:7.5px;color:#eeebe5;text-align:right}
+
+/* ── Chart pages ── */
+.chart-body{padding:8px 18mm 0;flex:1;display:flex;flex-direction:column;min-height:0}
+.chart-h{font-family:'Cormorant Garamond',Georgia,serif;font-size:24px;font-weight:300;color:#eeebe5;line-height:1;flex-shrink:0}
+.chart-sub{font-family:'DM Mono',monospace;font-size:7px;color:#7a776f;margin:3px 0 5px;flex-shrink:0}
+.chart-wrap{flex:1;min-height:0;background:#0c0b0a;border:.4px solid rgba(201,169,110,.07);overflow:hidden;display:flex}
+.chart-wrap svg{width:100%;height:100%}
+
+/* ── EQ table ── */
+.eq-table{flex-shrink:0;margin-top:7px}
+.eq-head,.eq-row{display:grid;grid-template-columns:22px 68px 1fr 80px 60px;border-bottom:.3px solid rgba(255,255,255,.05)}
+.eq-head{font-family:'DM Mono',monospace;font-size:6.5px;letter-spacing:.12em;color:#c9a96e;text-transform:uppercase;border-bottom:.4px solid rgba(201,169,110,.18);padding-bottom:3px;margin-bottom:1px}
+.eq-row{font-family:'DM Mono',monospace;font-size:7.5px;color:#eeebe5}
+.eq-cell{padding:2.5px 0}
+.eq-num{color:#7a776f}
+.eq-note{font-family:'DM Mono',monospace;font-size:6.5px;color:#7a776f;margin-top:5px}
+.eq-empty{font-family:'DM Mono',monospace;font-size:9px;color:#7a776f;padding:10px 0}
+
+/* ── Tech page ── */
+.tech-body{padding:8px 18mm 0;flex:1;display:flex;flex-direction:column;min-height:0}
+.tech-title{font-family:'Cormorant Garamond',Georgia,serif;font-size:28px;font-weight:300;color:#eeebe5;margin-bottom:10px}
+.tech-rows{flex:1;display:flex;flex-direction:column;gap:0}
+.tech-row{display:flex;gap:10px;padding:7px 0;border-bottom:.3px solid rgba(255,255,255,.05);flex-shrink:0}
+.tech-row:last-child{border-bottom:none}
+.tech-icon{flex-shrink:0;width:12mm;display:flex;align-items:flex-start;padding-top:1px}
+.tech-img{width:12mm;height:12mm;object-fit:contain}
+.tech-ph{width:12mm;height:12mm;background:rgba(201,169,110,.07);border:.4px solid rgba(201,169,110,.16)}
+.tech-text{flex:1}
+.tech-name{font-family:'DM Sans',Helvetica,sans-serif;font-weight:700;font-size:8.5px;color:#c9a96e;margin-bottom:2px}
+.tech-desc{font-family:'DM Sans',Helvetica,sans-serif;font-size:7.5px;color:#7a776f;line-height:1.6}
 `
 
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${css}</style></head><body>
+    // ── HTML ─────────────────────────────────────────────────────────────────
+    const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><style>${css}</style></head><body>
 
 <!-- PAGE 1: COVER -->
 <div class="page">
   <div class="cvr">
-    <div class="topbar" style="position:absolute;top:0;left:0;right:0;z-index:2"></div>
+    <div class="cvr-topbar"></div>
     ${hero?`<img src="${hero}" class="cvr-img">`:''}
     <div class="cvr-grad"></div>
-    <div class="cvr-l">
+    <div class="cvr-left">
       <div class="cvr-brand">XSCACE</div>
-      <div class="cvr-sub">Size Defying Sound</div>
+      <div class="cvr-eyebrow">Technical Specification Document</div>
       <div class="cvr-name">${P.productName}</div>
       <div class="cvr-tag">${P.tagline||''}</div>
       <div class="cvr-rule"></div>
       <div class="cvr-stats">
         ${([
-          P.powerRmsW    ?{v:`${P.powerRmsW}W`,      l:'Power RMS'}   :null,
-          P.sensitivityDb?{v:`${P.sensitivityDb} dB`, l:'Sensitivity'} :null,
-          P.impedanceOhms?{v:`${P.impedanceOhms} Ω`,  l:'Impedance'}   :null,
-          P.depthMm      ?{v:`${P.depthMm} mm`,       l:'Depth'}       :null,
-        ] as any[]).filter(Boolean).map((s:any)=>
-          `<div><div class="cvr-sv">${s.v}</div><div class="cvr-sl">${s.l}</div></div>`
-        ).join('')}
+          P.powerRmsW?{v:`${P.powerRmsW} W`,l:'Power RMS'}:null,
+          P.sensitivityDb?{v:`${P.sensitivityDb} dB`,l:'Sensitivity'}:null,
+          P.impedanceOhms?{v:`${P.impedanceOhms} Ω`,l:'Impedance'}:null,
+          P.depthMm?{v:`${P.depthMm} mm`,l:'Depth'}:null,
+        ] as any[]).filter(Boolean).map((s:any)=>`<div><div class="cvr-sv">${s.v}</div><div class="cvr-sl">${s.l}</div></div>`).join('')}
       </div>
-      <div class="cvr-meta">${P.series||''} · ${P.skuBase||''} · ${P.specConfidence||'Lab Verified'} · © XSCACE ${P.launchYear||2022}</div>
+      <div class="cvr-meta">${P.series||''} · ${P.skuBase||''} · ${P.specConfidence||'Lab Verified'} · ${P.launchYear||2022}</div>
     </div>
-    <div class="botbar" style="position:absolute;bottom:0;left:0;right:0;z-index:2"></div>
+    <div class="cvr-botbar"></div>
   </div>
 </div>
 
-<!-- PAGE 2: SPECIFICATIONS -->
+<!-- PAGE 2: SPECIFICATIONS — full page, two columns -->
 <div class="page">
   <div class="topbar"></div>
-  ${hdr(P.productName,2,TOTAL)}
-  <div class="body">
-    <div class="ch1">Technical Specifications</div>
-    <div class="spcols">
-      <div class="spcol">
+  ${pageHdr(P.productName,2,TOTAL)}
+  <div class="spec-body">
+    <div class="spec-title">Technical Specifications</div>
+    <div class="spec-cols">
+      <div class="spec-col">
         <div class="sg">Acoustic Performance</div>
-        ${specRow('Power RMS',`${P.powerRmsW||'—'} W`)}
-        ${specRow('Power Peak',`${P.powerPeakW||'—'} W`)}
-        ${specRow('Sensitivity',`${P.sensitivityDb||'—'} dB / 1W / 1m`)}
-        ${specRow('Impedance',`${P.impedanceOhms||'—'} Ω`)}
-        ${specRow('Max SPL',`${P.splMaxDb||'—'} dB`)}
-        ${specRow('THD+N',P.thdN||'—')}
-        ${specRow('Frequency Range',`${P.freqLowHz||'—'} Hz – ${Math.round((P.freqHighHz||20000)/1000)} kHz ${P.freqQualifier||''}`)}
-        ${specRow('Directivity H',`${P.directivityHDeg||'—'}°`)}
-        ${specRow('Directivity V',`${P.directivityVDeg||'—'}°`)}
-        ${specRow('Driver Config',P.driverDescription||'—')}
-        ${specRow('Crossover',P.crossoverType||'—')}
-        ${specRow('EQ Profile',P.eqProfileName||'Default')}
-        ${specRow('Spec Confidence',P.specConfidence||'—')}
+        ${sr('Power RMS',P.powerRmsW?`${P.powerRmsW} W`:'—')}
+        ${sr('Power Peak',P.powerPeakW?`${P.powerPeakW} W`:'—')}
+        ${sr('Sensitivity',P.sensitivityDb?`${P.sensitivityDb} dB / 1W / 1m`:'—')}
+        ${sr('Impedance',P.impedanceOhms?`${P.impedanceOhms} Ω`:'—')}
+        ${sr('Max SPL',P.splMaxDb?`${P.splMaxDb} dB`:'—')}
+        ${sr('THD+N',P.thdN||'—')}
+        ${sr('Frequency Range',P.freqHighHz?`${P.freqLowHz} Hz – ${Math.round(P.freqHighHz/1000)} kHz ${P.freqQualifier||''}`:'—')}
+        ${sr('Directivity H',P.directivityHDeg?`${P.directivityHDeg}° (−6 dB, 1 kHz)`:'—')}
+        ${sr('Directivity V',P.directivityVDeg?`${P.directivityVDeg}° (−6 dB, 1 kHz)`:'—')}
+        ${sr('Driver Config',P.driverDescription||'—')}
+        ${sr('Crossover',P.crossoverType||'—')}
+        ${sr('Crossover Freq',P.crossoverFrequency?`${P.crossoverFrequency} Hz`:'—')}
+        ${sr('EQ Profile',P.eqProfileName||'Default')}
+        ${sr('Spec Confidence',P.specConfidence||'—')}
+        <div class="sg">Connectivity</div>
+        ${sr('Connector',P.speakerWireConnector||'—')}
+        ${sr('Wire Gauge',P.wireGaugeRecommended||'—')}
       </div>
-      <div class="spcol">
+      <div class="spec-col">
         <div class="sg">Physical</div>
-        ${specRow('Height',`${P.heightMm||'—'} mm`)}
-        ${specRow('Width',`${P.widthMm||'—'} mm`)}
-        ${specRow('Depth',`${P.depthMm||'—'} mm`)}
-        ${specRow('Weight',`${P.weightKg||'—'} kg`)}
-        ${specRow('Housing',P.housingMaterial||'—')}
-        ${specRow('Grille',P.grilleMaterial||'—')}
-        <div class="sg">Installation</div>
-        ${specRow('IP Rating',P.ipRating||'—')}
-        ${specRow('Mounting',P.mountingMethods||'—')}
-        ${specRow('Connector',P.speakerWireConnector||'—')}
-        ${specRow('Wire Gauge',P.wireGaugeRecommended||'—')}
+        ${sr('Dimensions',dims)}
+        ${sr('Weight',P.weightKg?`${P.weightKg} kg`:'—')}
+        ${sr('Housing',P.housingMaterial||'—')}
+        ${sr('Grille',P.grilleMaterial||'—')}
+        ${sr('Paintable Grille',P.paintableGrille!=null?(P.paintableGrille?'Yes':'No'):'—')}
+        <div class="sg">Environmental</div>
+        ${sr('IP Rating',P.ipRating||'—')}
+        ${sr('Fire Rating',P.fireRating||'—')}
+        ${sr('Mounting',P.mountingMethods||'—')}
+        <div class="sg">Colour & Finish</div>
+        ${sr('Finishes',P.colorsStandard||'—')}
+        ${sr('Custom RAL',P.customRalAvailable?'Available':'—')}
+        ${sr('Marine Treat.',P.marineTreatable?'Available':'—')}
         <div class="sg">Product</div>
-        ${specRow('Series',P.series||'—')}
-        ${specRow('SKU',P.skuBase||'—')}
-        ${specRow('Since',String(P.launchYear||'—'))}
+        ${sr('Series',P.series||'—')}
+        ${sr('SKU',P.skuBase||'—')}
+        ${sr('Variants',P.skuVariants||'—')}
+        ${sr('Since',P.launchYear?String(P.launchYear):'—')}
       </div>
     </div>
   </div>
-  ${ftr()}
+  ${pageFtr()}
   <div class="botbar"></div>
 </div>
 
-<!-- PAGE 3: FREQUENCY RESPONSE -->
+<!-- PAGE 3: FREQUENCY RESPONSE — full page -->
 <div class="page">
   <div class="topbar"></div>
-  ${hdr(P.productName,3,TOTAL)}
-  <div class="body">
-    <div class="ch1">Frequency Response</div>
-    <div class="ch2">On-axis · 1W / 1m · anechoic · ${P.freqLowHz}Hz – ${Math.round((P.freqHighHz||20000)/1000)}kHz ${P.freqQualifier||''} · ${P.sensitivityDb}dB sensitivity · with recommended EQ applied</div>
-    <div class="chart">${frChart}</div>
+  ${pageHdr(P.productName,3,TOTAL)}
+  <div class="chart-body">
+    <div class="chart-h">Frequency Response</div>
+    <div class="chart-sub">On-axis · 1W / 1m · anechoic · ${P.freqLowHz}Hz – ${Math.round((P.freqHighHz||20000)/1000)}kHz ${P.freqQualifier||''} · ${P.sensitivityDb}dB sensitivity · recommended EQ applied</div>
+    <div class="chart-wrap">${frChart}</div>
   </div>
-  ${ftr()}
+  ${pageFtr()}
   <div class="botbar"></div>
 </div>
 
-<!-- PAGE 4: DIRECTIVITY -->
+<!-- PAGE 4: DIRECTIVITY — full page -->
 <div class="page">
   <div class="topbar"></div>
-  ${hdr(P.productName,4,TOTAL)}
-  <div class="body">
-    <div class="ch1">Directivity Pattern</div>
-    <div class="ch2">Normalised polar response · H ${P.directivityHDeg}° / V ${P.directivityVDeg}° at –6 dB · 1kHz reference · multi-frequency overlay</div>
-    <div class="chart">${polChart}</div>
+  ${pageHdr(P.productName,4,TOTAL)}
+  <div class="chart-body">
+    <div class="chart-h">Directivity Pattern</div>
+    <div class="chart-sub">Normalised polar response · H ${P.directivityHDeg}° / V ${P.directivityVDeg}° at −6 dB · 1 kHz reference · multi-frequency overlay (1–8 kHz)</div>
+    <div class="chart-wrap">${polChart}</div>
   </div>
-  ${ftr()}
+  ${pageFtr()}
   <div class="botbar"></div>
 </div>
 
-<!-- PAGE 5: SPL + EQ (side by side) -->
+<!-- PAGE 5: SPL vs DISTANCE — full page -->
 <div class="page">
   <div class="topbar"></div>
-  ${hdr(P.productName,5,TOTAL)}
-  <div class="body" style="flex-direction:row;gap:10px">
-    <div style="flex:1;display:flex;flex-direction:column;min-width:0">
-      <div class="ch1" style="font-size:20px">SPL vs Distance</div>
-      <div class="ch2">Inverse square law · Ref: ${P.sensitivityDb}dB/1W/1m · anechoic</div>
-      <div class="chart">${splChart}</div>
+  ${pageHdr(P.productName,5,TOTAL)}
+  <div class="chart-body">
+    <div class="chart-h">SPL vs Distance</div>
+    <div class="chart-sub">Inverse square law · Ref: ${P.sensitivityDb} dB / 1W / 1m · free field anechoic · ${P.powerRmsW}W RMS / ${P.powerPeakW}W Peak</div>
+    <div class="chart-wrap">${splChart}</div>
+  </div>
+  ${pageFtr()}
+  <div class="botbar"></div>
+</div>
+
+<!-- PAGE 6: EQ — chart + filter table -->
+<div class="page">
+  <div class="topbar"></div>
+  ${pageHdr(P.productName,6,TOTAL)}
+  <div class="chart-body">
+    <div class="chart-h">Recommended EQ</div>
+    <div class="chart-sub">Combined biquad cascade response (bold) with individual filter contributions (dashed)</div>
+    <div class="chart-wrap" style="flex:1;min-height:0">${eqChart}</div>
+    ${eqTable}
+  </div>
+  ${pageFtr()}
+  <div class="botbar"></div>
+</div>
+
+${tech.length>0?`<!-- PAGE 7: TECHNOLOGIES -->
+<div class="page">
+  <div class="topbar"></div>
+  ${pageHdr(P.productName,7,TOTAL)}
+  <div class="tech-body">
+    <div class="tech-title">Proprietary Technologies</div>
+    <div class="tech-rows">
+      ${tech.map((badge:string)=>{
+        const img=techIconB64(badge)
+        const key=badge.toLowerCase().replace(/\s+/g,' ')
+        let desc=''
+        for(const [k,d] of Object.entries(TECH_DESC)) if(key.includes(k)||k.includes(key.split(' ')[0])){desc=d;break}
+        return `<div class="tech-row">
+          <div class="tech-icon">${img?`<img src="${img}" class="tech-img">`:`<div class="tech-ph"></div>`}</div>
+          <div class="tech-text"><div class="tech-name">${badge}</div><div class="tech-desc">${desc}</div></div>
+        </div>`
+      }).join('')}
     </div>
-    <div style="flex:1;display:flex;flex-direction:column;min-width:0">
-      <div class="ch1" style="font-size:20px">Recommended EQ</div>
-      <div class="ch2">Profile: ${P.eqProfileName||'Default'} · RBJ biquad cascade · fs = 48 kHz (ADAU1701)</div>
-      <div class="chart">${eqChart}</div>
-    </div>
   </div>
-  ${ftr()}
+  ${pageFtr()}
   <div class="botbar"></div>
-</div>
-
-<!-- PAGE 6: PROPRIETARY TECHNOLOGIES -->
-<div class="page">
-  <div class="topbar"></div>
-  ${hdr(P.productName,6,TOTAL)}
-  <div class="body">
-    <div class="ch1">Proprietary Technologies</div>
-    <div class="ch2" style="margin-bottom:8px">Exclusive engineering innovations inside every XSCACE product</div>
-    ${techData.map(({name,img}:{name:string,img:string})=>{
-      const key=name.toLowerCase().replace(/\s+/g,' ')
-      let desc=''
-      for(const [k,d] of Object.entries(TECH_DESC)) if(key.includes(k)||k.includes(key.split(' ')[0])){desc=d;break}
-      return `<div class="trow">
-        <div class="ticon">${img?`<img src="${img}" class="timg">`:`<div class="tph"></div>`}</div>
-        <div class="ttext"><div class="tname">${name}</div><div class="tdesc">${desc}</div></div>
-      </div>`
-    }).join('')}
-  </div>
-  ${ftr()}
-  <div class="botbar"></div>
-</div>
+</div>`:''}
 
 </body></html>`
 
-    // Puppeteer — identical to brochure
-    const puppeteer = (await import('puppeteer-core')).default
-    const chromium  = (await import('@sparticuz/chromium')).default
-    chromium.setGraphicsMode = false
-    const browser = await puppeteer.launch({
+    // ── PUPPETEER ─────────────────────────────────────────────────────────────
+    const puppeteer=(await import('puppeteer-core')).default
+    const chromium=(await import('@sparticuz/chromium')).default
+    chromium.setGraphicsMode=false
+    const browser=await puppeteer.launch({
       args:[...chromium.args,'--no-sandbox','--single-process','--disable-gpu'],
-      executablePath: await chromium.executablePath(
-        process.env.CHROMIUM_PACK_URL||
-        'https://github.com/Sparticuz/chromium/releases/download/v147.0.0/chromium-v147.0.0-pack.x64.tar'
+      executablePath:await chromium.executablePath(
+        process.env.CHROMIUM_PACK_URL||'https://github.com/Sparticuz/chromium/releases/download/v147.0.0/chromium-v147.0.0-pack.x64.tar'
       ),
       headless:true,
     })
-    const page = await browser.newPage()
+    const page=await browser.newPage()
     await page.setViewport({width:1587,height:1123,deviceScaleFactor:1})
     await page.setContent(html,{waitUntil:'domcontentloaded',timeout:15000})
     await page.emulateMediaType('print')
-    const pdf = Buffer.from(await page.pdf({
+    const pdf=Buffer.from(await page.pdf({
       width:'297mm',height:'210mm',printBackground:true,
       margin:{top:'0',right:'0',bottom:'0',left:'0'},
     }))
     await browser.close()
 
     // Cache to Sanity
-    if (process.env.SANITY_API_TOKEN && pdf.length>1000) {
-      try {
+    if(process.env.SANITY_API_TOKEN&&pdf.length>1000){
+      try{
         const fname=`XSCACE_${P.productName.replace(/\s+/g,'_')}_SpecSheet.pdf`
         const up=await fetch(`https://${PROJECT}.api.sanity.io/v2024-01-01/assets/files/${DATASET}?filename=${encodeURIComponent(fname)}`,
           {method:'POST',headers:{Authorization:`Bearer ${process.env.SANITY_API_TOKEN}`,'Content-Type':'application/pdf'},body:pdf})
@@ -758,7 +786,7 @@ body{font-family:'DM Sans',Helvetica,sans-serif;background:#090909;color:#eeebe5
             {method:'POST',headers:{Authorization:`Bearer ${process.env.SANITY_API_TOKEN}`,'Content-Type':'application/json'},
              body:JSON.stringify({mutations:[{patch:{id:P._id,set:{specSheetRef:doc._id,specSheetHash:h,specSheet:{_type:'file',asset:{_type:'reference',_ref:doc._id}}}}}]})})
         }
-      } catch(e){console.error('[specsheet] cache failed',e)}
+      }catch(e){console.error('[specsheet] cache failed',e)}
     }
 
     return new NextResponse(pdf,{status:200,headers:{
@@ -767,7 +795,7 @@ body{font-family:'DM Sans',Helvetica,sans-serif;background:#090909;color:#eeebe5
       'Content-Length':String(pdf.length),
       'Cache-Control':'no-cache',
     }})
-  } catch(err:any){
+  }catch(err:any){
     console.error('[specsheet]',err)
     return NextResponse.json({error:err?.message},{status:500})
   }
