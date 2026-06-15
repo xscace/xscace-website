@@ -223,7 +223,7 @@ function installSteps(P: any): string[] {
       `Route your speaker cable (${wire}) through the wall or along the surface to the intended speaker position, leaving 150mm of cable exposed at the mounting point.`,
       `Strip 10mm of insulation from each wire end. Connect to the ${conn} on the back of the ${name} — observe polarity (+ red / − black).`,
       `Align the two keyhole slots on the back of the ${name} with the two screw heads. Lower the speaker onto the screws until it seats firmly and cannot be lifted without tilting.`,
-      isCorner ? `Corner mount option: The corner bracket attaches between two adjacent walls. ${isQuad ? `The QuadCane corner mount is a two-piece bracket — each piece is placed exactly ${spc} apart, matching the QuadCane's keyhole spacing.` : 'Screw the bracket into both walls using the same method. Hang the speaker on the bracket's keyhole slot.'} Ensure the bracket is level before hanging the speaker.` : '',
+      isCorner ? `Corner mount option: The corner bracket attaches between two adjacent walls. ${isQuad ? `The QuadCane corner mount is a two-piece bracket — each piece is placed exactly ${spc} apart, matching the QuadCane's keyhole spacing.` : "Screw the bracket into both walls using the same method. Hang the speaker on the bracket's keyhole slot."} Ensure the bracket is level before hanging the speaker.` : '',
       `Dress the cable neatly. Use the included double-sided tape strip on the back of the speaker if additional grip against the wall surface is needed.`,
     ].filter(Boolean)
   }
