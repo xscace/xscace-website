@@ -173,6 +173,63 @@ export default defineType({
       description: 'Numbered steps for the auto-generated install manual'}),
     defineField({name: 'positioningNote',   title: 'Positioning Note',       type: 'text',   group: 'installation', rows: 3}),
 
+    // ── NEW: Installation manual fields ────────────────────────────────────
+    defineField({
+      name: 'installationType',
+      title: 'Installation Type',
+      type: 'string',
+      group: 'installation',
+      description: 'Drives the auto-generated installation manual template.',
+      options: {
+        list: [
+          {title: 'Keyhole Wall Mount (Bonsai, Cane, QuadCane)',              value: 'keyhole-wall'},
+          {title: 'Bracket Wall Mount (Cedar, Camphor 6, Camphor 8)',         value: 'bracket-wall'},
+          {title: 'Ceiling — Circular Cutout (Aspen 6, Aspen 8, Aster 6)',   value: 'ceiling-circular'},
+          {title: 'Ceiling — Rectangular Cutout (Ghost 2.0)',                 value: 'ceiling-rectangular'},
+          {title: 'In-Wall — Dog-leg Clips (Bergenia, Sage, Oak, Willow)',    value: 'inwall-dogleg'},
+          {title: 'In-Wall — Spring Clips (Bonsai IC, Cane IC, QuadCane IC)', value: 'inwall-springclip'},
+          {title: 'In-Wall Subwoofer (Acacia 6 IW, Acacia 10 IW)',           value: 'inwall-sub'},
+          {title: 'Banyan Canopy',                                             value: 'banyan-canopy'},
+          {title: 'Banyan Pith',                                               value: 'banyan-pith'},
+          {title: 'Spirea Landscape',                                          value: 'spirea'},
+          {title: 'Powered Subwoofer (Juniper, Acacia PW)',                   value: 'powered-sub'},
+          {title: 'Passive Subwoofer (Acacia Std)',                           value: 'passive-sub'},
+          {title: 'DSP Amplifier (Root 4, Xylem, Lucifer)',                   value: 'dsp-amplifier'},
+          {title: 'Streaming Amplifier (Air Amp)',                             value: 'streaming-amplifier'},
+          {title: 'Streamer (Air Mini)',                                        value: 'streamer'},
+        ],
+      },
+    }),
+    defineField({
+      name: 'screwSpacingMm',
+      title: 'Screw / Keyhole Spacing (mm)',
+      type: 'number',
+      group: 'installation',
+      description: 'Centre-to-centre distance between mounting screws or keyhole slots. Bonsai: 11.74 | Cane: 82 | QuadCane: 82 | Cedar: 120 | Camphor 6: 138 | Camphor 8: 227',
+    }),
+    defineField({
+      name: 'ioPortsImage',
+      title: 'I/O Ports Diagram / Back Panel Image',
+      type: 'image',
+      group: 'installation',
+      options: {hotspot: true},
+      description: 'Photo or diagram of the rear panel with all ports labelled. Used in amplifier and powered sub manuals.',
+    }),
+    defineField({
+      name: 'installManualRef',
+      title: 'Install Manual Asset Ref (auto)',
+      type: 'string',
+      group: 'installation',
+      description: 'Auto-populated cache key — clear to regenerate',
+    }),
+    defineField({
+      name: 'installManualHash',
+      title: 'Install Manual Hash (auto)',
+      type: 'string',
+      group: 'installation',
+      description: 'Auto-populated — clear to force PDF regeneration',
+    }),
+
     // ── CONNECTIVITY ───────────────────────────────────────────────────────
     defineField({name: 'inputs',               title: 'Inputs',              type: 'string', group: 'connectivity'}),
     defineField({name: 'outputs',              title: 'Outputs',             type: 'string', group: 'connectivity'}),
