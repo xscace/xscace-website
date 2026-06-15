@@ -1586,7 +1586,7 @@ export default function ProductDetail({ product }: { product: Product }) {
         ? product.itemsInBox
         : product.itemsInBox.split(/\n/).map((s: string) => s.trim()).filter(Boolean))
     : []
-  const hasDownloads = product.cadFile
+  const hasDownloads = true
   const hasEQ = product.freqLowHz && product.freqHighHz
   const hasEqData = !!product.eqData
 
