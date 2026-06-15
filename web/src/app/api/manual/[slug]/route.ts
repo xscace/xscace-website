@@ -142,7 +142,7 @@ function stereoAdvice(P: any): { title: string, steps: string[], note: string } 
       steps: [
         'Install the Banyan Canopy directly above or forward of the MLP.',
         'For stereo, two Canopy units should be placed symmetrically, one on each side of the room centreline.',
-        'The Canopy's wide horizontal dispersion (120°) makes precise toe-in less critical — focus on equal distance from the MLP.',
+        "The Canopy's wide horizontal dispersion (120°) makes precise toe-in less critical — focus on equal distance from the MLP.",
       ],
       note: 'The Banyan Pith DSP module manages crossover and equalisation for the Canopy automatically.',
     }
@@ -154,7 +154,7 @@ function stereoAdvice(P: any): { title: string, steps: string[], note: string } 
       steps: [
         'For pathway coverage, place Spirea units every 4–6m along the path for even distribution.',
         'For listening areas (pool, terrace), position two units symmetrically at the perimeter of the area, aimed inward.',
-        'Aim the drivers toward the primary seating zone. The Spirea's 120° dispersion covers a wide arc.',
+        "Aim the drivers toward the primary seating zone. The Spirea's 120° dispersion covers a wide arc.",
         'Minimum 1.5m from the seating position to avoid overpowering nearfield bass.',
       ],
       note: 'For garden installations: bury the spike fully into soft soil. For hard surfaces, use the standing mount or hanging mount.',
