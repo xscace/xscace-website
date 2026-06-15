@@ -62,274 +62,275 @@ function installDiagram(P:any):string {
   const it=P.installationType||'', W=480, H=570
   const f2=(n:number)=>n.toFixed(1)
 
-  // Colors
+  // Palette
   const BG2='#090909',CH2='#c9a96e',LT2='#eeebe5',MU2='#7a776f',WL2='#111110'
-  // Helpers
-  const t=(x:number,y:number,txt:string,sz=9,cl=MU2,a='middle')=>
-    `<text x="${f2(x)}" y="${f2(y)}" text-anchor="${a}" fill="${cl}" font-size="${sz}" font-family="DM Mono,monospace">${txt}</text>`
-  const rect2=(x:number,y:number,w:number,h:number,fill=WL2,str=CH2,sw=0.8,rx=2)=>
+
+  // SVG primitives — all coords absolute, no nesting
+  const tx2=(x:number,y:number,s:string,sz=9,cl=MU2,a='middle')=>
+    `<text x="${f2(x)}" y="${f2(y)}" text-anchor="${a}" fill="${cl}" font-size="${sz}" font-family="DM Mono,monospace">${s}</text>`
+  const r2=(x:number,y:number,w:number,h:number,fill=WL2,str=CH2,sw=0.8,rx=2)=>
     `<rect x="${f2(x)}" y="${f2(y)}" width="${f2(w)}" height="${f2(h)}" rx="${rx}" fill="${fill}" stroke="${str}" stroke-width="${sw}"/>`
-  const circ=(cx:number,cy:number,r:number,fill=WL2,str=CH2,sw=0.8)=>
+  const c2=(cx:number,cy:number,r:number,fill=WL2,str=CH2,sw=0.8)=>
     `<circle cx="${f2(cx)}" cy="${f2(cy)}" r="${f2(r)}" fill="${fill}" stroke="${str}" stroke-width="${sw}"/>`
-  const line2=(x1:number,y1:number,x2:number,y2:number,str=CH2,sw=0.7,dash='')=>
+  const ln=(x1:number,y1:number,x2:number,y2:number,str=CH2,sw=0.8,dash='')=>
     `<line x1="${f2(x1)}" y1="${f2(y1)}" x2="${f2(x2)}" y2="${f2(y2)}" stroke="${str}" stroke-width="${sw}" ${dash?`stroke-dasharray="${dash}"`:''}stroke-linecap="round"/>`
-  const hatch=`<defs><pattern id="h" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="10" stroke="rgba(201,169,110,0.09)" stroke-width="3.5"/></pattern></defs>`
-  // Wall slab (front face or cross section)
-  const wallRect=(x:number,y:number,w:number,h:number)=>
-    `${rect2(x,y,w,h,WL2,'rgba(201,169,110,0.28)',0.6,0)}<rect x="${f2(x)}" y="${f2(y)}" width="${f2(w)}" height="${f2(h)}" fill="url(#h)"/>`
-  // Dim line with ticks + label (horizontal)
-  const dimH=(x1:number,y:number,x2:number,lbl:string,above=true)=>{
-    const mid=(x1+x2)/2, tickY=y+(above?-6:6), lY=y+(above?-10:18)
-    return `${line2(x1,y,x2,y,CH2,0.5,'3,2')}${line2(x1,y-5,x1,y+5,CH2,0.5)}${line2(x2,y-5,x2,y+5,CH2,0.5)}${t(mid,lY,lbl,8,CH2)}`
-  }
-  // Dim line vertical
-  const dimV=(x:number,y1:number,y2:number,lbl:string,left=true)=>{
-    const mid=(y1+y2)/2, lX=x+(left?-12:12)
-    return `${line2(x,y1,x,y2,CH2,0.5,'3,2')}${line2(x-5,y1,x+5,y1,CH2,0.5)}${line2(x-5,y2,x+5,y2,CH2,0.5)}${t(lX,mid+3,lbl,8,CH2,left?'end':'start')}`
-  }
-  // Screw: shaft + thread marks + hex head, protruding RIGHT from wall
-  const drawScrew=(wx:number,wy:number,screwLen=38,headH=14)=>{
-    const shaft=`${rect2(wx,wy-5,screwLen,10,LT2,BG2,0.3,1)}`
-    const threads=[6,12,18,24,30].filter(d=>d<screwLen).map(d=>
-      line2(wx+d,wy-5,wx+d,wy+5,'rgba(9,9,9,0.45)',0.5)).join('')
-    const head=`${rect2(wx+screwLen,wy-headH/2,14,headH,CH2,BG2,0.4,2)}`
-    // hex slot on head face
-    const hx=wx+screwLen+7, hy=wy
-    const slot=`<line x1="${f2(hx-5)}" y1="${f2(hy)}" x2="${f2(hx+5)}" y2="${f2(hy)}" stroke="${BG2}" stroke-width="1.5"/>`
+
+  // Wall slab rectangle with hatch fill
+  const wall=(x:number,y:number,w:number,h:number)=>
+    `${r2(x,y,w,h,WL2,'rgba(201,169,110,0.3)',0.7,0)}<rect x="${f2(x)}" y="${f2(y)}" width="${f2(w)}" height="${f2(h)}" fill="url(#hatch)"/>`
+
+  // Screw: shaft + thread marks + hex head, all coords absolute
+  const screw=(x:number,y:number,len:number)=>{
+    const shaft=r2(x,y-5,len,10,LT2,BG2,0.3,1)
+    const threads=[6,12,18,24,30,36].filter(d=>d<len)
+      .map(d=>ln(x+d,y-5,x+d,y+5,'rgba(9,9,9,0.45)',0.5)).join('')
+    const head=r2(x+len,y-8,14,16,CH2,BG2,0.5,2)
+    const slot=ln(x+len+3,y,x+len+11,y,BG2,1.8)
     return shaft+threads+head+slot
   }
-  // Wall plug circle with inner ring
-  const drawPlug=(cx:number,cy:number)=>
-    `${circ(cx,cy,9,'rgba(201,169,110,0.18)',CH2,1.2)}${circ(cx,cy,4,CH2,BG2,0.5)}`
-  // Keyhole slot: circle (screw head circles through) + rectangular tail
-  const drawKeyhole=(cx:number,cy:number,r=10)=>
-    `${circ(cx,cy,r,BG2,CH2,1.5)}${rect2(cx-r*0.6,cy,r*1.2,r*2,BG2,CH2,1,0)}
-    ${line2(cx-r*0.6,cy,cx-r*0.6,cy+r*2,CH2,1.2)}${line2(cx+r*0.6,cy,cx+r*0.6,cy+r*2,CH2,1.2)}`
-  // Speaker front face
-  const spkFace=(x:number,y:number,sw:number,sh:number,name:string)=>{
-    const wr=Math.min(sw*0.38,sh*0.3)
-    return `${rect2(x,y,sw,sh,WL2,CH2,1.5,3)}
-    ${circ(x+sw/2,y+sh*0.22,Math.min(sw*0.14,10),CH2,BG2,0.5)}
-    ${circ(x+sw/2,y+sh*0.62,wr,BG2,CH2,1.2)}${circ(x+sw/2,y+sh*0.62,wr*0.44,CH2,BG2,0.4)}${circ(x+sw/2,y+sh*0.62,wr*0.17,CH2,BG2,0.75)}
-    <text x="${f2(x+sw/2)}" y="${f2(y+sh+16)}" text-anchor="middle" fill="${LT2}" font-size="9" font-family="Cormorant Garamond,serif" font-weight="300">${name}</text>`
+
+  // Wall plug: outer ring + inner dot
+  const plug=(cx:number,cy:number)=>
+    c2(cx,cy,9,'rgba(201,169,110,0.18)',CH2,1.3)+c2(cx,cy,4,CH2,BG2,0.6)
+
+  // Keyhole slot: circle + rectangular tail pointing down
+  const keyhole=(cx:number,cy:number,r=11)=>{
+    const slot_w=r*1.1, slot_h=r*2.2
+    return c2(cx,cy,r,BG2,CH2,1.6)
+      +r2(cx-slot_w/2,cy,slot_w,slot_h,BG2,CH2,1,0)
+      +ln(cx-slot_w/2,cy,cx-slot_w/2,cy+slot_h,CH2,1.3)
+      +ln(cx+slot_w/2,cy,cx+slot_w/2,cy+slot_h,CH2,1.3)
   }
 
-  // SVG wrapper with standard defs
-  function mksvg(body:string):string {
-    return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">
-    ${hatch}<rect width="${W}" height="${H}" fill="${BG2}"/>${body}</svg>`
-  }
-  // Section label at top of a zone
-  function zoneLabel(x:number,y:number,txt:string):string {
-    return `<line x1="${f2(x)}" y1="${f2(y)}" x2="${f2(x+160)}" y2="${f2(y)}" stroke="rgba(201,169,110,0.2)" stroke-width="0.5"/>
-    ${t(x,y-4,txt,7,MU2,'start')}`
-  }
-  // Callout number badge
-  function badge(x:number,y:number,num:number):string {
-    return `${circ(x,y,8,CH2,BG2,0.3)}<text x="${f2(x)}" y="${f2(y+3)}" text-anchor="middle" fill="${BG2}" font-size="8" font-family="DM Mono,monospace" font-weight="bold">${num}</text>`
-  }
+  // Numbered badge
+  const badge=(x:number,y:number,n:number)=>
+    c2(x,y,9,CH2,BG2,0.3)
+    +`<text x="${f2(x)}" y="${f2(y+3.5)}" text-anchor="middle" fill="#090909" font-size="8.5" font-family="DM Mono,monospace" font-weight="bold">${n}</text>`
+
+  // Horizontal dimension line
+  const dimH=(x1:number,y:number,x2:number,lbl:string)=>
+    ln(x1,y,x2,y,CH2,0.5,'3,2')
+    +ln(x1,y-5,x1,y+5,CH2,0.5)
+    +ln(x2,y-5,x2,y+5,CH2,0.5)
+    +tx2((x1+x2)/2,y-8,lbl,8,CH2)
+
+  // Vertical dimension line (label left)
+  const dimV=(x:number,y1:number,y2:number,lbl:string)=>
+    ln(x,y1,x,y2,CH2,0.5,'3,2')
+    +ln(x-5,y1,x+5,y1,CH2,0.5)
+    +ln(x-5,y2,x+5,y2,CH2,0.5)
+    +tx2(x-10,(y1+y2)/2+3,lbl,8,CH2,'end')
+
+  // Standard hatch def + SVG wrapper
+  const HATCH=`<defs><pattern id="hatch" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="10" stroke="rgba(201,169,110,0.09)" stroke-width="3.5"/></pattern></defs>`
+  const mksvg=(body:string)=>
+    `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">${HATCH}<rect width="${W}" height="${H}" fill="${BG2}"/>${body}</svg>`
+
+  // ── Step label row: badge + two lines of text ──────────────────────────────
+  // x=badge centre, y=vertical centre, line1=bold, line2=muted
+  const step=(bx:number,by:number,n:number,line1:string,line2='')=>
+    badge(bx,by)
+    +tx2(bx+16,by-4,line1,9,LT2,'start')
+    +(line2?tx2(bx+16,by+9,line2,8,MU2,'start'):'')
 
   // ============================================================
   // KEYHOLE WALL MOUNT
+  // Layout: left strip = wall cross-section (thin)
+  //         right area = clean labelled diagram
   // ============================================================
   if(it==='keyhole-wall'){
-    const spc=P.screwSpacingMm||82, scrL=P.screwSize||'M2.5×25'
-    // Derive drill bit size from screw: M2 → 4mm, M2.5 → 5mm, M3 → 6mm, M4 → 7mm, M5 → 8mm
-    const drillMm = scrL.startsWith('M2.5')?'5':scrL.startsWith('M2')?'4':scrL.startsWith('M3')?'6':scrL.startsWith('M4')?'7':'6'
-    const name=P.productName||'speaker'
-    const isQ=name.toLowerCase().includes('quad')
+    const spc=P.screwSpacingMm||82
+    const scrL=P.screwSize||'M2.5×25'
+    const drillMm=scrL.startsWith('M2.5')?'5':scrL.startsWith('M2')?'4':scrL.startsWith('M3')?'6':scrL.startsWith('M4')?'7':'6'
+    const isQ=(P.productName||'').toLowerCase().includes('quad')
 
-    // Layout constants — generous margins, nothing overlaps
-    const WALL_X=80, WALL_W=36, WALL_Y=40, WALL_H=490
-    const screw1Y = WALL_Y + WALL_H/2 - Math.min(spc*0.58,95)
-    const screw2Y = WALL_Y + WALL_H/2 + Math.min(spc*0.58,95)
-    const SCREW_LEN=52
+    // Fixed layout — everything in absolute coords, plenty of breathing room
+    // Wall strip: narrow, left side
+    const WX=18, WW=30, WY=55, WH=460
+    // Two screw positions — spaced enough to show clearly, capped so they fit
+    const GAP=Math.min(spc*0.9, 200)  // gap between screws in SVG units
+    const midY=WY+WH/2
+    const S1=midY-GAP/2, S2=midY+GAP/2
+    // Screw extends right from wall
+    const SX=WX+WW, SLEN=48
+    // Speaker rear face shown to the right of screw heads
+    const REAR_X=SX+SLEN+22, REAR_W=30, REAR_H=GAP+50
+    const REAR_Y=midY-REAR_H/2
+    // Text column — right of rear face, clear margin
+    const TX=REAR_X+REAR_W+24
 
-    // Step labels on right — use a clean column with enough space
-    const LX=WALL_X+WALL_W+SCREW_LEN+24  // left edge of text column
+    return mksvg(
+      // Title
+      tx2(W/2,18,'KEYHOLE WALL MOUNT',9,MU2)
+      +tx2(W/2,30,spc+'mm C/C  ·  '+scrL,8.5,CH2)
 
-    return mksvg(`
-      <!-- Title bar -->
-      ${t(W/2,16,'KEYHOLE WALL MOUNT',9,MU2)}
-      ${t(W/2,28,spc+'mm SCREW SPACING  ·  '+scrL,8,CH2)}
+      // Wall slab
+      +wall(WX,WY,WW,WH)
+      +tx2(WX+WW/2,WY-8,'WALL',8,MU2)
 
-      <!-- WALL CROSS-SECTION -->
-      ${wallRect(WALL_X,WALL_Y,WALL_W,WALL_H)}
-      ${t(WALL_X+WALL_W/2,WALL_Y-8,'WALL',8,MU2)}
+      // Plug labels (above screw 1 only, to avoid clutter)
+      +tx2(WX+WW/2,S1-18,'PLUG',7,MU2)
+      +plug(WX+WW/2,S1)
+      +plug(WX+WW/2,S2)
 
-      <!-- Wall plugs -->
-      ${drawPlug(WALL_X+WALL_W/2,screw1Y)}
-      ${drawPlug(WALL_X+WALL_W/2,screw2Y)}
-      ${t(WALL_X+WALL_W/2,screw1Y-16,'PLUG',7,MU2)}
+      // Screw 1 + label
+      +screw(SX,S1,SLEN)
+      +tx2(SX+SLEN+3,S1-14,'5–7mm proud',7,MU2,'start')
 
-      <!-- Screw 1 -->
-      ${drawScrew(WALL_X+WALL_W,screw1Y,SCREW_LEN)}
-      ${badge(LX-6,screw1Y,1)}
-      ${t(LX+8,screw1Y-10,'Drive '+scrL,8.5,LT2,'start')}
-      ${t(LX+8,screw1Y+3,'Leave 5–7mm head proud',8,MU2,'start')}
+      // Screw 2
+      +screw(SX,S2,SLEN)
 
-      <!-- Screw 2 -->
-      ${drawScrew(WALL_X+WALL_W,screw2Y,SCREW_LEN)}
-      ${badge(LX-6,screw2Y,2)}
-      ${t(LX+8,screw2Y-10,'Drive '+scrL,8.5,LT2,'start')}
-      ${t(LX+8,screw2Y+3,'Leave 5–7mm head proud',8,MU2,'start')}
+      // Spacing dimension on left of wall
+      +dimV(WX-16,S1,S2,spc+'mm')
 
-      <!-- Spacing dimension -->
-      ${dimV(WALL_X-18,screw1Y,screw2Y,spc+'mm c/c')}
+      // Speaker REAR face with two keyhole slots
+      +r2(REAR_X,REAR_Y,REAR_W,REAR_H,WL2,CH2,1.4,4)
+      +tx2(REAR_X+REAR_W/2,REAR_Y-12,'REAR FACE',7.5,MU2)
+      +keyhole(REAR_X+REAR_W/2,S1-7,8)
+      +keyhole(REAR_X+REAR_W/2,S2-7,8)
 
-      <!-- SPEAKER REAR FACE — keyhole slots -->
-      ${rect2(WALL_X+WALL_W+SCREW_LEN+4,screw1Y-18,30,screw2Y-screw1Y+36,WL2,CH2,1.4,4)}
-      ${drawKeyhole(WALL_X+WALL_W+SCREW_LEN+19,screw1Y,9)}
-      ${drawKeyhole(WALL_X+WALL_W+SCREW_LEN+19,screw2Y,9)}
-      ${t(WALL_X+WALL_W+SCREW_LEN+19,screw1Y-28,'REAR FACE',8,MU2)}
-      ${t(WALL_X+WALL_W+SCREW_LEN+19,screw1Y-18,'(keyhole slots)',7,MU2)}
+      // Steps column — no overlap: each step gets 48px vertical slot
+      +step(TX,S1-30,  1,'Mark positions — use template','Confirm level with spirit level')
+      +step(TX,S1+10,  2,'Drill '+drillMm+'mm holes — insert plugs')
+      +step(TX,(S1+S2)/2, 3,'Drive '+scrL,'Leave 5–7mm proud of wall')
+      +step(TX,S2+10,  4,'Connect cable at rear terminal','Red(+) · Black(−)')
+      +step(TX,S2+60,  5,'Lower onto screws — keyhole locks')
+      +(isQ
+        ? tx2(TX,S2+95,'QuadCane: 2-piece corner bracket — '+spc+'mm apart',7.5,MU2,'start')
+        : tx2(TX,S2+95,'Cannot lift out without tilting speaker',7.5,MU2,'start'))
 
-      <!-- Step 3 callout: how it hangs -->
-      ${badge(LX-6,(screw1Y+screw2Y)/2+45,3)}
-      ${t(LX+8,(screw1Y+screw2Y)/2+38,'Lower speaker — keyhole slides',8.5,LT2,'start')}
-      ${t(LX+8,(screw1Y+screw2Y)/2+51,'over screw head and locks',8,MU2,'start')}
-
-      <!-- Speaker front face -->
-      ${spkFace(WALL_X+WALL_W+SCREW_LEN+38,screw1Y-28,48,screw2Y-screw1Y+56,name)}
-
-      <!-- Step 4: connect cable -->
-      ${badge(LX-6,screw2Y+90,4)}
-      ${t(LX+8,screw2Y+82,'Connect cable at rear terminal',8.5,LT2,'start')}
-      ${t(LX+8,screw2Y+95,'Red (+)  ·  Black (−)',8,MU2,'start')}
-
-      <!-- Drill info at bottom -->
-      ${rect2(WALL_X,WALL_Y+WALL_H+16,W-WALL_X-16,38,BG2,'rgba(201,169,110,0.12)',0.4,3)}
-      ${t(WALL_X+8,WALL_Y+WALL_H+30,'DRILL BIT:  '+drillMm+'mm for '+scrL+' into wall plug',8.5,LT2,'start')}
-      ${isQ?t(WALL_X+8,WALL_Y+WALL_H+45,'QuadCane: two-piece corner bracket — each piece '+spc+'mm apart on adjacent walls',7.5,MU2,'start'):''}
-    `)
+      // Bottom info strip
+      +r2(WX,WY+WH+14,W-WX-14,28,BG2,'rgba(201,169,110,0.12)',0.4,3)
+      +tx2(WX+10,WY+WH+24,'DRILL BIT',8,CH2,'start')
+      +tx2(WX+70,WY+WH+24,drillMm+'mm for '+scrL,8,LT2,'start')
+      +tx2(WX+10,WY+WH+36,'SCREW SPACING',8,CH2,'start')
+      +tx2(WX+104,WY+WH+36,spc+'mm centre-to-centre',8,LT2,'start')
+    )
   }
 
   // ============================================================
   // BRACKET WALL MOUNT
   // ============================================================
   if(it==='bracket-wall'){
-    const spc=P.screwSpacingMm||120, scrL=P.screwSize||'M4×25'
+    const spc=P.screwSpacingMm||120
+    const scrL=P.screwSize||'M4×25'
     const drillMm=scrL.startsWith('M4')?'7':scrL.startsWith('M3')?'6':'7'
-    const name=P.productName||'speaker'
 
-    const WALL_X=70, WALL_W=36, WALL_Y=44, WALL_H=460
-    const s1Y=WALL_Y+WALL_H*0.28, s2Y=WALL_Y+WALL_H*0.72
-    const SCREW_LEN=44, BARM_W=52, BBAR_W=12
+    const WX=18, WW=30, WY=55, WH=420
+    const GAP=Math.min(spc*0.75,180)
+    const midY=WY+WH/2, S1=midY-GAP/2, S2=midY+GAP/2
+    const SX=WX+WW, SLEN=40
+    // Bracket arms + vertical bar
+    const B_ARM_W=50, B_BAR_W=12
+    const BVX=SX+SLEN+B_ARM_W  // bracket bar left edge
+    const TX=BVX+B_BAR_W+28
 
-    return mksvg(`
-      ${t(W/2,16,'BRACKET WALL MOUNT',9,MU2)}
-      ${t(W/2,28,spc+'mm SCREW SPACING  ·  '+scrL,8,CH2)}
+    return mksvg(
+      tx2(W/2,18,'BRACKET WALL MOUNT',9,MU2)
+      +tx2(W/2,30,spc+'mm C/C  ·  '+scrL,8.5,CH2)
 
-      ${wallRect(WALL_X,WALL_Y,WALL_W,WALL_H)}
-      ${t(WALL_X+WALL_W/2,WALL_Y-8,'WALL',8,MU2)}
+      +wall(WX,WY,WW,WH)
+      +tx2(WX+WW/2,WY-8,'WALL',8,MU2)
 
-      ${drawPlug(WALL_X+WALL_W/2,s1Y)}
-      ${drawPlug(WALL_X+WALL_W/2,s2Y)}
-      ${drawScrew(WALL_X+WALL_W,s1Y,SCREW_LEN,12)}
-      ${drawScrew(WALL_X+WALL_W,s2Y,SCREW_LEN,12)}
+      +plug(WX+WW/2,S1)+plug(WX+WW/2,S2)
+      +screw(SX,S1,SLEN)+screw(SX,S2,SLEN)
 
-      <!-- Bracket horizontal arms -->
-      ${rect2(WALL_X+WALL_W+SCREW_LEN,s1Y-5,BARM_W,10,WL2,CH2,1.2,2)}
-      ${rect2(WALL_X+WALL_W+SCREW_LEN,s2Y-5,BARM_W,10,WL2,CH2,1.2,2)}
-      <!-- Bracket vertical bar -->
-      ${rect2(WALL_X+WALL_W+SCREW_LEN+BARM_W,s1Y,BBAR_W,s2Y-s1Y,WL2,CH2,1.2,1)}
-      ${t(WALL_X+WALL_W+SCREW_LEN+BARM_W/2,s1Y-10,'BRACKET',8,CH2)}
+      // Horizontal bracket arms
+      +r2(SX+SLEN,S1-5,B_ARM_W,10,WL2,CH2,1.2,2)
+      +r2(SX+SLEN,S2-5,B_ARM_W,10,WL2,CH2,1.2,2)
+      // Vertical bracket bar
+      +r2(BVX,S1,B_BAR_W,S2-S1,WL2,CH2,1.2,1)
+      +tx2(BVX+B_BAR_W/2,S1-14,'BRACKET',8,CH2)
 
-      <!-- Speaker on bracket -->
-      ${spkFace(WALL_X+WALL_W+SCREW_LEN+BARM_W+BBAR_W,s1Y-28,56,s2Y-s1Y+56,name)}
+      +dimV(WX-16,S1,S2,spc+'mm')
 
-      <!-- Dimensions -->
-      ${dimV(WALL_X-16,s1Y,s2Y,spc+'mm')}
+      +step(TX,S1-30,  1,'Mark '+spc+'mm spacing — confirm level')
+      +step(TX,S1+10,  2,'Drill '+drillMm+'mm — insert plugs')
+      +step(TX,(S1+S2)/2, 3,'Drive '+scrL+' — attach bracket to wall')
+      +step(TX,S2+10,  4,'Fix speaker to bracket')
+      +step(TX,S2+60,  5,'Connect cable — Red(+) · Black(−)')
 
-      <!-- Step callouts right column -->
-      ${badge(W-110,s1Y-10,1)}
-      ${t(W-96,s1Y-14,'Mark screws '+spc+'mm apart',8.5,LT2,'start')}
-      ${t(W-96,s1Y-1,'Drill '+drillMm+'mm, insert plugs',8,MU2,'start')}
-
-      ${badge(W-110,s1Y+50,2)}
-      ${t(W-96,s1Y+44,'Drive '+scrL+' flush',8.5,LT2,'start')}
-      ${t(W-96,s1Y+57,'Attach bracket to wall',8,MU2,'start')}
-
-      ${badge(W-110,(s1Y+s2Y)/2,3)}
-      ${t(W-96,(s1Y+s2Y)/2-6,'Fix speaker to bracket',8.5,LT2,'start')}
-      ${t(W-96,(s1Y+s2Y)/2+7,'Connect cable — red+, black−',8,MU2,'start')}
-
-      ${rect2(WALL_X,WALL_Y+WALL_H+16,W-WALL_X-16,28,BG2,'rgba(201,169,110,0.12)',0.4,3)}
-      ${t(WALL_X+8,WALL_Y+WALL_H+30,'DRILL BIT:  '+drillMm+'mm for '+scrL+' into wall plug',8.5,LT2,'start')}
-    `)
+      +r2(WX,WY+WH+14,W-WX-14,28,BG2,'rgba(201,169,110,0.12)',0.4,3)
+      +tx2(WX+10,WY+WH+24,'DRILL BIT',8,CH2,'start')
+      +tx2(WX+70,WY+WH+24,drillMm+'mm for '+scrL,8,LT2,'start')
+      +tx2(WX+10,WY+WH+36,'SCREW SPACING',8,CH2,'start')
+      +tx2(WX+104,WY+WH+36,spc+'mm centre-to-centre',8,LT2,'start')
+    )
   }
 
   // ============================================================
   // CEILING CIRCULAR
   // ============================================================
   if(it==='ceiling-circular'){
-    const d=P.cutoutDiameterMm||209, cav=P.requiredCavityDepthMm||115
-    const R_SVG=108  // radius in SVG coords
+    const d=P.cutoutDiameterMm||209
+    const cav=P.requiredCavityDepthMm||115
+    const R=100  // circle radius in SVG units — big and clear
 
-    // Map: left half = cross-section side view, right = rear detail
-    return mksvg(`
-      ${t(W/2,16,'CIRCULAR IN-CEILING',9,MU2)}
-      ${t(W/2,28,'⌀'+d+'mm CUTOUT  ·  MIN '+cav+'mm VOID ABOVE',8,CH2)}
+    // Top third: ceiling cross-section with hole + speaker
+    // Bottom: step list with plenty of space
+    const CEIL_Y=80, CEIL_H=34
+    const CX=W/2, CY=CEIL_Y+CEIL_H/2+R+4  // speaker centre
 
-      <!-- Ceiling void -->
-      ${rect2(22,38,W-44,70,'#0c0c0a','rgba(201,169,110,0.07)',0.3,0)}
-      ${t(W/2,76,'CEILING VOID  —  MIN '+cav+'mm',8,MU2)}
+    // Dog-leg clips at 4 compass points
+    const clips=[0,90,180,270].map((a:number)=>{
+      const rd=a*Math.PI/180
+      const cx2=CX+Math.cos(rd)*(R-3), cy2=CY+Math.sin(rd)*(R-3)
+      const ex=CX+Math.cos(rd)*(R+24), ey=CY+Math.sin(rd)*(R+24)
+      return r2(cx2-6,cy2-4,12,8,CH2,BG2,0.3,1)
+        +ln(cx2,cy2,ex,ey,CH2,2)
+        +c2(ex,ey,7,BG2,CH2,1.3)
+    }).join('')
 
-      <!-- Ceiling slab -->
-      ${wallRect(22,108,W-44,40)}
-      ${t(W/2,101,'CEILING',8,MU2)}
+    const STEP_Y=CY+R+30  // start of step list
+    const STEP_GAP=28
 
-      <!-- Circular hole through ceiling -->
-      <circle cx="${W/2}" cy="128" r="${R_SVG}" fill="${BG2}" stroke="${CH2}" stroke-width="2"/>
+    return mksvg(
+      tx2(W/2,16,'CIRCULAR IN-CEILING',9,MU2)
+      +tx2(W/2,28,'⌀'+d+'mm CUTOUT  ·  '+cav+'mm MIN VOID',8.5,CH2)
 
-      <!-- Speaker body flush in hole -->
-      <circle cx="${W/2}" cy="128" r="${R_SVG-8}" fill="${WL2}" stroke="${CH2}" stroke-width="1.4"/>
-      <!-- grille zone -->
-      <circle cx="${W/2}" cy="128" r="${R_SVG-22}" fill="#0d0d0b" stroke="rgba(201,169,110,0.2)" stroke-width="0.5"/>
-      <!-- tweeter -->
-      <ellipse cx="${W/2}" cy="${128-R_SVG*0.26}" rx="16" ry="9" fill="${CH2}" opacity="0.6"/>
-      ${t(W/2,128-R_SVG*0.26+3,'TWEETER',6,'#090909')}
-      <!-- woofer cone rings -->
-      <circle cx="${W/2}" cy="${f2(128+R_SVG*0.2)}" r="${f2(R_SVG*0.36)}" fill="${BG2}" stroke="${CH2}" stroke-width="1.1"/>
-      <circle cx="${W/2}" cy="${f2(128+R_SVG*0.2)}" r="${f2(R_SVG*0.14)}" fill="${CH2}" opacity="0.35"/>
-      <circle cx="${W/2}" cy="${f2(128+R_SVG*0.2)}" r="${f2(R_SVG*0.055)}" fill="${CH2}" opacity="0.7"/>
+      // Ceiling void label
+      +r2(22,38,W-44,CEIL_Y-40,'#0c0c0a','rgba(201,169,110,0.06)',0.3,0)
+      +tx2(W/2,60,'CEILING VOID  —  MIN '+cav+'mm DEPTH REQUIRED',8,MU2)
 
-      <!-- Dog-leg clips — 4 positions shown clearly -->
-      ${[0,90,180,270].map((a:number)=>{
-        const rad=a*Math.PI/180
-        const cx=W/2+(R_SVG-3)*Math.cos(rad), cy=128+(R_SVG-3)*Math.sin(rad)
-        const ex=W/2+(R_SVG+22)*Math.cos(rad), ey=128+(R_SVG+22)*Math.sin(rad)
-        return `${rect2(cx-6,cy-4,12,8,CH2,BG2,0.3,1)}${line2(cx,cy,ex,ey,CH2,1.8)}${circ(ex,ey,6,BG2,CH2,1.2)}`
-      }).join('')}
-      ${t(W/2+R_SVG+30,100,'DOG-LEG',8.5,CH2,'start')}
-      ${t(W/2+R_SVG+30,112,'CLIPS ×4',8.5,CH2,'start')}
-      ${t(W/2+R_SVG+30,124,'grip behind',7,MU2,'start')}
-      ${t(W/2+R_SVG+30,135,'ceiling board',7,MU2,'start')}
+      // Ceiling slab
+      +wall(22,CEIL_Y,W-44,CEIL_H)
+      +tx2(W/2,CEIL_Y-6,'CEILING SURFACE',8,MU2)
 
-      <!-- Cutout diameter dim -->
-      ${dimH(W/2-R_SVG,166,W/2+R_SVG,'⌀'+d+'mm')}
+      // Circular cutout
+      +`<circle cx="${CX}" cy="${CY}" r="${R}" fill="${BG2}" stroke="${CH2}" stroke-width="2.2"/>`
+      // Speaker body flush in hole
+      +`<circle cx="${CX}" cy="${CY}" r="${R-9}" fill="${WL2}" stroke="${CH2}" stroke-width="1.4"/>`
+      +`<circle cx="${CX}" cy="${CY}" r="${R-24}" fill="#0d0d0b" stroke="rgba(201,169,110,0.2)" stroke-width="0.6"/>`
+      // Tweeter
+      +`<ellipse cx="${CX}" cy="${f2(CY-R*0.26)}" rx="17" ry="10" fill="${CH2}" opacity="0.6"/>`
+      +tx2(CX,CY-R*0.26+4,'TWEETER',6,'#090909')
+      // Woofer cone
+      +`<circle cx="${CX}" cy="${f2(CY+R*0.2)}" r="${f2(R*0.36)}" fill="${BG2}" stroke="${CH2}" stroke-width="1.1"/>`
+      +`<circle cx="${CX}" cy="${f2(CY+R*0.2)}" r="${f2(R*0.14)}" fill="${CH2}" opacity="0.35"/>`
+      +`<circle cx="${CX}" cy="${f2(CY+R*0.2)}" r="${f2(R*0.055)}" fill="${CH2}" opacity="0.72"/>`
 
-      <!-- Void depth dim on left side -->
-      ${dimV(26,38,108,'  '+cav+'mm',false)}
+      // Dog-leg clips
+      +clips
+      +tx2(CX+R+32,CY-14,'DOG-LEG',8.5,CH2,'start')
+      +tx2(CX+R+32,CY-2,'CLIPS ×4',8.5,CH2,'start')
+      +tx2(CX+R+32,CY+11,'grip behind ceiling',7.5,MU2,'start')
 
-      <!-- Cable drop -->
-      ${line2(W/2,128+R_SVG-6,W/2,310,CH2,1.4,'6,3')}
-      ${circ(W/2,316,8,BG2,CH2,1.2)}${circ(W/2-4,316,3,CH2,BG2,0.5)}${circ(W/2+4,316,3,BG2,LT2,0.5)}
-      ${t(W/2+16,312,'TERMINAL',8,CH2,'start')}
-      ${t(W/2+16,326,'connect + / −',7.5,MU2,'start')}
+      // Diameter dimension line
+      +dimH(CX-R,CY+R+14,CX+R,'⌀'+d+'mm')
 
-      <!-- Step list bottom -->
-      ${rect2(22,344,W-44,200,BG2,'rgba(201,169,110,0.1)',0.4,3)}
-      ${[
-        ['1','Use hole saw to cut ⌀'+d+'mm opening — check no joists'],
-        ['2','Confirm '+cav+'mm void depth above ceiling'],
-        ['3','Route cable through hole — leave 200mm slack'],
-        ['4','Connect to terminal (observe + / −)'],
-        ['5','Insert speaker tilted, then straighten flush to ceiling'],
-        ['6','Tighten dog-leg clips evenly — do not overtighten'],
-        ['7','Clip grille on (paintable — prime before fitting)'],
-      ].map(([n,s],i)=>`${badge(40,362+i*22,parseInt(n))}${t(56,366+i*22,s,8.5,i%2===0?LT2:MU2,'start')}`).join('')}
-    `)
+      // Steps — well-spaced list
+      +r2(22,STEP_Y,W-44,H-STEP_Y-10,BG2,'rgba(201,169,110,0.09)',0.4,3)
+      +[
+        ['1','Cut ⌀'+d+'mm hole — use hole saw','Check no joists within cutout area'],
+        ['2','Route cable through hole','Leave 200mm slack hanging through'],
+        ['3','Connect cable to terminal','Observe polarity: + and −'],
+        ['4','Insert speaker at angle — straighten flush','Dog-leg clips go behind ceiling board'],
+        ['5','Tighten clips evenly — do not overtighten'],
+        ['6','Fit grille (paintable — prime before fitting)'],
+      ].map(([n,a,b=''],i)=>
+        step(38,STEP_Y+18+i*STEP_GAP,parseInt(n as string),a,b)
+      ).join('')
+    )
   }
 
   // ============================================================
@@ -339,86 +340,96 @@ function installDiagram(P:any):string {
     const cH=P.cutoutHeightMm||230, cW=P.cutoutWidthMm||328
     const isDog=it==='inwall-dogleg'
 
-    // Large cross-section view fills most of canvas
-    const WALL_X=70, WALL_W=40, WALL_Y=38, WALL_H=H-80
-    const cutH_px=Math.min(cH*0.52,300), cutY=WALL_Y+(WALL_H-cutH_px)/2
-    const cavW=50  // cavity depth shown
+    // Cross-section view: wall left, speaker in middle, room right
+    // All proportions fixed — no dynamic scaling that causes cramping
+    const WX=40, WW=38, WY=44, WH=H-88
+    const cutH_px=Math.min(cH*0.52,260)
+    const cutY=WY+(WH-cutH_px)/2
 
-    return mksvg(`
-      ${t(W/2,16,'IN-WALL '+(isDog?'DOG-LEG CLIPS':'SPRING CLIPS'),9,MU2)}
-      ${t(W/2,28,'CUTOUT: '+cW+'×'+cH+'mm',8,CH2)}
+    // Cavity behind wall (left of wall)
+    const CAV_W=36
+    // Speaker body in the wall opening
+    const ROOM_X=WX+WW  // room-side face of speaker
 
-      <!-- Cavity behind wall -->
-      ${rect2(WALL_X-cavW-10,WALL_Y,cavW+10,WALL_H,'#0a0a08','rgba(201,169,110,0.05)',0.2,0)}
-      ${t(WALL_X-cavW/2-4,WALL_Y-8,'CAVITY',7,MU2)}
+    // Step list: right side column
+    const STEPS_X=WX+WW+50
+    const STEPS_W=W-STEPS_X-14
+    const STEP_GAP=Math.min((WH-20)/8.5, 52)
 
-      <!-- Wall slab -->
-      ${wallRect(WALL_X,WALL_Y,WALL_W,WALL_H)}
-      ${t(WALL_X+WALL_W/2,WALL_Y-8,'WALL',8,MU2)}
+    return mksvg(
+      tx2(W/2,16,'IN-WALL '+(isDog?'DOG-LEG CLIPS':'SPRING CLIPS'),9,MU2)
+      +tx2(W/2,28,'CUTOUT: '+cW+' × '+cH+'mm',8.5,CH2)
 
-      <!-- Cutout opening in wall -->
-      ${rect2(WALL_X,cutY,WALL_W,cutH_px,BG2,CH2,1,0)}
-      ${line2(WALL_X,cutY,WALL_X+WALL_W,cutY,CH2,1,'5,3')}
-      ${line2(WALL_X,cutY+cutH_px,WALL_X+WALL_W,cutY+cutH_px,CH2,1,'5,3')}
+      // Cavity behind wall
+      +r2(WX-CAV_W-6,WY,CAV_W+6,WH,'#0a0a08','rgba(201,169,110,0.05)',0.2,0)
+      +tx2(WX-CAV_W/2-3,WY-8,'CAVITY',7,MU2)
 
-      <!-- Speaker body in wall -->
-      ${rect2(WALL_X,cutY+8,WALL_W,cutH_px-16,'#0f0f0d',CH2,1.4,2)}
-      <!-- Speaker cavity section behind wall -->
-      ${rect2(WALL_X-cavW,cutY+16,cavW,cutH_px-32,'#0e0e0c','rgba(201,169,110,0.18)',0.5,1)}
+      // Wall slab
+      +wall(WX,WY,WW,WH)
+      +tx2(WX+WW/2,WY-8,'WALL',8,MU2)
 
-      <!-- Woofer cone (front face) -->
-      ${circ(WALL_X+WALL_W/2,WALL_Y+WALL_H/2,Math.min(cutH_px*0.3,58),BG2,CH2,1.2)}
-      ${circ(WALL_X+WALL_W/2,WALL_Y+WALL_H/2,Math.min(cutH_px*0.12,22),CH2,BG2,0.38)}
-      ${circ(WALL_X+WALL_W/2,WALL_Y+WALL_H/2,Math.min(cutH_px*0.05,9),CH2,BG2,0.75)}
-      ${cutH_px>180?circ(WALL_X+WALL_W/2,WALL_Y+WALL_H/2-Math.min(cutH_px*0.32,68),11,CH2,BG2,0.5):''}
+      // Cutout opening
+      +r2(WX,cutY,WW,cutH_px,BG2,CH2,0.9,0)
+      +ln(WX,cutY,WX+WW,cutY,CH2,1,'5,3')
+      +ln(WX,cutY+cutH_px,WX+WW,cutY+cutH_px,CH2,1,'5,3')
 
-      <!-- Mounting clips — shown clearly -->
-      ${isDog?`
-        <path d="M ${WALL_X} ${cutY+28} L ${WALL_X-18} ${cutY+14} L ${WALL_X-18} ${cutY-6}" fill="none" stroke="${CH2}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-        ${circ(WALL_X-18,cutY-6,6,CH2,BG2,0.7)}
-        <path d="M ${WALL_X} ${cutY+cutH_px-28} L ${WALL_X-18} ${cutY+cutH_px-14} L ${WALL_X-18} ${cutY+cutH_px+6}" fill="none" stroke="${CH2}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-        ${circ(WALL_X-18,cutY+cutH_px+6,6,CH2,BG2,0.7)}
-        ${t(WALL_X-26,cutY+6,'DOG-LEG',7.5,CH2,'end')}
-        ${t(WALL_X-26,cutY+cutH_px+8,'DOG-LEG',7.5,CH2,'end')}
-      `:`
-        <path d="M ${WALL_X} ${cutY+20} Q ${WALL_X-22} ${cutY+32} ${WALL_X-20} ${cutY+50} Q ${WALL_X-18} ${cutY+68} ${WALL_X} ${cutY+76}" fill="none" stroke="${CH2}" stroke-width="2.5" stroke-linecap="round"/>
-        <path d="M ${WALL_X} ${cutY+cutH_px-20} Q ${WALL_X-22} ${cutY+cutH_px-32} ${WALL_X-20} ${cutY+cutH_px-50} Q ${WALL_X-18} ${cutY+cutH_px-68} ${WALL_X} ${cutY+cutH_px-76}" fill="none" stroke="${CH2}" stroke-width="2.5" stroke-linecap="round"/>
-        ${t(WALL_X-26,cutY+cutH_px/2-8,'SPRING',7.5,CH2,'end')}
-        ${t(WALL_X-26,cutY+cutH_px/2+5,'CLIPS',7.5,CH2,'end')}
-        ${t(WALL_X-26,cutY+cutH_px/2+18,'auto-expand',6.5,MU2,'end')}
-      `}
+      // Speaker body in wall
+      +r2(WX,cutY+8,WW,cutH_px-16,'#0f0f0d',CH2,1.5,2)
+      // Speaker cavity (behind wall section)
+      +r2(WX-CAV_W,cutY+16,CAV_W,cutH_px-32,'#0e0e0c','rgba(201,169,110,0.18)',0.5,1)
 
-      <!-- Terminal on rear -->
-      ${rect2(WALL_X-cavW+8,WALL_Y+WALL_H/2-18,26,36,BG2,LT2,0.8,2)}
-      ${circ(WALL_X-cavW+16,WALL_Y+WALL_H/2-4,4,CH2,BG2,0.5)}
-      ${circ(WALL_X-cavW+25,WALL_Y+WALL_H/2-4,4,BG2,LT2,0.5)}
-      ${t(WALL_X-cavW+16,WALL_Y+WALL_H/2+10,'+',9,CH2)}
-      ${t(WALL_X-cavW+25,WALL_Y+WALL_H/2+10,'−',9,LT2)}
-      ${line2(WALL_X-cavW,WALL_Y+WALL_H/2,WALL_X-cavW-18,WALL_Y+WALL_H/2,CH2,1,'4,3')}
-      ${t(WALL_X-cavW-20,WALL_Y+WALL_H/2+12,'TO AMP',7,MU2,'end')}
+      // Woofer cone (room-side face)
+      +c2(WX+WW/2,WY+WH/2,Math.min(cutH_px*0.29,54),BG2,CH2,1.2)
+      +c2(WX+WW/2,WY+WH/2,Math.min(cutH_px*0.12,22),CH2,BG2,0.38)
+      +c2(WX+WW/2,WY+WH/2,Math.min(cutH_px*0.05,9),CH2,BG2,0.75)
 
-      <!-- Grille line on room side -->
-      ${rect2(WALL_X+WALL_W+2,cutY+8,8,cutH_px-16,'rgba(238,235,229,0.03)',LT2,0.5,1)}
-      ${t(WALL_X+WALL_W+18,WALL_Y+WALL_H/2,'ROOM SIDE',9,MU2,'start')}
-      ${t(WALL_X+WALL_W+18,WALL_Y+WALL_H/2+14,'(grille fits flush)',7,MU2,'start')}
+      // Mounting mechanism — clips shown left of wall clearly
+      +(isDog
+        ? // Dog-leg arms: L-shaped paths bending behind wall
+          `<path d="M ${WX} ${cutY+26} L ${WX-16} ${cutY+12} L ${WX-16} ${cutY-8}" fill="none" stroke="${CH2}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`
+          +c2(WX-16,cutY-8,7,CH2,BG2,0.7)
+          +tx2(WX-22,cutY-16,'CLIP',7.5,CH2,'end')
+          +`<path d="M ${WX} ${cutY+cutH_px-26} L ${WX-16} ${cutY+cutH_px-12} L ${WX-16} ${cutY+cutH_px+8}" fill="none" stroke="${CH2}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`
+          +c2(WX-16,cutY+cutH_px+8,7,CH2,BG2,0.7)
+          +tx2(WX-22,cutY+cutH_px+16,'CLIP',7.5,CH2,'end')
+        : // Spring clips: bezier curve
+          `<path d="M ${WX} ${cutY+18} Q ${WX-20} ${cutY+30} ${WX-18} ${cutY+48} Q ${WX-16} ${cutY+66} ${WX} ${cutY+74}" fill="none" stroke="${CH2}" stroke-width="2.5" stroke-linecap="round"/>`
+          +tx2(WX-24,cutY+cutH_px/2-6,'SPRING',7.5,CH2,'end')
+          +tx2(WX-24,cutY+cutH_px/2+8,'CLIPS',7.5,CH2,'end')
+          +`<path d="M ${WX} ${cutY+cutH_px-18} Q ${WX-20} ${cutY+cutH_px-30} ${WX-18} ${cutY+cutH_px-48} Q ${WX-16} ${cutY+cutH_px-66} ${WX} ${cutY+cutH_px-74}" fill="none" stroke="${CH2}" stroke-width="2.5" stroke-linecap="round"/>`)
 
-      <!-- Cutout dimensions -->
-      ${dimH(WALL_X,cutY-20,WALL_X+WALL_W,cW+'mm wide')}
-      ${dimV(WALL_X+WALL_W+42,cutY,cutY+cutH_px,cH+'mm',false)}
+      // Terminal on rear (inside cavity)
+      +r2(WX-CAV_W+6,WY+WH/2-16,26,32,BG2,LT2,0.8,2)
+      +c2(WX-CAV_W+14,WY+WH/2-3,4,CH2,BG2,0.5)
+      +c2(WX-CAV_W+22,WY+WH/2-3,4,BG2,LT2,0.5)
+      +tx2(WX-CAV_W+14,WY+WH/2+10,'+',8.5,CH2)
+      +tx2(WX-CAV_W+22,WY+WH/2+10,'−',8.5,LT2)
+      +ln(WX-CAV_W,WY+WH/2,WX-CAV_W-14,WY+WH/2,CH2,1,'3,2')
+      +tx2(WX-CAV_W-16,WY+WH/2+14,'TO AMP',7,MU2,'end')
 
-      <!-- Step list right column -->
-      ${rect2(WALL_X+WALL_W+60,WALL_Y,W-WALL_X-WALL_W-76,WALL_H,BG2,'rgba(201,169,110,0.08)',0.3,3)}
-      ${[
+      // Room side label
+      +tx2(WX+WW+8,WY+WH/2-8,'ROOM',8,MU2,'start')
+      +tx2(WX+WW+8,WY+WH/2+6,'SIDE',8,MU2,'start')
+
+      // Cutout dimensions
+      +dimH(WX,cutY-18,WX+WW,cW+'mm wide')
+      +dimV(WX+WW+28,cutY,cutY+cutH_px,cH+'mm')
+
+      // Step list in right column — well spaced
+      +r2(STEPS_X,WY,STEPS_W,WH,BG2,'rgba(201,169,110,0.08)',0.3,3)
+      +[
         ['1','Mark '+cW+'×'+cH+'mm cutout'],
         ['2','Check pipes & studs first'],
         ['3','Cut with drywall saw'],
         ['4','Route cable — 200mm slack'],
-        ['5','Connect cable (observe + / −)'],
+        ['5','Connect — Red(+) · Black(−)'],
         ['6','Insert speaker into opening'],
         ['7',isDog?'Tighten clips alternating sides':'Spring clips auto-expand'],
         ['8','Fit grille (paintable)'],
-      ].map(([n,s],i)=>`${badge(WALL_X+WALL_W+72,WALL_Y+22+i*((WALL_H-20)/8.5),parseInt(n))}${t(WALL_X+WALL_W+88,WALL_Y+26+i*((WALL_H-20)/8.5),s,8,i%2===0?LT2:MU2,'start')}`).join('')}
-    `)
+      ].map(([n,s],i)=>
+        step(STEPS_X+16,WY+18+i*STEP_GAP,parseInt(n as string),s as string)
+      ).join('')
+    )
   }
 
   // ============================================================
@@ -426,60 +437,67 @@ function installDiagram(P:any):string {
   // ============================================================
   if(it==='ceiling-rectangular'){
     const cH=P.cutoutHeightMm||168, cW=P.cutoutWidthMm||53
-    const sc=Math.min(220/cW,90/cH,2.4), dW=Math.round(cW*sc), dH=Math.round(cH*sc)
-    const cx=W/2-dW/2, cy=130
+    const sc=Math.min(200/cW,85/cH,2.2)
+    const dW=Math.round(cW*sc), dH=Math.round(cH*sc)
+    const cx=W/2-dW/2, cy=132
 
-    return mksvg(`
-      ${t(W/2,16,'GHOST 2.0  CEILING RECTANGULAR',9,MU2)}
-      ${t(W/2,28,cW+'×'+cH+'mm CUTOUT  ·  MAGNET + SAFETY HARNESS',8,CH2)}
+    const STEP_Y=cy+dH+100
+    const STEP_GAP=28
 
-      <!-- Ceiling void -->
-      ${rect2(22,38,W-44,80,'#0c0c0a','rgba(201,169,110,0.07)',0.3,0)}
-      ${t(W/2,76,'CEILING VOID',8,MU2)}
-      <!-- Pre-construction bracket in void -->
-      ${rect2(cx-20,60,dW+40,28,WL2,CH2,0.9,2)}
-      ${t(W/2,77,'PRE-CONSTRUCTION BRACKET  (fit during build)',7.5,CH2)}
+    return mksvg(
+      tx2(W/2,16,'GHOST 2.0  CEILING RECTANGULAR',9,MU2)
+      +tx2(W/2,28,cW+'×'+cH+'mm  ·  MAGNET + SAFETY HARNESS',8.5,CH2)
 
-      <!-- Ceiling slab -->
-      ${wallRect(22,118,W-44,44)}
-      ${t(W/2,111,'FINISHED CEILING',8,MU2)}
+      // Ceiling void
+      +r2(22,40,W-44,78,'#0c0c0a','rgba(201,169,110,0.06)',0.3,0)
+      +tx2(W/2,76,'CEILING VOID',8,MU2)
+      // Pre-construction bracket
+      +r2(cx-22,62,dW+44,30,WL2,CH2,0.9,2)
+      +tx2(W/2,78,'PRE-CONSTRUCTION BRACKET',7.5,CH2)
+      +tx2(W/2,90,'fit during construction before plasterboard',7,MU2)
 
-      <!-- Rectangular cutout -->
-      ${rect2(cx,cy,dW,dH,BG2,CH2,1.8,1)}
-      ${t(W/2,cy-14,cW+'×'+cH+'mm',9,CH2)}
+      // Ceiling slab
+      +wall(22,118,W-44,40)
+      +tx2(W/2,112,'FINISHED CEILING',8,MU2)
 
-      <!-- Ghost speaker flush in cutout -->
-      ${rect2(cx+4,cy+4,dW-8,dH-8,'#0f0f0d',CH2,1.2,1)}
-      ${circ(W/2,cy+dH/2,Math.min(dW*0.3,17),BG2,CH2,0.9)}
-      ${circ(W/2,cy+dH/2,Math.min(dW*0.12,6),CH2,BG2,0.4)}
+      // Rectangular cutout
+      +r2(cx,cy,dW,dH,BG2,CH2,2,1)
+      +tx2(W/2,cy-12,cW+'×'+cH+'mm',9,CH2)
 
-      <!-- Magnet symbol -->
-      <path d="M ${f2(W/2-12)} ${f2(cy+10)} L ${f2(W/2)} ${f2(cy+22)} L ${f2(W/2+12)} ${f2(cy+10)}" fill="none" stroke="${CH2}" stroke-width="2" stroke-linecap="round"/>
-      ${t(W/2+dW/2+16,cy+14,'MAGNET',8,CH2,'start')}
-      ${t(W/2+dW/2+16,cy+26,'holds flush',7,MU2,'start')}
+      // Ghost speaker in cutout
+      +r2(cx+4,cy+4,dW-8,dH-8,'#0f0f0d',CH2,1.2,1)
+      +c2(W/2,cy+dH/2,Math.min(dW*0.3,17),BG2,CH2,1)
+      +c2(W/2,cy+dH/2,Math.min(dW*0.12,6),CH2,BG2,0.4)
 
-      <!-- Safety harness wire + terminal -->
-      ${line2(W/2,cy+dH-4,W/2,cy+dH+72,LT2,2)}
-      ${rect2(W/2-14,cy+dH+70,28,18,BG2,LT2,0.9,2)}
-      ${t(W/2+22,cy+dH+82,'PUSH TERMINAL',8,LT2,'start')}
-      ${t(W/2+22,cy+dH+96,'safety harness — retains speaker',7.5,MU2,'start')}
-      ${t(W/2+22,cy+dH+110,'if magnet ever fails',7,MU2,'start')}
+      // Magnet symbol
+      +`<path d="M ${W/2-13} ${cy+10} L ${W/2} ${cy+22} L ${W/2+13} ${cy+10}" fill="none" stroke="${CH2}" stroke-width="2.2" stroke-linecap="round"/>`
+      +tx2(W/2+dW/2+18,cy+14,'MAGNET',8.5,CH2,'start')
+      +tx2(W/2+dW/2+18,cy+28,'holds speaker flush',7.5,MU2,'start')
 
-      <!-- Dimensions -->
-      ${dimH(cx,cy+dH+128,cx+dW,cW+'mm')}
-      ${dimV(cx-24,cy,cy+dH,cH+'mm')}
+      // Safety harness wire + terminal
+      +ln(W/2,cy+dH-4,W/2,cy+dH+60,LT2,2)
+      +r2(W/2-14,cy+dH+58,28,18,BG2,LT2,0.9,2)
+      +tx2(W/2+22,cy+dH+68,'PUSH TERMINAL',8.5,LT2,'start')
+      +tx2(W/2+22,cy+dH+82,'safety harness wire',7.5,MU2,'start')
+      +tx2(W/2+22,cy+dH+96,'retains speaker if magnet fails',7,MU2,'start')
 
-      <!-- Steps -->
-      ${rect2(22,cy+dH+144,W-44,H-(cy+dH+152),BG2,'rgba(201,169,110,0.1)',0.4,3)}
-      ${[
+      // Dimensions — positioned to not overlap anything
+      +dimH(cx,cy+dH+96+18,cx+dW,cW+'mm wide')
+      +dimV(cx-28,cy,cy+dH,cH+'mm')
+
+      // Step list
+      +r2(22,STEP_Y,W-44,H-STEP_Y-10,BG2,'rgba(201,169,110,0.09)',0.4,3)
+      +[
         ['1','During construction: fit bracket in ceiling framing'],
-        ['2','Connect cable to safety harness terminal inside bracket'],
-        ['3','Cut '+cW+'×'+cH+'mm opening in finished ceiling'],
+        ['2','Connect cable to safety harness terminal in bracket'],
+        ['3','Cut '+cW+'×'+cH+'mm opening after finishing'],
         ['4','Connect cable to Ghost — observe polarity'],
-        ['5','Slide Ghost into bracket — magnets hold it flush'],
+        ['5','Slide Ghost into bracket — magnets pull it flush'],
         ['6','Pull-test: harness must hold speaker independently'],
-      ].map(([n,s],i)=>`${badge(38,cy+dH+164+i*22,parseInt(n))}${t(54,cy+dH+168+i*22,s,8.5,i%2===0?LT2:MU2,'start')}`).join('')}
-    `)
+      ].map(([n,s],i)=>
+        step(38,STEP_Y+18+i*STEP_GAP,parseInt(n as string),s as string)
+      ).join('')
+    )
   }
 
   // ============================================================
@@ -487,90 +505,154 @@ function installDiagram(P:any):string {
   // ============================================================
   if(it==='inwall-sub'){
     const cH=P.cutoutHeightMm||365, cW=P.cutoutWidthMm||225
-    const sc=Math.min(120/cW,130/cH), dW=Math.round(cW*sc), dH=Math.round(cH*sc)
-    const WALL_X=70, WALL_W=40, WALL_Y=38, WALL_H=H-80, cutY=WALL_Y+(WALL_H-dH)/2
+    const sc=Math.min(110/cW,120/cH)
+    const dW=Math.round(cW*sc), dH=Math.round(cH*sc)
 
-    return mksvg(`
-      ${t(W/2,16,'IN-WALL SUBWOOFER',9,MU2)}
-      ${t(W/2,28,'CUTOUT: '+cW+'×'+cH+'mm',8,CH2)}
-      ${wallRect(WALL_X,WALL_Y,WALL_W,WALL_H)}
-      ${t(WALL_X+WALL_W/2,WALL_Y-8,'WALL',8,MU2)}
-      ${rect2(WALL_X,cutY,WALL_W,dH,BG2,CH2,0.8,0)}
-      ${rect2(WALL_X-2,cutY+6,dW+4,dH-12,WL2,CH2,1.5,2)}
-      ${circ(WALL_X+dW/2+2,WALL_Y+WALL_H/2,Math.min(dH*0.4,44),BG2,CH2,1.3)}
-      ${circ(WALL_X+dW/2+2,WALL_Y+WALL_H/2,Math.min(dH*0.4,44)*0.56,WL2,CH2,0.7)}
-      ${circ(WALL_X+dW/2+2,WALL_Y+WALL_H/2,Math.min(dH*0.4,44)*0.22,CH2,BG2,0.5)}
-      ${rect2(WALL_X+dW+5,cutY+6,10,dH-12,WL2,LT2,0.6,1)}
-      ${t(WALL_X+dW+22,WALL_Y+WALL_H/2,'GRILLE',8,LT2,'start')}
-      ${circ(WALL_X+7,cutY+20,6,BG2,CH2,0.8)}${circ(WALL_X+7,cutY+dH-20,6,BG2,CH2,0.8)}
-      ${t(WALL_X+3,cutY+14,'FLANGE',6.5,MU2,'end')}${t(WALL_X+3,cutY+dH-16,'SCREWS',6.5,MU2,'end')}
-      ${dimV(WALL_X+dW+30,cutY,cutY+dH,cH+'mm',false)}
-      ${dimH(WALL_X,cutY-18,WALL_X+dW,cW+'mm')}
-      ${rect2(WALL_X+dW+46,WALL_Y,W-WALL_X-dW-62,WALL_H,BG2,'rgba(201,169,110,0.08)',0.3,3)}
-      ${[
-        ['1','Mark '+cW+'×'+cH+'mm cutout'],['2','Check pipes & studs'],['3','Cut with drywall saw'],
-        ['4','Route cable — 200mm slack'],['5','Connect cable (+ / −)'],['6','Insert sub into cutout'],
-        ['7','Drive flange screws through body'],['8','Clip grille on'],
-      ].map(([n,s],i)=>`${badge(WALL_X+dW+58,WALL_Y+20+i*((WALL_H-20)/8.5),parseInt(n))}${t(WALL_X+dW+74,WALL_Y+24+i*((WALL_H-20)/8.5),s,8,i%2===0?LT2:MU2,'start')}`).join('')}
-    `)
+    const WX=40, WW=36, WY=44, WH=H-88
+    const cutY=WY+(WH-dH)/2
+    const STEPS_X=WX+WW+dW+40
+
+    return mksvg(
+      tx2(W/2,16,'IN-WALL SUBWOOFER',9,MU2)
+      +tx2(W/2,28,'CUTOUT: '+cW+' × '+cH+'mm',8.5,CH2)
+
+      +wall(WX,WY,WW,WH)
+      +tx2(WX+WW/2,WY-8,'WALL',8,MU2)
+
+      +r2(WX,cutY,WW,dH,BG2,CH2,0.8,0)
+      +r2(WX-2,cutY+6,dW+4,dH-12,WL2,CH2,1.5,2)
+
+      // Woofer cone
+      +c2(WX+dW/2+2,WY+WH/2,Math.min(dH*0.4,44),BG2,CH2,1.3)
+      +c2(WX+dW/2+2,WY+WH/2,Math.min(dH*0.4,44)*0.55,WL2,CH2,0.7)
+      +c2(WX+dW/2+2,WY+WH/2,Math.min(dH*0.4,44)*0.22,CH2,BG2,0.5)
+
+      // Grille strip on room side
+      +r2(WX+dW+5,cutY+6,10,dH-12,WL2,LT2,0.6,1)
+      +tx2(WX+dW+22,WY+WH/2,'GRILLE',8,LT2,'start')
+
+      // Flange screws
+      +c2(WX+7,cutY+20,6,BG2,CH2,0.8)
+      +c2(WX+7,cutY+dH-20,6,BG2,CH2,0.8)
+      +tx2(WX+3,cutY+14,'FLANGE',6.5,MU2,'end')
+      +tx2(WX+3,cutY+dH-14,'SCREWS',6.5,MU2,'end')
+
+      +dimV(WX+dW+24,cutY,cutY+dH,cH+'mm')
+      +dimH(WX,cutY-16,WX+dW,cW+'mm')
+
+      +r2(STEPS_X,WY,W-STEPS_X-14,WH,BG2,'rgba(201,169,110,0.08)',0.3,3)
+      +[
+        ['1','Mark '+cW+'×'+cH+'mm cutout'],
+        ['2','Check pipes & studs'],
+        ['3','Cut with drywall saw'],
+        ['4','Route cable — 200mm slack'],
+        ['5','Connect — Red(+) · Black(−)'],
+        ['6','Insert sub body into cutout'],
+        ['7','Drive flange screws through body'],
+        ['8','Clip grille over flange'],
+      ].map(([n,s],i)=>
+        step(STEPS_X+16,WY+18+i*((WH-20)/8.5),parseInt(n as string),s as string)
+      ).join('')
+    )
   }
 
   // ============================================================
   // BANYAN
   // ============================================================
   if(it==='banyan-canopy'||it==='banyan-pith'){
-    return mksvg(`
-      ${t(W/2,16,'BANYAN SYSTEM ASSEMBLY',9,MU2)}
-      ${rect2(125,290,230,178,WL2,CH2,1.8,6)}
-      ${t(240,326,'BANYAN PITH',10,CH2)}
-      ${t(240,342,'Dual 12" Powered Sub + DSP',8,MU2)}
-      ${[0,1,2,3].map((i:number)=>rect2(142+i*48,358,38,10,BG2,CH2,0.3,1)).join('')}
-      ${rect2(170,276,140,16,BG2,CH2,0.8,1)}
-      ${t(240,270,'TOP SOCKET',7,MU2)}
-      ${rect2(214,246,52,32,CH2,BG2,0.6,3)}
-      ${t(240,266,'SPEAKON',8,'#090909')}
-      ${rect2(146,58,188,190,WL2,CH2,1.8,5)}
-      ${t(240,40,'BANYAN CANOPY',11,CH2)}
-      ${t(240,26,'Wide-Dispersion Line Array',8,MU2)}
-      ${[0,1,2,3,4].map((i:number)=>circ(240,78+i*32,12,CH2,BG2,0.38)).join('')}
-      ${rect2(26,90,112,98,BG2,'rgba(201,169,110,0.12)',0.3,2)}
-      ${t(82,110,'ALSO MOUNTS:',8.5,CH2)}
-      ${t(82,126,'· Pole mount',8,MU2,'start')}${t(82,140,'· Wall mount',8,MU2,'start')}${t(82,154,'· Hanging',8,MU2,'start')}
-      ${rect2(26,428,W-52,118,BG2,'rgba(201,169,110,0.08)',0.3,3)}
-      ${[['1','Seat Canopy into Pith top socket'],['2','Connect Speakon cable: Pith → Canopy'],['3','Connect source to Pith Line In (XLR or RCA)'],['4','Load DSP preset via USB + SigmaStudio'],['5','Power on — LED illuminates when ready']].map(([n,s],i)=>`${badge(44,448+i*22,parseInt(n))}${t(60,452+i*22,s,9,i%2===0?LT2:MU2,'start')}`).join('')}
-    `)
+    return mksvg(
+      tx2(W/2,16,'BANYAN SYSTEM ASSEMBLY',9,MU2)
+
+      // Pith body
+      +r2(125,292,230,178,WL2,CH2,1.8,6)
+      +tx2(240,330,'BANYAN PITH',10,CH2)
+      +tx2(240,346,'Dual 12" Powered Sub + DSP',8.5,MU2)
+      +[0,1,2,3].map((i:number)=>r2(142+i*48,362,38,10,BG2,CH2,0.3,1)).join('')
+
+      // Top socket
+      +r2(170,278,140,16,BG2,CH2,0.8,1)
+      +tx2(240,272,'TOP SOCKET',7.5,MU2)
+
+      // Speakon connector
+      +r2(214,246,52,34,CH2,BG2,0.6,3)
+      +tx2(240,267,'SPEAKON',8,'#090909')
+      +tx2(240,240,'SPEAKON CABLE',8,CH2)
+
+      // Canopy body
+      +r2(146,60,188,186,WL2,CH2,1.8,5)
+      +tx2(240,42,'BANYAN CANOPY',11,CH2)
+      +tx2(240,28,'Wide-Dispersion Line Array',8.5,MU2)
+      +[0,1,2,3,4].map((i:number)=>c2(240,78+i*32,12,CH2,BG2,0.38)).join('')
+
+      // Optional mounts
+      +r2(26,96,110,90,BG2,'rgba(201,169,110,0.12)',0.3,2)
+      +tx2(81,114,'ALSO MOUNTS:',8.5,CH2)
+      +tx2(81,130,'· Pole mount',8,MU2,'start')
+      +tx2(81,144,'· Wall mount',8,MU2,'start')
+      +tx2(81,158,'· Hanging',8,MU2,'start')
+
+      // Steps
+      +r2(26,436,W-52,108,BG2,'rgba(201,169,110,0.08)',0.3,3)
+      +[
+        ['1','Seat Canopy into Pith top socket until locked'],
+        ['2','Connect Speakon cable: Pith output → Canopy input'],
+        ['3','Connect source to Pith Line In (XLR or RCA)'],
+        ['4','Load DSP preset via USB + SigmaStudio'],
+        ['5','Power on — LED illuminates when ready'],
+      ].map(([n,s],i)=>step(42,454+i*22,parseInt(n as string),s as string)).join('')
+    )
   }
 
   // ============================================================
   // SPIREA
   // ============================================================
   if(it==='spirea'){
-    return mksvg(`
-      ${t(W/2,16,'SPIREA  ·  TWO INSTALLATION OPTIONS',9,MU2)}
-      ${line2(W/2,28,W/2,H-10,'rgba(201,169,110,0.1)',0.6,'6,4')}
-      ${t(W/4,26,'HANGING MOUNT',9,CH2)}
-      ${t(W/4*3,26,'SPIKE MOUNT',9,CH2)}
-      ${wallRect(28,38,192,16)}
-      ${t(120,34,'PERGOLA BEAM / JOIST',7.5,MU2)}
-      ${line2(120,54,120,96,LT2,1.2,'3,2')}
-      <ellipse cx="120" cy="107" rx="13" ry="18" fill="${BG2}" stroke="${CH2}" stroke-width="2"/>
-      <line x1="107" y1="100" x2="133" y2="100" stroke="${BG2}" stroke-width="4"/>
-      ${t(144,107,'CARABINER',8.5,CH2,'start')}
-      ${line2(120,125,120,162,LT2,1.4)}
-      ${circ(120,194,38,WL2,CH2,1.8)}${circ(120,194,17,CH2,BG2,0.44)}${circ(120,194,7,CH2,BG2,0.82)}
-      ${t(120,250,'SPIREA',9.5,LT2)}
-      ${line2(158,194,200,194,CH2,1.1,'4,3')}${t(204,200,'TO AMP',7.5,MU2,'start')}
-      ${wallRect(W/2+18,396,190,86)}
-      <rect x="${W/2+18}" y="396" width="190" height="86" fill="url(#h)"/>
-      ${t(W/2+114,388,'SOIL / GROUND',7.5,MU2)}
-      ${line2(W/2+114,158,W/2+114,396,LT2,3.5)}
-      <polygon points="${f2(W/2+102)},393 ${f2(W/2+126)},393 ${f2(W/2+114)},416" fill="${CH2}"/>
-      ${t(W/2+150,298,'SPIKE',9,CH2,'start')}${t(W/2+150,312,'drive with mallet',7.5,MU2,'start')}${t(W/2+150,326,'if ground is hard',7.5,MU2,'start')}
-      ${circ(W/2+114,128,38,WL2,CH2,1.8)}${circ(W/2+114,128,17,CH2,BG2,0.44)}${circ(W/2+114,128,7,CH2,BG2,0.82)}
-      ${t(W/2+114,184,'SPIREA',9.5,LT2)}
-      ${line2(W/2+76,128,W/2+52,128,CH2,1.1,'4,3')}${t(W/2+48,134,'TO AMP',7.5,MU2,'end')}
-      ${dimV(W/2+68,158,396,'400–600mm',false)}
-    `)
+    const MID=W/2
+    return mksvg(
+      tx2(MID,16,'SPIREA  ·  TWO INSTALLATION OPTIONS',9,MU2)
+      +ln(MID,28,MID,H-10,'rgba(201,169,110,0.1)',0.6,'7,4')
+      +tx2(MID/2,28,'HANGING MOUNT',9,CH2)
+      +tx2(MID+MID/2,28,'SPIKE MOUNT',9,CH2)
+
+      // LEFT: hanging mount
+      +wall(22,42,MID-40,18)
+      +tx2(MID/2,38,'PERGOLA BEAM / JOIST',7.5,MU2)
+      +ln(MID/2,60,MID/2,100,LT2,1.2,'3,2')
+      +`<ellipse cx="${MID/2}" cy="110" rx="13" ry="18" fill="${BG2}" stroke="${CH2}" stroke-width="2"/>`
+      +ln(MID/2-13,104,MID/2+13,104,BG2,4)
+      +tx2(MID/2+16,110,'CARABINER',8.5,CH2,'start')
+      +ln(MID/2,128,MID/2,168,LT2,1.4)
+      +c2(MID/2,200,38,WL2,CH2,2)
+      +c2(MID/2,200,17,CH2,BG2,0.44)
+      +c2(MID/2,200,7,CH2,BG2,0.82)
+      +tx2(MID/2,256,'SPIREA',9.5,LT2)
+      +ln(MID/2+38,200,MID/2+58,200,CH2,1.1,'3,2')
+      +tx2(MID/2+62,206,'TO AMP',7.5,MU2,'start')
+      // Hanging mount steps
+      +tx2(MID/2,320,'1. Attach carabiner to anchor',8,LT2)
+      +tx2(MID/2,338,'2. Clip Spirea loop to carabiner',8,MU2)
+      +tx2(MID/2,356,'3. Route cable — connect + / −',8,LT2)
+
+      // RIGHT: spike mount
+      +wall(MID+22,408,MID-44,78)
+      +tx2(MID+MID/2,404,'SOIL / GROUND',7.5,MU2)
+      +ln(MID+MID/2,162,MID+MID/2,408,LT2,3.5)
+      +`<polygon points="${f2(MID+MID/2-12)},406 ${f2(MID+MID/2+12)},406 ${f2(MID+MID/2)},424" fill="${CH2}"/>`
+      +c2(MID+MID/2,132,38,WL2,CH2,2)
+      +c2(MID+MID/2,132,17,CH2,BG2,0.44)
+      +c2(MID+MID/2,132,7,CH2,BG2,0.82)
+      +tx2(MID+MID/2,188,'SPIREA',9.5,LT2)
+      +ln(MID+MID/2-38,132,MID+MID/2-62,132,CH2,1.1,'3,2')
+      +tx2(MID+MID/2-66,138,'TO AMP',7.5,MU2,'end')
+      // Height annotation
+      +dimV(MID+MID/2+50,162,408,'400–600mm')
+      +tx2(MID+MID/2+16,220,'drive spike into soil',8,MU2,'start')
+      +tx2(MID+MID/2+16,236,'use mallet if ground is hard',8,MU2,'start')
+      // Spike steps
+      +tx2(MID+MID/2,320,'1. Push spike into soil',8,LT2)
+      +tx2(MID+MID/2,338,'2. Use mallet if ground is firm',8,MU2)
+      +tx2(MID+MID/2,356,'3. Route cable — connect + / −',8,LT2)
+    )
   }
 
   // ============================================================
@@ -578,54 +660,128 @@ function installDiagram(P:any):string {
   // ============================================================
   if(it==='powered-sub'||it==='passive-sub'){
     const pw=it==='powered-sub'
-    return mksvg(`
-      ${t(W/2,16,pw?'POWERED SUBWOOFER':'PASSIVE SUBWOOFER',9,MU2)}
-      ${rect2(76,32,328,294,WL2,CH2,1.6,7)}
-      ${circ(W/2,188,114,BG2,CH2,1.3)}${circ(W/2,188,88,WL2,CH2,0.6)}${circ(W/2,188,57,BG2,CH2,0.9)}${circ(W/2,188,30,CH2,BG2,0.42)}${circ(W/2,188,13,CH2,BG2,0.76)}
-      <text x="${W/2}" y="52" text-anchor="middle" fill="${LT2}" font-size="13" font-family="Cormorant Garamond,serif" font-weight="300">${P.productName||'SUBWOOFER'}</text>
-      ${[-116,-58,0,58,116].map((ox:number)=>circ(W/2+ox,326,10,CH2,BG2,0.44)).join('')}
-      ${rect2(76,358,328,198,'#0c0c0a',CH2,0.8,3)}${t(W/2,374,'REAR PANEL',8,MU2)}
-      ${pw?`
-        ${circ(125,418,16,BG2,CH2,1.5)}${circ(125,418,7,CH2,BG2,0.5)}
-        ${t(125,444,'LFE IN',8,CH2)}${t(125,456,'(RCA)',7,MU2)}
-        ${circ(192,418,11,BG2,LT2,0.8)}${circ(208,418,11,BG2,LT2,0.8)}
-        ${t(192,444,'+',9,CH2)}${t(208,444,'−',9,LT2)}${t(200,456,'HIGH LEVEL',7,MU2)}
-        ${circ(278,418,17,BG2,CH2,0.7)}${line2(278,418,278,402,CH2,1.8)}
-        ${t(278,444,'X-OVER',8,CH2)}
-        ${rect2(326,408,40,22,BG2,LT2,0.7,2)}${t(346,444,'PHASE',8,LT2)}${t(346,458,'0°/180°',7,MU2)}
-        ${rect2(374,407,28,24,BG2,LT2,0.6,1)}${t(388,444,'IEC',8,LT2)}
-      `:`
-        ${circ(186,418,16,CH2,BG2,0.55)}${circ(240,418,16,BG2,CH2,1)}
-        ${t(186,444,'+',11,CH2)}${t(240,444,'−',11,LT2)}${t(213,456,'BINDING POSTS',8,LT2)}${t(213,470,'14 AWG or thinner',7,MU2)}
-      `}
-      ${rect2(26,418,38,44,BG2,'rgba(201,169,110,0.14)',0.3,2)}
-      ${line2(26,418,26,462,'rgba(201,169,110,0.4)',0.8)}${line2(26,418,64,418,'rgba(201,169,110,0.4)',0.8)}
-      ${circ(46,440,11,CH2,BG2,0.44)}${t(46,470,'CORNER',6.5,CH2)}${t(46,480,'= more bass',5.5,MU2)}
-    `)
+    return mksvg(
+      tx2(W/2,16,pw?'POWERED SUBWOOFER':'PASSIVE SUBWOOFER',9,MU2)
+
+      // Sub enclosure front
+      +r2(76,32,328,296,WL2,CH2,1.6,7)
+      // Woofer cone rings — large and clear
+      +c2(W/2,188,114,BG2,CH2,1.3)
+      +c2(W/2,188,88,WL2,CH2,0.6)
+      +c2(W/2,188,57,BG2,CH2,0.9)
+      +c2(W/2,188,30,CH2,BG2,0.42)
+      +c2(W/2,188,13,CH2,BG2,0.76)
+      +`<text x="${W/2}" y="52" text-anchor="middle" fill="${LT2}" font-size="13" font-family="Cormorant Garamond,serif" font-weight="300">${P.productName||'SUBWOOFER'}</text>`
+      // Rubber feet
+      +[-116,-58,0,58,116].map((ox:number)=>c2(W/2+ox,328,10,CH2,BG2,0.44)).join('')
+
+      // Rear panel area
+      +r2(76,360,328,168,'#0c0c0a',CH2,0.8,3)
+      +tx2(W/2,374,'REAR PANEL',8,MU2)
+
+      +(pw
+        ? // LFE input — plenty of space
+          c2(120,418,16,BG2,CH2,1.5)+c2(120,418,7,CH2,BG2,0.5)
+          +tx2(120,446,'LFE IN',8.5,CH2)+tx2(120,460,'(RCA)',7.5,MU2)
+          // High level input
+          +c2(192,418,11,BG2,LT2,0.8)+c2(208,418,11,BG2,LT2,0.8)
+          +tx2(192,446,'+',10,CH2)+tx2(208,446,'−',10,LT2)
+          +tx2(200,460,'HIGH LEVEL',7.5,MU2)
+          // Crossover dial
+          +c2(278,418,17,BG2,CH2,0.7)+ln(278,418,278,402,CH2,2)
+          +tx2(278,446,'X-OVER',8.5,CH2)
+          // Phase switch
+          +r2(326,408,42,22,BG2,LT2,0.7,2)+tx2(347,446,'PHASE',8.5,LT2)+tx2(347,462,'0° / 180°',7.5,MU2)
+          // IEC power
+          +r2(376,407,28,24,BG2,LT2,0.6,1)+tx2(390,446,'IEC PWR',8,LT2)
+        : // Binding posts — large and clear
+          c2(186,418,16,CH2,BG2,0.55)+c2(240,418,16,BG2,CH2,1)
+          +tx2(186,446,'+',12,CH2)+tx2(240,446,'−',12,LT2)
+          +tx2(213,460,'BINDING POSTS',8.5,LT2)
+          +tx2(213,476,'14 AWG or thinner',7.5,MU2))
+
+      // Corner note — small, out of the way
+      +r2(28,418,40,44,BG2,'rgba(201,169,110,0.14)',0.3,2)
+      +ln(28,418,28,462,'rgba(201,169,110,0.4)',0.8)+ln(28,418,68,418,'rgba(201,169,110,0.4)',0.8)
+      +c2(48,440,11,CH2,BG2,0.44)
+      +tx2(48,468,'CORNER',7,CH2)+tx2(48,480,'= more bass',6,MU2)
+    )
   }
 
   // ============================================================
   // DSP AMPLIFIER
   // ============================================================
   if(it==='dsp-amplifier'){
-    const ch=P.channelCount||4, chW=Math.min(300/ch,70)
-    const isLR=(P.productName||'').toLowerCase().includes('lucifer')||(P.productName||'').toLowerCase().includes('root')
-    return mksvg(`
-      ${t(W/2,16,ch+'-CHANNEL DSP AMPLIFIER',9,MU2)}
-      ${rect2(20,56,30,210,WL2,'rgba(201,169,110,0.18)',0.5,2)}${rect2(W-50,56,30,210,WL2,'rgba(201,169,110,0.18)',0.5,2)}
-      ${[76,96,116,136,156,176,196,216,236,256].map((y:number)=>`${circ(35,y,4,BG2,CH2,0.4)}${circ(W-35,y,4,BG2,CH2,0.4)}`).join('')}
-      ${rect2(50,50,W-100,216,WL2,CH2,1.5,2)}
-      ${Array.from({length:ch},(_:unknown,i:number)=>{const sx=62+i*chW;return `${rect2(sx,62,chW-10,148,BG2,'rgba(201,169,110,0.11)',0.4,2)}${[0,1,2,3,4].map((b:number)=>rect2(sx+5,74+b*11,chW-22,7,'rgba(201,169,110,'+(0.16+b*0.13)+')',BG2,0.2,1)).join('')}${circ(sx+chW/2-5,160,12,'#181816',CH2,0.9)}${line2(sx+chW/2-5,160,sx+chW/2-5,149,CH2,1.8)}${t(sx+chW/2-5,182,'CH'+(i+1),8.5,LT2)}${t(sx+chW/2-5,195,'GAIN',7,MU2)}`}).join('')}
-      ${rect2(W-118,72,50,22,BG2,CH2,0.8,1)}${t(W-93,87,'USB DSP',7.5,CH2)}
-      ${rect2(50,284,W-100,205,'#0c0c0a',CH2,0.8,2)}${t(W/2,300,'REAR PANEL',8,MU2)}
-      ${t(W/2,316,'XLR BALANCED INPUTS',7.5,CH2)}
-      ${Array.from({length:Math.min(ch,4)},(_:unknown,i:number)=>{const ix=72+i*(Math.min(ch,4)>2?88:120);return `${circ(ix,344,18,BG2,CH2,1.2)}${circ(ix,344,8,CH2,BG2,0.32)}${t(ix-7,349,'1',5,MU2)}${t(ix+2,340,'2',5,LT2)}${t(ix+6,350,'3',5,MU2)}${t(ix,372,'IN '+(i+1),8.5,CH2)}${t(ix,385,'XLR',7,MU2)}`}).join('')}
-      ${t(W-168,316,'OUTPUTS',7.5,LT2)}
-      ${Array.from({length:Math.min(ch,4)},(_:unknown,i:number)=>{const ox=W-162+(i-Math.min(ch,4)/2)*82+41;return `${rect2(ox-18,326,36,26,BG2,LT2,1,3)}${t(ox,360,'OUT '+(i+1),8.5,LT2)}${t(ox,375,isLR?'SPKN':'+  −',8,MU2)}`}).join('')}
-      ${isLR?`${rect2(28,408,W-56,90,BG2,'rgba(201,169,110,0.11)',0.3,3)}${t(W/2,428,'BRIDGE WIRING:  CH1(+) and CH2(−) = 1 bridged mono channel',9,LT2)}${t(W/2,448,'CH3(+) and CH4(−) = 2nd bridged mono channel',9,LT2)}${t(W/2,468,'XLR: Pin 1=GND  ·  Pin 2=Hot(+)  ·  Pin 3=Cold(−)',8.5,MU2)}`:
-      `${rect2(28,408,W-56,72,BG2,'rgba(201,169,110,0.07)',0.3,3)}${t(W/2,430,'Connect all speakers before powering on.',9.5,LT2)}${t(W/2,450,'Load XSCACE factory DSP preset via USB.',9.5,LT2)}${t(W/2,468,'Adjust crossover, delay, EQ for your room.',8.5,MU2)}`}
-      <text x="${W/2}" y="36" text-anchor="middle" fill="${LT2}" font-size="16" font-family="Cormorant Garamond,serif" font-weight="300">${P.productName||'DSP AMPLIFIER'}</text>
-    `)
+    const ch=P.channelCount||4
+    const chW=Math.min(300/ch,70)
+    const isLR=(P.productName||'').toLowerCase().includes('lucifer')
+              ||(P.productName||'').toLowerCase().includes('root')
+    return mksvg(
+      tx2(W/2,16,ch+'-CHANNEL DSP AMPLIFIER',9,MU2)
+
+      // Rack ears
+      +r2(20,56,30,210,WL2,'rgba(201,169,110,0.18)',0.5,2)
+      +r2(W-50,56,30,210,WL2,'rgba(201,169,110,0.18)',0.5,2)
+      +[76,96,116,136,156,176,196,216,236,256].map((y:number)=>
+        c2(35,y,4,BG2,CH2,0.4)+c2(W-35,y,4,BG2,CH2,0.4)).join('')
+
+      // Main chassis front
+      +r2(50,50,W-100,216,WL2,CH2,1.5,2)
+
+      // Channel strips
+      +Array.from({length:ch},(_:unknown,i:number)=>{
+        const sx=62+i*chW
+        return r2(sx,62,chW-10,148,BG2,'rgba(201,169,110,0.11)',0.4,2)
+          +[0,1,2,3,4].map((b:number)=>r2(sx+5,74+b*11,chW-22,7,'rgba(201,169,110,'+(0.16+b*0.13)+')',BG2,0.2,1)).join('')
+          +c2(sx+chW/2-5,160,12,'#181816',CH2,0.9)
+          +ln(sx+chW/2-5,160,sx+chW/2-5,149,CH2,1.8)
+          +tx2(sx+chW/2-5,182,'CH'+(i+1),8.5,LT2)
+          +tx2(sx+chW/2-5,195,'GAIN',7,MU2)
+      }).join('')
+
+      // USB DSP port
+      +r2(W-118,72,50,22,BG2,CH2,0.8,1)
+      +tx2(W-93,87,'USB DSP',7.5,CH2)
+
+      // Rear panel
+      +r2(50,284,W-100,205,'#0c0c0a',CH2,0.8,2)
+      +tx2(W/2,300,'REAR PANEL',8,MU2)
+
+      // XLR inputs — clearly spaced
+      +tx2(W/2,316,'XLR BALANCED INPUTS',7.5,CH2)
+      +Array.from({length:Math.min(ch,4)},(_:unknown,i:number)=>{
+        const ix=72+i*(Math.min(ch,4)>2?88:120)
+        return c2(ix,344,18,BG2,CH2,1.2)
+          +c2(ix,344,8,CH2,BG2,0.32)
+          +tx2(ix-7,349,'1',5,MU2)
+          +tx2(ix+2,340,'2',5,LT2)
+          +tx2(ix+6,350,'3',5,MU2)
+          +tx2(ix,372,'IN '+(i+1),8.5,CH2)
+          +tx2(ix,385,'XLR',7,MU2)
+      }).join('')
+
+      // Speaker outputs
+      +tx2(W-168,316,'OUTPUTS',7.5,LT2)
+      +Array.from({length:Math.min(ch,4)},(_:unknown,i:number)=>{
+        const ox=W-162+(i-Math.min(ch,4)/2)*82+41
+        return r2(ox-18,326,36,26,BG2,LT2,1,3)
+          +tx2(ox,360,'OUT '+(i+1),8.5,LT2)
+          +tx2(ox,375,isLR?'SPKN':'+  −',8,MU2)
+      }).join('')
+
+      // Bridge wiring note or general instructions
+      +(isLR
+        ? r2(28,408,W-56,90,BG2,'rgba(201,169,110,0.11)',0.3,3)
+          +tx2(W/2,428,'BRIDGE WIRING:  CH1(+) and CH2(−) = 1 mono channel',9,LT2)
+          +tx2(W/2,448,'CH3(+) and CH4(−) = 2nd mono channel',9,LT2)
+          +tx2(W/2,468,'XLR: Pin 1=GND  ·  Pin 2=Hot(+)  ·  Pin 3=Cold(−)',8.5,MU2)
+        : r2(28,408,W-56,72,BG2,'rgba(201,169,110,0.07)',0.3,3)
+          +tx2(W/2,430,'Connect all speakers before powering on.',9.5,LT2)
+          +tx2(W/2,450,'Load XSCACE factory DSP preset via USB.',9.5,LT2)
+          +tx2(W/2,468,'Adjust crossover, delay, EQ for your room.',8.5,MU2))
+
+      +`<text x="${W/2}" y="36" text-anchor="middle" fill="${LT2}" font-size="16" font-family="Cormorant Garamond,serif" font-weight="300">${P.productName||'DSP AMPLIFIER'}</text>`
+    )
   }
 
   // ============================================================
@@ -633,33 +789,73 @@ function installDiagram(P:any):string {
   // ============================================================
   if(it==='streaming-amplifier'||it==='streamer'){
     const isA=it==='streaming-amplifier'
-    return mksvg(`
-      ${t(W/2,16,isA?'AIR AMP  ·  STREAMING AMPLIFIER':'AIR MINI  ·  WIRELESS STREAMER',9,MU2)}
-      ${rect2(86,54,308,124,WL2,CH2,1.5,6)}
-      <text x="${W/2}" y="108" text-anchor="middle" fill="${LT2}" font-size="20" font-family="Cormorant Garamond,serif" font-weight="300">${P.productName||''}</text>
-      ${t(W/2,128,'AirPlay 2  ·  Bluetooth 5.0  ·  Spotify Connect',8.5,MU2)}
-      ${circ(106,116,7,CH2,BG2,0.55)}${t(106,134,'STATUS',6,CH2)}
-      ${[32,23,14].map((r:number,i:number)=>`<path d="M ${240-r} ${80+r*0.5} A ${r} ${r} 0 0 1 ${240+r} ${80+r*0.5}" fill="none" stroke="${CH2}" stroke-width="${1.3-i*0.2}" stroke-linecap="round" opacity="${0.95-i*0.2}"/>`).join('')}
-      ${circ(240,90,5,CH2,BG2,0.32)}
-      ${rect2(26,94,56,98,WL2,CH2,1.1,6)}${rect2(32,105,44,72,BG2,'rgba(201,169,110,0.17)',0.3,2)}${circ(54,184,5,CH2,BG2,0.35)}
-      ${t(54,118,'XSCACE',8,CH2)}${t(54,130,'CONTROLLER',6,MU2)}${t(54,146,'App Store',7,LT2)}${t(54,158,'Google Play',7,LT2)}
-      ${line2(82,145,90,126,CH2,0.7,'2,2')}
-      ${rect2(86,202,308,174,'#0c0c0a',CH2,0.7,3)}${t(W/2,218,'REAR PANEL',8,MU2)}
-      ${isA?`${circ(124,254,15,CH2,BG2,0.55)}${circ(148,254,15,BG2,CH2,0.9)}${t(124,280,'+',11,CH2)}${t(148,280,'−',11,LT2)}${t(136,294,'SPK L',8,LT2)}
-      ${circ(194,254,15,CH2,BG2,0.55)}${circ(218,254,15,BG2,CH2,0.9)}${t(194,280,'+',11,CH2)}${t(218,280,'−',11,LT2)}${t(206,294,'SPK R',8,LT2)}
-      ${circ(270,254,13,BG2,CH2,0.8)}${circ(270,254,5,CH2,BG2,0.35)}${t(270,280,'SUB',8,CH2)}${t(270,294,'OUT',7,MU2)}
-      ${circ(324,254,13,BG2,LT2,0.7)}${t(324,280,'DC',8,LT2)}${t(324,294,'24V',7,MU2)}`
-      :`${circ(146,254,14,BG2,CH2,0.9)}${circ(146,254,5,CH2,BG2,0.4)}${t(146,280,'LINE OUT',8,CH2)}${t(146,294,'RCA',7,MU2)}
-      ${circ(208,254,12,BG2,LT2,0.7)}${t(208,280,'SPDIF',7,LT2)}
-      ${rect2(244,244,40,22,BG2,LT2,0.6,1)}${t(264,280,'HDMI ARC',7,LT2)}
-      ${circ(328,254,12,BG2,LT2,0.6)}${t(328,280,'DC 19V',7,LT2)}`}
-      ${rect2(26,396,W-52,150,BG2,'rgba(201,169,110,0.07)',0.3,3)}
-      ${(isA?[['1','Connect speakers to + / − terminals'],['2','Optionally connect sub to SUB OUT'],['3','Plug DC adapter — power on'],['4','Download XSCACE Controller App'],['5','Follow in-app Wi-Fi setup wizard'],['6','Stream via AirPlay / Spotify / BT']]:
-      [['1','Connect Line Out (RCA) to amplifier'],['2','Plug DC 19V adapter — power on'],['3','Download XSCACE Controller App'],['4','Follow in-app Wi-Fi setup wizard'],['5','Select Air Mini as output in streaming app']]).map(([n,s],i)=>`${badge(44,416+i*22,parseInt(n))}${t(60,420+i*22,s,9,i%2===0?LT2:MU2,'start')}`).join('')}
-    `)
+    return mksvg(
+      tx2(W/2,16,isA?'AIR AMP  ·  STREAMING AMPLIFIER':'AIR MINI  ·  WIRELESS STREAMER',9,MU2)
+
+      // Device body
+      +r2(86,54,308,124,WL2,CH2,1.5,6)
+      +`<text x="${W/2}" y="108" text-anchor="middle" fill="${LT2}" font-size="20" font-family="Cormorant Garamond,serif" font-weight="300">${P.productName||''}</text>`
+      +tx2(W/2,128,'AirPlay 2  ·  Bluetooth 5.0  ·  Spotify Connect',8.5,MU2)
+      +c2(106,116,7,CH2,BG2,0.55)
+      +tx2(106,134,'STATUS',6.5,CH2)
+
+      // Wi-Fi symbol
+      +[32,23,14].map((r2r:number,i:number)=>
+        `<path d="M ${240-r2r} ${80+r2r*0.5} A ${r2r} ${r2r} 0 0 1 ${240+r2r} ${80+r2r*0.5}" fill="none" stroke="${CH2}" stroke-width="${1.3-i*0.2}" stroke-linecap="round" opacity="${0.95-i*0.2}"/>`).join('')
+      +c2(240,90,5,CH2,BG2,0.32)
+
+      // App icon
+      +r2(26,94,56,98,WL2,CH2,1.1,6)
+      +r2(32,105,44,72,BG2,'rgba(201,169,110,0.17)',0.3,2)
+      +c2(54,184,5,CH2,BG2,0.35)
+      +tx2(54,118,'XSCACE',8,CH2)
+      +tx2(54,130,'APP',8,MU2)
+      +tx2(54,148,'App Store',7.5,LT2)
+      +tx2(54,162,'Google Play',7.5,LT2)
+      +ln(82,145,90,126,CH2,0.7,'2,2')
+
+      // Rear panel
+      +r2(86,202,308,174,'#0c0c0a',CH2,0.7,3)
+      +tx2(W/2,218,'REAR PANEL',8,MU2)
+
+      +(isA
+        ? // Speaker terminals — well spaced
+          c2(124,254,15,CH2,BG2,0.55)+c2(148,254,15,BG2,CH2,0.9)
+          +tx2(124,280,'+',11,CH2)+tx2(148,280,'−',11,LT2)
+          +tx2(136,296,'SPK L',8.5,LT2)
+          +c2(194,254,15,CH2,BG2,0.55)+c2(218,254,15,BG2,CH2,0.9)
+          +tx2(194,280,'+',11,CH2)+tx2(218,280,'−',11,LT2)
+          +tx2(206,296,'SPK R',8.5,LT2)
+          +c2(272,254,13,BG2,CH2,0.8)+c2(272,254,5,CH2,BG2,0.35)
+          +tx2(272,280,'SUB',8.5,CH2)+tx2(272,296,'OUT',7.5,MU2)
+          +c2(324,254,13,BG2,LT2,0.7)
+          +tx2(324,280,'DC',8.5,LT2)+tx2(324,296,'24V',7.5,MU2)
+        : c2(146,254,14,BG2,CH2,0.9)+c2(146,254,5,CH2,BG2,0.4)
+          +tx2(146,280,'LINE OUT',8,CH2)+tx2(146,296,'RCA',7.5,MU2)
+          +c2(208,254,12,BG2,LT2,0.7)
+          +tx2(208,280,'SPDIF',7.5,LT2)
+          +r2(244,244,40,22,BG2,LT2,0.6,1)+tx2(264,280,'HDMI ARC',7.5,LT2)
+          +c2(328,254,12,BG2,LT2,0.6)+tx2(328,280,'DC 19V',7.5,LT2))
+
+      // Step list — well spaced
+      +r2(26,396,W-52,150,BG2,'rgba(201,169,110,0.07)',0.3,3)
+      +(isA
+        ? [['1','Connect speakers to + / − terminals',''],
+           ['2','Optionally connect sub to SUB OUT',''],
+           ['3','Plug DC adapter — power on',''],
+           ['4','Download XSCACE Controller App','App Store / Google Play'],
+           ['5','Follow in-app Wi-Fi setup wizard',''],
+           ['6','Stream via AirPlay / Spotify / BT','']]
+        : [['1','Connect Line Out (RCA) to amplifier',''],
+           ['2','Plug DC 19V adapter — power on',''],
+           ['3','Download XSCACE Controller App','App Store / Google Play'],
+           ['4','Follow in-app Wi-Fi setup wizard',''],
+           ['5','Select Air Mini as output in streaming app','']]
+      ).map(([n,a,b],i)=>step(42,414+i*24,parseInt(n as string),a as string,b as string)).join('')
+    )
   }
 
-  return mksvg(t(W/2,H/2,'DIAGRAM N/A',10,MU2))
+  return mksvg(tx2(W/2,H/2,'DIAGRAM N/A',10,MU2))
 }
 
 
