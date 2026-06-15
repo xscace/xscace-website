@@ -216,6 +216,14 @@ export default defineType({
       description: 'Photo or diagram of the rear panel with all ports labelled. Used in amplifier and powered sub manuals.',
     }),
     defineField({
+      name: 'installManual',
+      title: 'Install Manual PDF (auto-generated)',
+      type: 'file',
+      group: 'installation',
+      description: 'Auto-generated — DELETE this file to force regeneration on next request to /api/manual/[slug]',
+      options: { accept: 'application/pdf' },
+    }),
+    defineField({
       name: 'installManualRef',
       title: 'Install Manual Asset Ref (auto)',
       type: 'string',
