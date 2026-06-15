@@ -1933,7 +1933,7 @@ export default function ProductDetail({ product }: { product: Product }) {
       <SpecsTicker product={product} acousticSpecs={acousticSpecs} physicalSpecs={physicalSpecs} connectivitySpecs={connectivitySpecs} isAmp={isAmp}/>
 
       {/* ── DIMENSION DRAWING ── */}
-      {!isAmp && (product.heightMm || product.widthMm) && (
+      {(product.heightMm || product.widthMm) && (
         <DimensionDrawing product={product}/>
       )}
 
