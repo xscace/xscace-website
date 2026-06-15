@@ -144,43 +144,32 @@ function installDiagram(P:any):string {
     const drillMm=scrL.startsWith('M2.5')?'5':scrL.startsWith('M2')?'4':scrL.startsWith('M3')?'6':scrL.startsWith('M4')?'7':'6'
     const isQ=(P.productName||'').toLowerCase().includes('quad')
 
-    // Fixed layout — everything in absolute coords, plenty of breathing room
-    // Wall strip: narrow, left side
-    const WX=18, WW=30, WY=55, WH=460
-    // Two screw positions — spaced enough to show clearly, capped so they fit
-    const GAP=Math.min(spc*0.9, 200)  // gap between screws in SVG units
+    // Wall shifted right so dimV label at x=WX-26 fits within viewBox
+    const WX=44, WW=30, WY=55, WH=460
+    const GAP=Math.min(spc*0.9, 200)
     const midY=WY+WH/2
     const S1=midY-GAP/2, S2=midY+GAP/2
-    // Screw extends right from wall
     const SX=WX+WW, SLEN=48
-    // Speaker rear face shown to the right of screw heads
     const REAR_X=SX+SLEN+22, REAR_W=30, REAR_H=GAP+50
     const REAR_Y=midY-REAR_H/2
-    // Text column — right of rear face, clear margin
     const TX=REAR_X+REAR_W+24
 
     return mksvg(
-      // Title
       tx2(W/2,18,'KEYHOLE WALL MOUNT',9,MU2)
       +tx2(W/2,30,spc+'mm C/C  ·  '+scrL,8.5,CH2)
 
-      // Wall slab
       +wall(WX,WY,WW,WH)
       +tx2(WX+WW/2,WY-8,'WALL',8,MU2)
 
-      // Plug labels (above screw 1 only, to avoid clutter)
-      +tx2(WX+WW/2,S1-18,'PLUG',7,MU2)
+      // Wall plugs — no text label
       +plug(WX+WW/2,S1)
       +plug(WX+WW/2,S2)
 
-      // Screw 1 + label
       +screw(SX,S1,SLEN)
       +tx2(SX+SLEN+3,S1-14,'5–7mm proud',7,MU2,'start')
-
-      // Screw 2
       +screw(SX,S2,SLEN)
 
-      // Spacing dimension on left of wall
+      // Spacing dimension — at x=WX-16=28, label at x=18, fully visible
       +dimV(WX-16,S1,S2,spc+'mm')
 
       // Speaker REAR face with two keyhole slots
@@ -216,7 +205,7 @@ function installDiagram(P:any):string {
     const scrL=P.screwSize||'M4×25'
     const drillMm=scrL.startsWith('M4')?'7':scrL.startsWith('M3')?'6':'7'
 
-    const WX=18, WW=30, WY=55, WH=420
+    const WX=44, WW=30, WY=55, WH=420
     const GAP=Math.min(spc*0.75,180)
     const midY=WY+WH/2, S1=midY-GAP/2, S2=midY+GAP/2
     const SX=WX+WW, SLEN=40
