@@ -1933,10 +1933,9 @@ export default function ProductDetail({ product }: { product: Product }) {
       <SpecsTicker product={product} acousticSpecs={acousticSpecs} physicalSpecs={physicalSpecs} connectivitySpecs={connectivitySpecs} isAmp={isAmp}/>
 
       {/* ── DIMENSION DRAWING ── */}
-      {(product.heightMm || product.widthMm) && (
+      {!isAmp && (product.heightMm || product.widthMm) && (
         <DimensionDrawing product={product}/>
       )}
-
 
       {/* ── FR + POLAR CHARTS ── */}
       {!isAmp && product.sensitivityDb && product.freqLowHz && (
@@ -2086,10 +2085,18 @@ export default function ProductDetail({ product }: { product: Product }) {
             <div className="pd-setup-cta-headline">Don't see your setup?</div>
             <div className="pd-setup-cta-sub">Tell the AI your room, budget and use case — get a complete system in seconds.</div>
           </div>
-          <a href="https://configurator.xscace.com" target="_blank" rel="noopener noreferrer"
-            className="btn-prim" style={{color:'#000'}}>
-            Build My System →
-          </a>
+          <div className="pd-setup-cta-actions">
+            <a href={`/api/manual/${product.slug?.current}`}
+              target="_blank" rel="noopener noreferrer"
+              className="btn-sec"
+              aria-label="Download installation manual PDF">
+              Install Guide ↓
+            </a>
+            <a href="https://configurator.xscace.com" target="_blank" rel="noopener noreferrer"
+              className="btn-prim" style={{color:'#000'}}>
+              Build My System →
+            </a>
+          </div>
         </div>
 
       </section>

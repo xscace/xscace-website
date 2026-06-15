@@ -2660,11 +2660,29 @@ a.p-card, a.p-card:hover {
 .pd-setup-cta-sub {
   font-size: 12px; color: rgba(238,235,229,0.35); line-height: 1.7; max-width: 400px;
 }
+.pd-setup-cta-actions {
+  display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+}
+
+/* Secondary button — champagne outline */
+.btn-sec {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 24px;
+  font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.12em;
+  color: #c9a96e; text-transform: uppercase; text-decoration: none;
+  border: 0.5px solid rgba(201,169,110,0.5); background: transparent;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  white-space: nowrap; cursor: pointer;
+}
+.btn-sec:hover {
+  border-color: #c9a96e; background: rgba(201,169,110,0.06); color: #eeebe5;
+}
 
 @media (max-width: 860px) {
   .pd-setup-group-header { padding: 16px 24px 12px; }
   .pd-setup-prod-card { width: calc(50% - 1px); flex: 0 0 calc(50% - 1px); }
   .pd-setup-cta-row { flex-direction: column; align-items: flex-start; padding: 32px 24px; }
+  .pd-setup-cta-actions { width: 100%; }
 }
 @media (max-width: 560px) {
   .pd-setup-prod-card { width: 100%; flex: 0 0 100%; }
