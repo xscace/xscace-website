@@ -1586,7 +1586,7 @@ export default function ProductDetail({ product }: { product: Product }) {
         ? product.itemsInBox
         : product.itemsInBox.split(/\n/).map((s: string) => s.trim()).filter(Boolean))
     : []
-  const hasDownloads = true
+  const hasDownloads = product.cadFile
   const hasEQ = product.freqLowHz && product.freqHighHz
   const hasEqData = !!product.eqData
 
@@ -1936,6 +1936,15 @@ export default function ProductDetail({ product }: { product: Product }) {
       {!isAmp && (product.heightMm || product.widthMm) && (
         <DimensionDrawing product={product}/>
       )}
+
+      {isAmp && (
+  <div className="dd-actions" style={{padding:'0 18mm 24px'}}>
+    <a href={`/api/specsheet/${product.slug?.current}`} target="_blank" rel="noopener noreferrer" className="dd-download-btn">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/></svg>
+      Spec Sheet
+    </a>
+  </div>
+)}
 
       {/* ── FR + POLAR CHARTS ── */}
       {!isAmp && product.sensitivityDb && product.freqLowHz && (
