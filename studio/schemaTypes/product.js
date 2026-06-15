@@ -320,7 +320,7 @@ export default defineType({
     defineField({name: 'specSheetHash',  title: 'Spec Sheet Hash (auto)',  type: 'string', group: 'relations',
       description: 'Auto-generated hash of spec data. Delete to force PDF regeneration.', readOnly: true}),
     defineField({name: 'specSheet',   title: 'Spec Sheet (PDF)',      type: 'file',  group: 'relations', options: {accept: 'application/pdf'}}),
-    defineField({name: 'installGuide', title: 'Installation Guide (PDF)', type: 'file', group: 'relations', options: {accept: 'application/pdf'}}),
+
     defineField({name: 'cadFile',              title: 'CAD File (DWG/DXF)',    type: 'file',  group: 'relations'}),
 
     // ── CONTENT & COPY ─────────────────────────────────────────────────────

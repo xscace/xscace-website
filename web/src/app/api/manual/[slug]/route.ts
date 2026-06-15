@@ -55,9 +55,9 @@ function dim(x1:number,y1:number,x2:number,y2:number,lbl:string,off=16){
   return `${L(x1,y1,x2,y2,CH,0.6,'4,3')}${L(x1-6,y1,x1+6,y1,CH,0.6)}${L(x2-6,y2,x2+6,y2,CH,0.6)}${tx(x1-off-2,my+3,lbl,9,CH,'end')}`
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
+// ==============================================================================
 // INSTALL DIAGRAM — 4-panel step cards, 480×570 SVG
-// ══════════════════════════════════════════════════════════════════════════════
+// ==============================================================================
 function installDiagram(P:any):string {
   const it=P.installationType||'', W=480, H=570
 
@@ -88,7 +88,7 @@ function installDiagram(P:any):string {
     return `${R(ox,oy,sw,sh,WL,CH,1.5,3)}${C(ox+sw/2,oy+sh*0.2,Math.min(sw*0.12,9),CH,BG,0.5)}${C(ox+sw/2,oy+sh*0.6,wr,BG,CH,1.2)}${C(ox+sw/2,oy+sh*0.6,wr*0.42,CH,BG,0.42)}${C(ox+sw/2,oy+sh*0.6,wr*0.16,CH,BG,0.76)}`
   }
 
-  // ── KEYHOLE WALL MOUNT ────────────────────────────────────────────────────────
+  // -- KEYHOLE WALL MOUNT --------------------------------------------------------
   if(it==='keyhole-wall'){
     const spc=P.screwSpacingMm||82, scrL=P.screwSize||'M2.5×25'
     const isQ=(P.productName||'').toLowerCase().includes('quad'), name=P.productName||'speaker'
@@ -169,7 +169,7 @@ function installDiagram(P:any):string {
     ${P1}${P2}${P3}${P4}</svg>`
   }
 
-  // ── BRACKET WALL MOUNT ────────────────────────────────────────────────────────
+  // -- BRACKET WALL MOUNT --------------------------------------------------------
   if(it==='bracket-wall'){
     const spc=P.screwSpacingMm||120, scrL=P.screwSize||'M4×25', name=P.productName||'speaker'
     function wh2(ox:number,oy:number,ww:number,wt:number):string {return `${R(ox,oy,ww,wt,WL,'rgba(201,169,110,0.3)',0.7,0)}<rect x="${f(ox)}" y="${f(oy)}" width="${f(ww)}" height="${f(wt)}" fill="url(#hatch)"/>`}
@@ -218,10 +218,10 @@ function installDiagram(P:any):string {
       ${tx(x4+PW-6,y4+36+(PH-46)/2-11,'TO AMP',6.5,MU,'end')}
       ${tx(x4+PW-6,y4+PH-20,'✓ SECURE',8.5,CH,'end')}
     `)
-    return svg(W,H,`${tx(W/2,16,`BRACKET WALL MOUNT  ·  ${spc}mm SPACING  ·  ${scrL}`,8.5,MU)}${P1}${P2}${P3}${P4}`)
+    return svg(W,H,`${tx(W/2,16,'BRACKET WALL MOUNT  ·  '+spc+'mm SPACING  ·  '+scrL,8.5,MU)}${P1}${P2}${P3}${P4}`)
   }
 
-  // ── CEILING CIRCULAR ──────────────────────────────────────────────────────────
+  // -- CEILING CIRCULAR ----------------------------------------------------------
   if(it==='ceiling-circular'){
     const d=P.cutoutDiameterMm||209, cav=P.requiredCavityDepthMm||115, r=52
 
@@ -274,10 +274,10 @@ function installDiagram(P:any):string {
       ${tx(c4x,c4y+r*2+30,'then fit grille',7,MU,'middle')}
       ${tx(c4x,c4y+r*2+46,'✓ COMPLETE',8.5,LT,'middle')}
     `)
-    return svg(W,H,`${tx(W/2,16,`CIRCULAR IN-CEILING  ·  ⌀${d}mm  ·  MIN ${cav}mm VOID`,8.5,MU)}${P1}${P2}${P3}${P4}`)
+    return svg(W,H,`${tx(W/2,16,'CIRCULAR IN-CEILING  ·  ⌀'+d+'mm  ·  MIN '+cav+'mm VOID',8.5,MU)}${P1}${P2}${P3}${P4}`)
   }
 
-  // ── IN-WALL DOGLEG / SPRINGCLIP ──────────────────────────────────────────────
+  // -- IN-WALL DOGLEG / SPRINGCLIP ----------------------------------------------
   if(it==='inwall-dogleg'||it==='inwall-springclip'){
     const cH=P.cutoutHeightMm||230,cW=P.cutoutWidthMm||328, isDog=it==='inwall-dogleg'
     function wallS(ox:number,oy:number,ww:number,wh:number):string {return `${R(ox,oy,ww,wh,WL,'rgba(201,169,110,0.3)',0.7,0)}<rect x="${f(ox)}" y="${f(oy)}" width="${f(ww)}" height="${f(wh)}" fill="url(#hatch)"/>`}
@@ -332,10 +332,10 @@ function installDiagram(P:any):string {
       ${tx(x4+PW/2,y4+56+(PH-82)/2+18,'(paintable)',7.5,MU,'middle')}
       ${tx(x4+PW-8,y4+PH-20,'✓ DONE',8.5,CH,'end')}
     `)
-    return svg(W,H,`${tx(W/2,16,`${isDog?'DOG-LEG CLIPS':'SPRING CLIPS'} IN-WALL  ·  CUTOUT: ${cW}×${cH}mm`,8.5,MU)}${P1}${P2}${P3}${P4}`)
+    return svg(W,H,`${tx(W/2,16,(isDog?'DOG-LEG CLIPS':'SPRING CLIPS')+' IN-WALL  ·  CUTOUT: '+cW+'×'+cH+'mm',8.5,MU)}${P1}${P2}${P3}${P4}`)
   }
 
-  // ── GHOST 2.0 CEILING RECTANGULAR ────────────────────────────────────────────
+  // -- GHOST 2.0 CEILING RECTANGULAR --------------------------------------------
   if(it==='ceiling-rectangular'){
     const cH=P.cutoutHeightMm||168,cW=P.cutoutWidthMm||53
     function ceilS(ox:number,oy:number,w:number,h:number):string {return `${R(ox,oy,w,h,WL,'rgba(201,169,110,0.3)',0.7,0)}<rect x="${f(ox)}" y="${f(oy)}" width="${f(w)}" height="${f(h)}" fill="url(#hatch)"/>`}
@@ -385,10 +385,10 @@ function installDiagram(P:any):string {
       ${tx(x4+PW/2,y4+PH-34,'speaker independently',7,MU,'middle')}
       ${tx(x4+PW/2,y4+PH-20,'✓ THEN DONE',8.5,LT,'middle')}
     `)
-    return svg(W,H,`${tx(W/2,16,`GHOST 2.0  ·  ${cW}×${cH}mm  ·  MAGNET + SAFETY HARNESS`,8.5,MU)}${P1}${P2}${P3}${P4}`)
+    return svg(W,H,`${tx(W/2,16,'GHOST 2.0  ·  '+cW+'×'+cH+'mm  ·  MAGNET + SAFETY HARNESS',8.5,MU)}${P1}${P2}${P3}${P4}`)
   }
 
-  // ── IN-WALL SUB ─────────────────────────────────────────────────────────────
+  // -- IN-WALL SUB -------------------------------------------------------------
   if(it==='inwall-sub'){
     const cH=P.cutoutHeightMm||365,cW=P.cutoutWidthMm||225
     const x1=px(0),y1=py(0)
@@ -425,11 +425,10 @@ function installDiagram(P:any):string {
       ${tx(x4+PW/2,y4+34+(PH-44)/2,'GRILLE',9,LT,'middle')}
       ${tx(x4+PW-8,y4+PH-20,'✓ COMPLETE',8.5,CH,'end')}
     `)
-    return svg(W,H,`${tx(W/2,16,`IN-WALL SUBWOOFER  ·  ${cW}×${cH}mm`,8.5,MU)}${P1}${P2}${P3}${P4}`)
+    return svg(W,H,`${tx(W/2,16,'IN-WALL SUBWOOFER  ·  '+cW+'×'+cH+'mm',8.5,MU)}${P1}${P2}${P3}${P4}`)
   }
 
-  // ── BANYAN ──────────────────────────────────────────────────────────────────
-  if(it==='banyan-canopy'||it==='banyan-pith'){  // ── BANYAN ──────────────────────────────────────────────────────────────────
+  // -- BANYAN ------------------------------------------------------------------
   if(it==='banyan-canopy'||it==='banyan-pith'){
     return svg(W,H,`
       ${R(125,286,230,178,WL,CH,1.8,6)}${tx(240,324,'BANYAN PITH',11,CH)}${tx(240,343,'Dual 12" Powered Sub + DSP',9,MU)}
@@ -446,7 +445,7 @@ function installDiagram(P:any):string {
       ${tx(W/2,H-10,'BANYAN  ·  CANOPY + PITH ASSEMBLY',9,MU)}`)
   }
 
-  // ── SPIREA ──────────────────────────────────────────────────────────────────
+  // -- SPIREA ------------------------------------------------------------------
   if(it==='spirea'){
     return svg(W,H,`
       ${L(W/2,0,W/2,H,'rgba(201,169,110,0.1)',0.6,'7,4')}
@@ -475,7 +474,7 @@ function installDiagram(P:any):string {
       ${tx(W/2,H-10,'SPIREA  ·  HANGING OR SPIKE MOUNT',9,MU)}`)
   }
 
-  // ── POWERED / PASSIVE SUB ───────────────────────────────────────────────────
+  // -- POWERED / PASSIVE SUB ---------------------------------------------------
   if(it==='powered-sub'||it==='passive-sub'){
     const pw=it==='powered-sub'
     return svg(W,H,`
@@ -496,7 +495,7 @@ function installDiagram(P:any):string {
       ${tx(W/2,H-10,pw?'POWERED SUBWOOFER  ·  LFE SIGNAL IN':'PASSIVE SUBWOOFER  ·  SPEAKER WIRE IN',9,MU)}`)
   }
 
-  // ── DSP AMPLIFIER ───────────────────────────────────────────────────────────
+  // -- DSP AMPLIFIER -----------------------------------------------------------
   if(it==='dsp-amplifier'){
     const ch=P.channelCount||4, chW=Math.min(300/ch,70)
     const isLR=(P.productName||'').toLowerCase().includes('lucifer')||(P.productName||'').toLowerCase().includes('root')
@@ -521,7 +520,7 @@ function installDiagram(P:any):string {
       ${tx(W/2,H-10,`${ch}-CH DSP AMPLIFIER  ·  XLR IN  ·  SPEAKON OUT`,9,MU)}`)
   }
 
-  // ── STREAMING AMP / STREAMER ─────────────────────────────────────────────────
+  // -- STREAMING AMP / STREAMER -------------------------------------------------
   if(it==='streaming-amplifier'||it==='streamer'){
     const isA=it==='streaming-amplifier'
     return svg(W,H,`
@@ -549,9 +548,9 @@ function installDiagram(P:any):string {
   return svg(W,H,`${tx(W/2,H/2,'DIAGRAM N/A',10,MU)}`)
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
+// ==============================================================================
 // STEREO POSITIONING DIAGRAM — fills right half of page 3 (480×570)
-// ══════════════════════════════════════════════════════════════════════════════
+// ==============================================================================
 function stereoDiagram(P:any):string {
   const it=P.installationType||'', W=480, H=570
 
@@ -677,7 +676,7 @@ function stereoDiagram(P:any):string {
     ${tx(W/2,H-16,'SYSTEM CONNECTION OVERVIEW',9,MU)}`)
 }
 
-// ── POSITIONING ADVICE (text) ─────────────────────────────────────────────────
+// -- POSITIONING ADVICE (text) -------------------------------------------------
 function stereoAdvice(P:any):{title:string,steps:string[],note:string}{
   const it=P.installationType||'', name=P.productName||'speaker'
   if(['ceiling-circular','ceiling-rectangular','inwall-springclip','inwall-dogleg'].includes(it)) return {
@@ -721,7 +720,7 @@ function stereoAdvice(P:any):{title:string,steps:string[],note:string}{
   }
 }
 
-// ── TOOLS ─────────────────────────────────────────────────────────────────────
+// -- TOOLS ---------------------------------------------------------------------
 function toolsNeeded(it:string):string[]{
   const b=['Pencil / marker','Spirit level','Tape measure','Cable stripper / cutters']
   const d=['Power drill + 6mm bits','Screwdriver (Phillips + flat)']
@@ -745,7 +744,7 @@ function toolsNeeded(it:string):string[]{
   return m[it]||b
 }
 
-// ── INSTALL STEPS ─────────────────────────────────────────────────────────────
+// -- INSTALL STEPS -------------------------------------------------------------
 function installSteps(P:any):string[]{
   const it=P.installationType||''
   const spc=P.screwSpacingMm?`${P.screwSpacingMm}mm`:'as per template'
@@ -893,7 +892,7 @@ function installSteps(P:any):string[]{
   return ['Place the unit as described in the positioning section.','Make all signal and power connections.','Power on and verify at low volume.']
 }
 
-// ── CONNECT SECTION ───────────────────────────────────────────────────────────
+// -- CONNECT SECTION -----------------------------------------------------------
 function connectSection(P:any):string{
   const it=P.installationType||''
   const wire=P.wireGaugeRecommended||'14 AWG', conn=P.speakerWireConnector||'push terminal'
@@ -908,7 +907,7 @@ function connectSection(P:any):string{
   return `${row('Outputs',P.outputs||'RCA Line Out, SPDIF Optical')}${row('Inputs',P.inputs||'AirPlay 2, Bluetooth 5.0, Spotify Connect')}${row('Power',P.powerSupply||'DC 19V adapter (included)')}<p class="cnote">The Air Mini is a streamer only — no built-in amplifier. Connect its Line Out to an amplifier or AV receiver.</p>`
 }
 
-// ── CSS ───────────────────────────────────────────────────────────────────────
+// -- CSS -----------------------------------------------------------------------
 function buildCss(fc:string):string{return `${fc}
 *{margin:0;padding:0;box-sizing:border-box}
 @page{size:297mm 210mm;margin:0}
@@ -972,7 +971,7 @@ body{font-family:'DM Sans',Helvetica,sans-serif;background:#090909;color:#eeebe5
 .pro{font-family:'DM Mono',monospace;font-size:6.5px;color:#3a3835;line-height:1.7;margin-top:auto;border-top:.3px solid rgba(255,255,255,.04);padding-top:7px}
 `}
 
-// ── MAIN HANDLER ──────────────────────────────────────────────────────────────
+// -- MAIN HANDLER --------------------------------------------------------------
 export async function GET(_req:NextRequest,{params}:{params:Promise<{slug:string}>}){
   const {slug}=await params
   try{
