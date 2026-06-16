@@ -128,10 +128,10 @@ function installDiagram(P:any):string {
 
   // ── Step label row: badge + two lines of text ──────────────────────────────
   // x=badge centre, y=vertical centre, line1=bold, line2=muted
-  const step=(bx:number,by:number,n:number,line1:string,line2='')=>
+  const step=(bx:number,by:number,n:number,line1:string,line2?:string)=>
     badge(bx,by)
-    +tx2(bx+16,by-4,line1,9,LT2,'start')
-    +(line2?tx2(bx+16,by+9,line2,8,MU2,'start'):'')
+    +tx2(bx+16,by-4,line1||'',9,LT2,'start')
+    +(line2&&line2!==''&&line2!=='undefined'?tx2(bx+16,by+9,line2,8,MU2,'start'):'')
 
   // ============================================================
   // KEYHOLE WALL MOUNT
@@ -848,7 +848,7 @@ function installDiagram(P:any):string {
            ['3','Download XSCACE Controller App','App Store / Google Play'],
            ['4','Follow in-app Wi-Fi setup wizard',''],
            ['5','Select Air Mini as output in streaming app','']]
-      ).map(([n,a,b],i)=>step(42,414+i*24,parseInt(n as string),a as string,b as string)).join('')
+      ).map(([n,a,b],i)=>step(42,414+i*24,parseInt(n as string),(a as string)||'',(b as string)||'')).join('')
     )
   }
 
