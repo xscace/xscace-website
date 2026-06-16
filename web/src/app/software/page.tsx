@@ -75,13 +75,13 @@ export default async function SoftwarePage() {
       <section className="sw-grid">
         {apps.map((app: any) => {
           const heroRef = app.heroImage?.asset?._ref
-          const heroUrl = heroRef ? sanityImgUrl(heroRef, 1200) : ''
+          const heroUrl = heroRef ? sanityImgUrl(heroRef, 1600) : ''
           const isMobile = app.platform?.includes('ios') || app.platform?.includes('android')
 
           return (
             <Link href={`/software/${app.slug?.current}`} key={app._id} className="sw-card">
               {/* Card hero */}
-              <div className="sw-card-hero" style={heroUrl ? { backgroundImage: `url(${heroUrl})` } : {}}>
+              <div className="sw-card-hero" style={heroUrl ? { backgroundImage: `url(${heroUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}>
                 <div className="sw-card-hero-overlay" />
                 <div className="sw-card-hero-top">
                   {platformIcon(app.platform)}
