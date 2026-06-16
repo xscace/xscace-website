@@ -2177,6 +2177,37 @@ export default function ProductDetail({ product }: { product: Product }) {
             })()}
 
           </div>
+          {/* Software link in downloads — visible on speakers and DSP amps */}
+          {!isSub && (
+            <div className="pd-downloads-sw-link">
+              {!isAmp && (
+                <a href="/software/xscace-controller" className="pd-sw-link-card">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" width="20" height="20">
+                    <rect x="5" y="2" width="14" height="20" rx="3"/>
+                    <circle cx="12" cy="17" r="1" fill="currentColor"/>
+                  </svg>
+                  <span>
+                    <span className="pd-sw-link-name">XSCACE Controller App</span>
+                    <span className="pd-sw-link-sub">iOS & Android · Free download</span>
+                  </span>
+                  <span className="pd-sw-link-arrow">→</span>
+                </a>
+              )}
+              {isAmp && product.hasDsp && (
+                <a href="/software/network-controller" className="pd-sw-link-card">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" width="20" height="20">
+                    <rect x="2" y="3" width="20" height="14" rx="2"/>
+                    <line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+                  </svg>
+                  <span>
+                    <span className="pd-sw-link-name">XSCACE Network Controller</span>
+                    <span className="pd-sw-link-sub">macOS & Windows · Free download</span>
+                  </span>
+                  <span className="pd-sw-link-arrow">→</span>
+                </a>
+              )}
+            </div>
+          )}
         </section>
       )}
 

@@ -4416,3 +4416,62 @@ a.p-card, a.p-card:hover {
   .sdp2-feat-visual { min-height: 400px; border-left: none !important; border-right: none !important; border-top: .5px solid rgba(201,169,110,0.07); }
   .sdp2-features-eyebrow, .sdp2-compat, .sdp2-bottom { padding: 48px 24px; }
 }
+
+/* Pending download button (URL not yet set) */
+.sdp2-store-btn--pending {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+}
+.sdp2-store-btn--pending::after {
+  content: 'Soon';
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: .12em;
+  color: #7a776f;
+  margin-left: 4px;
+  text-transform: uppercase;
+}
+
+/* Software link in product downloads section */
+.pd-downloads-sw-link {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: .5px solid rgba(255,255,255,0.05);
+}
+.pd-sw-link-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  text-decoration: none;
+  border: .5px solid rgba(201,169,110,0.15);
+  background: rgba(201,169,110,0.03);
+  color: #eeebe5;
+  transition: border-color .2s, background .2s;
+}
+.pd-sw-link-card:hover {
+  border-color: rgba(201,169,110,0.35);
+  background: rgba(201,169,110,0.07);
+}
+.pd-sw-link-card > svg { color: #c9a96e; flex-shrink: 0; }
+.pd-sw-link-card > span:nth-child(2) { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.pd-sw-link-name {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: .06em;
+  color: #eeebe5;
+}
+.pd-sw-link-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .1em;
+  color: #7a776f;
+  text-transform: uppercase;
+}
+.pd-sw-link-arrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: #c9a96e;
+  flex-shrink: 0;
+}

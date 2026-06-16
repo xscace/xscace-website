@@ -39,29 +39,33 @@ const ICONS: Record<string, string> = {
   timer:   `<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><line x1="9" y1="2" x2="15" y2="2"/>`,
   graph:   `<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>`,
   desktop: `<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>`,
+  group:   `<circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><path d="M16 3.13a4 4 0 010 7.75"/><path d="M21 21v-2a4 4 0 00-3-3.87"/>`,
 }
 function svgIcon(name: string) {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]||ICONS.wifi}</svg>`
 }
 
 // Map screenshot captions to feature indices for mobile app
+// Features: 0=Setup, 1=Volume, 2=Device Grouping, 3=X-Sense AI, 4=AirPlay, 5=EQ, 6=Device Grouping(appended)
 const MOBILE_FEATURE_SHOTS: Record<number, string[]> = {
-  0: ['Device List', 'Device Discovery'],          // Setup
-  1: ['Device List'],                               // Volume & Balance
-  2: ['X-Sense Auto EQ', 'X-Sense Auto EQ'],        // X-Sense AI
-  3: ['Device List'],                               // AirPlay
-  4: ['Rename Device'],                             // Channel Select
-  5: ['Parametric EQ', 'Tonal EQ'],                 // EQ & Presets
+  0: ['Device Discovery', 'Device List'],
+  1: ['Device List'],
+  2: ['Group Devices'],
+  3: ['X-Sense Auto EQ'],
+  4: ['Device List'],
+  5: ['Parametric EQ', 'Tonal EQ'],
+  6: ['Group Devices'],
 }
 
 // Map screenshot captions to feature indices for desktop app
 const DESKTOP_FEATURE_SHOTS: Record<number, string[]> = {
-  0: ['EQ Peaking, HS, LS Filters', 'Gain, Delay, Crossover Filters'],  // Live DSP
-  1: ['Preset List'],                                                    // Factory Presets
-  2: ['Auto Delay'],                                                     // Auto Delay
-  3: ['Gain, Delay, Crossover Filters'],                                 // Channel Routing
-  4: ['Frequency Overview'],                                             // Freq Graph
-  5: ['Dashboard Overview'],                                             // Mac & Windows
+  0: ['EQ Peaking, HS, LS Filters', 'Gain, Delay, Crossover Filters'],
+  1: ['Preset List'],
+  2: ['Auto Delay'],
+  3: ['Gain, Delay, Crossover Filters'],
+  4: ['Frequency Overview'],
+  5: ['Dashboard Overview'],
+  6: ['X-Sense Auto EQ'],
 }
 
 export default async function SoftwareDetailPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -138,8 +142,8 @@ export default async function SoftwareDetailPage({ params }: { params: Promise<{
                   </span>
                 </a>
               )}
-              {app.downloadUrlMac && (
-                <a href={app.downloadUrlMac} className="sdp2-store-btn">
+              {(app.downloadUrlMac || isDesktop) && (
+                <a href={app.downloadUrlMac || '#'} className={`sdp2-store-btn${!app.downloadUrlMac ? ' sdp2-store-btn--pending' : ''}`}>
                   {/* Apple logo */}
                   <svg viewBox="0 0 24 24" fill="currentColor" className="sdp2-store-logo">
                     <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
@@ -150,8 +154,8 @@ export default async function SoftwareDetailPage({ params }: { params: Promise<{
                   </span>
                 </a>
               )}
-              {app.downloadUrlWindows && (
-                <a href={app.downloadUrlWindows} className="sdp2-store-btn sdp2-store-btn--ghost">
+              {(app.downloadUrlWindows || isDesktop) && (
+                <a href={app.downloadUrlWindows || '#'} className={`sdp2-store-btn sdp2-store-btn--ghost${!app.downloadUrlWindows ? ' sdp2-store-btn--pending' : ''}`}>
                   {/* Windows logo */}
                   <svg viewBox="0 0 24 24" fill="currentColor" className="sdp2-store-logo">
                     <path d="M3 3h8v8H3zm10 0h8v8h-8zm-10 10h8v8H3zm10 0h8v8h-8z"/>
