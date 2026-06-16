@@ -2190,6 +2190,54 @@ export default function ProductDetail({ product }: { product: Product }) {
         />
       )}
 
+      {/* ── SOFTWARE STRIP ── */}
+      {/* Controller App: shown on all speakers (not subs, not amps) */}
+      {!isSub && !isAmp && (
+        <section className="pdp-sw-strip">
+          <div className="pdp-sw-label">Mobile App</div>
+          <a href="/software/xscace-controller" className="pdp-sw-card">
+            <div className="pdp-sw-card-icon pdp-sw-card-icon--mobile">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <rect x="5" y="2" width="14" height="20" rx="3"/>
+                <circle cx="12" cy="17" r="1" fill="currentColor"/>
+              </svg>
+            </div>
+            <div className="pdp-sw-card-body">
+              <div className="pdp-sw-card-platform">iOS & Android</div>
+              <div className="pdp-sw-card-name">XSCACE Controller</div>
+              <div className="pdp-sw-card-desc">
+                When paired with Air Amp or Air Mini, control this speaker from your phone.
+                Volume, balance, channel select, X-Sense AI room calibration, and streaming — all in one app.
+              </div>
+              <div className="pdp-sw-card-cta">Learn more →</div>
+            </div>
+          </a>
+        </section>
+      )}
+      {/* Network Controller: shown on DSP amps */}
+      {isAmp && product.hasDsp && (
+        <section className="pdp-sw-strip">
+          <div className="pdp-sw-label">Desktop Software</div>
+          <a href="/software/network-controller" className="pdp-sw-card">
+            <div className="pdp-sw-card-icon pdp-sw-card-icon--desktop">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <rect x="2" y="3" width="20" height="14" rx="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+              </svg>
+            </div>
+            <div className="pdp-sw-card-body">
+              <div className="pdp-sw-card-platform">macOS & Windows</div>
+              <div className="pdp-sw-card-name">XSCACE Network Controller</div>
+              <div className="pdp-sw-card-desc">
+                Configure this amplifier from your Mac or Windows PC. Adjust crossover frequencies,
+                parametric EQ, output delay, and channel routing — all in real time over the network.
+              </div>
+              <div className="pdp-sw-card-cta">Learn more →</div>
+            </div>
+          </a>
+        </section>
+      )}
+
       {/* ── GALLERY — last section ── */}
       {galleryAll.length > 0 && (
         <>
