@@ -1704,6 +1704,24 @@ a.p-card, a.p-card:hover {
 .cat-empty { padding: 80px; text-align: center; color: #2a2a2a; font-size: 11px; font-family: 'DM Mono', monospace; }
 
 /* ── Responsive ── */
+.catalogue-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: #111;
+}
+.pc-wrap {
+  background: #090909;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity .35s ease, transform .35s ease;
+}
+.pc-wrap.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
 @media (max-width: 1100px) { .catalogue-grid { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 900px) {
   .products-pg { flex-direction: column; }
