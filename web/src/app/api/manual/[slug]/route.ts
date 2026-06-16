@@ -43,7 +43,7 @@ const BG='#090909',CH='#c9a96e',LT='#eeebe5',MU='#7a776f',DIM_C='#3a3835',WL='#1
 const f=(n:number)=>n.toFixed(1)
 
 // SVG PRIMITIVES
-function svg(w:number,h:number,body:string){return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block"><defs><pattern id="hatch" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="12" stroke="rgba(201,169,110,0.09)" stroke-width="4"/></pattern></defs><rect width="${w}" height="${h}" fill="${BG}"/>${body}</svg>`}
+function svg(w:number,h:number,body:string){return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block"><defs style="display:none"><pattern id="hatch" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="12" stroke="rgba(201,169,110,0.09)" stroke-width="4"/></pattern></defs><rect width="${w}" height="${h}" fill="${BG}"/>${body}</svg>`}
 function tx(x:number,y:number,t:string,sz=10,fill=MU,anchor='middle'){return `<text x="${f(x)}" y="${f(y)}" text-anchor="${anchor}" fill="${fill}" font-size="${sz}" font-family="DM Mono,monospace" letter-spacing="0.03em">${t}</text>`}
 function corm(x:number,y:number,t:string,sz=22,fill=LT,anchor='middle'){return `<text x="${f(x)}" y="${f(y)}" text-anchor="${anchor}" fill="${fill}" font-size="${sz}" font-family="Cormorant Garamond,Georgia,serif" font-weight="300">${t}</text>`}
 function L(x1:number,y1:number,x2:number,y2:number,stroke=CH,sw=1,dash=''){return `<line x1="${f(x1)}" y1="${f(y1)}" x2="${f(x2)}" y2="${f(y2)}" stroke="${stroke}" stroke-width="${sw}" ${dash?`stroke-dasharray="${dash}"`:''}stroke-linecap="round"/>`}
@@ -122,7 +122,7 @@ function installDiagram(P:any):string {
     +tx2(x-10,(y1+y2)/2+3,lbl,8,CH2,'end')
 
   // Standard hatch def + SVG wrapper
-  const HATCH=`<defs><pattern id="hatch" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="10" stroke="rgba(201,169,110,0.09)" stroke-width="3.5"/></pattern></defs>`
+  const HATCH=`<defs style="display:none"><pattern id="hatch" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="10" stroke="rgba(201,169,110,0.09)" stroke-width="3.5"/></pattern></defs>`
   const mksvg=(body:string)=>
     `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">${HATCH}<rect width="${W}" height="${H}" fill="${BG2}"/>${body}</svg>`
 
@@ -144,112 +144,120 @@ function installDiagram(P:any):string {
     const drillMm=scrL.startsWith('M2.5')?'5':scrL.startsWith('M2')?'4':scrL.startsWith('M3')?'6':scrL.startsWith('M4')?'7':'6'
     const isQ=(P.productName||'').toLowerCase().includes('quad')
 
-    // Wall shifted right so dimV label at x=WX-26 fits within viewBox
-    const WX=44, WW=30, WY=55, WH=460
-    const GAP=Math.min(spc*0.9, 200)
-    const midY=WY+WH/2
-    const S1=midY-GAP/2, S2=midY+GAP/2
-    const SX=WX+WW, SLEN=48
-    const REAR_X=SX+SLEN+22, REAR_W=30, REAR_H=GAP+50
-    const REAR_Y=midY-REAR_H/2
-    const TX=REAR_X+REAR_W+24
+    // FIXED layout — screw positions NEVER change regardless of spc
+    // Only the annotation text shows the actual measurement
+    const WX=50, WW=30, WY=80, WH=400
+    const S1=WY+WH*0.28   // top screw — always at 28% of wall height
+    const S2=WY+WH*0.72   // bottom screw — always at 72% of wall height
+    const SX=WX+WW
+    const SLEN=52
+    const REAR_X=SX+SLEN+28  // speaker rear face
+    const REAR_W=32
+    const REAR_H=S2-S1+60
+    const REAR_Y=(S1+S2)/2-REAR_H/2
+    const TX=REAR_X+REAR_W+28  // text column, well clear of everything
 
     return mksvg(
       tx2(W/2,18,'KEYHOLE WALL MOUNT',9,MU2)
       +tx2(W/2,30,spc+'mm C/C  ·  '+scrL,8.5,CH2)
 
       +wall(WX,WY,WW,WH)
-      +tx2(WX+WW/2,WY-8,'WALL',8,MU2)
+      +tx2(WX+WW/2,WY-10,'WALL',8,MU2)
 
-      // Wall plugs — no text label
+      // Two wall plugs
       +plug(WX+WW/2,S1)
       +plug(WX+WW/2,S2)
 
+      // Two screws protruding from wall
       +screw(SX,S1,SLEN)
-      +tx2(SX+SLEN+3,S1-14,'5–7mm proud',7,MU2,'start')
       +screw(SX,S2,SLEN)
+      +tx2(SX+SLEN+3,S1-14,'5–7mm proud',7,MU2,'start')
 
-      // Spacing dimension — at x=WX-16=28, label at x=18, fully visible
-      +dimV(WX-16,S1,S2,spc+'mm')
+      // Spacing dimension — line between screws, label shows actual mm
+      +ln(WX+WW+10,S1,WX+WW+10,S2,CH2,0.5,'3,2')
+      +ln(WX+WW+5,S1,WX+WW+15,S1,CH2,0.5)
+      +ln(WX+WW+5,S2,WX+WW+15,S2,CH2,0.5)
+      +tx2(WX+WW+12,S1-6,spc+'mm',8,CH2,'start')
 
-      // Speaker REAR face with two keyhole slots
+      // Speaker REAR face with keyholes
       +r2(REAR_X,REAR_Y,REAR_W,REAR_H,WL2,CH2,1.4,4)
-      +tx2(REAR_X+REAR_W/2,REAR_Y-12,'REAR FACE',7.5,MU2)
-      +keyhole(REAR_X+REAR_W/2,S1-7,8)
-      +keyhole(REAR_X+REAR_W/2,S2-7,8)
+      +tx2(REAR_X+REAR_W/2,REAR_Y-10,'REAR FACE',7.5,MU2)
+      +keyhole(REAR_X+REAR_W/2,S1-6,8)
+      +keyhole(REAR_X+REAR_W/2,S2-6,8)
 
-      // Steps column — no overlap: each step gets 48px vertical slot
-      +step(TX,S1-30,  1,'Mark positions — use template','Confirm level with spirit level')
-      +step(TX,S1+10,  2,'Drill '+drillMm+'mm holes — insert plugs')
+      // Steps — one per row, generous spacing
+      +step(TX,S1-20, 1,'Mark positions — use template','Confirm level with spirit level')
+      +step(TX,S1+24, 2,'Drill '+drillMm+'mm holes — insert plugs')
       +step(TX,(S1+S2)/2, 3,'Drive '+scrL,'Leave 5–7mm proud of wall')
-      +step(TX,S2+10,  4,'Connect cable at rear terminal','Red(+) · Black(−)')
-      +step(TX,S2+60,  5,'Lower onto screws — keyhole locks')
+      +step(TX,S2+0,  4,'Connect cable — Red(+) · Black(−)')
+      +step(TX,S2+44, 5,'Lower onto screws — keyhole locks')
       +(isQ
-        ? tx2(TX,S2+95,'QuadCane: 2-piece corner bracket — '+spc+'mm apart',7.5,MU2,'start')
-        : tx2(TX,S2+95,'Cannot lift out without tilting speaker',7.5,MU2,'start'))
+        ? tx2(TX,S2+78,'QuadCane: 2-piece corner bracket, '+spc+'mm apart',7.5,MU2,'start')
+        : tx2(TX,S2+78,'Cannot lift without tilting speaker',7.5,MU2,'start'))
 
-      // Bottom info strip
-      +r2(WX,WY+WH+14,W-WX-14,28,BG2,'rgba(201,169,110,0.12)',0.4,3)
-      +tx2(WX+10,WY+WH+24,'DRILL BIT',8,CH2,'start')
-      +tx2(WX+70,WY+WH+24,drillMm+'mm for '+scrL,8,LT2,'start')
-      +tx2(WX+10,WY+WH+36,'SCREW SPACING',8,CH2,'start')
-      +tx2(WX+104,WY+WH+36,spc+'mm centre-to-centre',8,LT2,'start')
+      // Info bar
+      +r2(20,WY+WH+18,W-36,42,BG2,'rgba(201,169,110,0.12)',0.4,3)
+      +tx2(28,WY+WH+30,'DRILL BIT',8,CH2,'start')
+      +tx2(96,WY+WH+30,drillMm+'mm for '+scrL,8,LT2,'start')
+      +tx2(28,WY+WH+44,'SPACING',8,CH2,'start')
+      +tx2(96,WY+WH+44,spc+'mm centre-to-centre',8,LT2,'start')
     )
   }
 
-  // ============================================================
-  // BRACKET WALL MOUNT
-  // ============================================================
   if(it==='bracket-wall'){
     const spc=P.screwSpacingMm||120
     const scrL=P.screwSize||'M4×25'
     const drillMm=scrL.startsWith('M4')?'7':scrL.startsWith('M3')?'6':'7'
 
-    const WX=44, WW=30, WY=55, WH=420
-    const GAP=Math.min(spc*0.75,180)
-    const midY=WY+WH/2, S1=midY-GAP/2, S2=midY+GAP/2
-    const SX=WX+WW, SLEN=40
-    // Bracket arms + vertical bar
-    const B_ARM_W=50, B_BAR_W=12
-    const BVX=SX+SLEN+B_ARM_W  // bracket bar left edge
-    const TX=BVX+B_BAR_W+28
+    // FIXED layout — same positions always, only text changes
+    const WX=50, WW=30, WY=80, WH=380
+    const S1=WY+WH*0.25
+    const S2=WY+WH*0.75
+    const SX=WX+WW
+    const SLEN=44
+    const B_ARM=50, B_BAR=12
+    const BVX=SX+SLEN+B_ARM
+    const TX=BVX+B_BAR+32
 
     return mksvg(
       tx2(W/2,18,'BRACKET WALL MOUNT',9,MU2)
       +tx2(W/2,30,spc+'mm C/C  ·  '+scrL,8.5,CH2)
 
       +wall(WX,WY,WW,WH)
-      +tx2(WX+WW/2,WY-8,'WALL',8,MU2)
+      +tx2(WX+WW/2,WY-10,'WALL',8,MU2)
 
-      +plug(WX+WW/2,S1)+plug(WX+WW/2,S2)
-      +screw(SX,S1,SLEN)+screw(SX,S2,SLEN)
+      +plug(WX+WW/2,S1)
+      +plug(WX+WW/2,S2)
+      +screw(SX,S1,SLEN)
+      +screw(SX,S2,SLEN)
 
-      // Horizontal bracket arms
-      +r2(SX+SLEN,S1-5,B_ARM_W,10,WL2,CH2,1.2,2)
-      +r2(SX+SLEN,S2-5,B_ARM_W,10,WL2,CH2,1.2,2)
-      // Vertical bracket bar
-      +r2(BVX,S1,B_BAR_W,S2-S1,WL2,CH2,1.2,1)
-      +tx2(BVX+B_BAR_W/2,S1-14,'BRACKET',8,CH2)
+      // Bracket arms
+      +r2(SX+SLEN,S1-5,B_ARM,10,WL2,CH2,1.2,2)
+      +r2(SX+SLEN,S2-5,B_ARM,10,WL2,CH2,1.2,2)
+      // Bracket vertical bar
+      +r2(BVX,S1,B_BAR,S2-S1,WL2,CH2,1.2,1)
+      +tx2(BVX+B_BAR/2,S1-12,'BRACKET',8,CH2)
 
-      +dimV(WX-16,S1,S2,spc+'mm')
+      // Spacing annotation — inline between screw positions
+      +ln(SX+SLEN+B_ARM+4,S1,SX+SLEN+B_ARM+4,S2,CH2,0.5,'3,2')
+      +ln(SX+SLEN+B_ARM-1,S1,SX+SLEN+B_ARM+9,S1,CH2,0.5)
+      +ln(SX+SLEN+B_ARM-1,S2,SX+SLEN+B_ARM+9,S2,CH2,0.5)
+      +tx2(SX+SLEN+B_ARM+12,(S1+S2)/2,spc+'mm',8,CH2,'start')
 
-      +step(TX,S1-30,  1,'Mark '+spc+'mm spacing — confirm level')
-      +step(TX,S1+10,  2,'Drill '+drillMm+'mm — insert plugs')
-      +step(TX,(S1+S2)/2, 3,'Drive '+scrL+' — attach bracket to wall')
-      +step(TX,S2+10,  4,'Fix speaker to bracket')
-      +step(TX,S2+60,  5,'Connect cable — Red(+) · Black(−)')
+      +step(TX,S1-20, 1,'Mark '+spc+'mm spacing — confirm level')
+      +step(TX,S1+20, 2,'Drill '+drillMm+'mm — insert plugs')
+      +step(TX,(S1+S2)/2, 3,'Drive '+scrL+' — fit bracket to wall')
+      +step(TX,S2+10, 4,'Fix speaker to bracket')
+      +step(TX,S2+48, 5,'Connect cable — Red(+) · Black(−)')
 
-      +r2(WX,WY+WH+14,W-WX-14,28,BG2,'rgba(201,169,110,0.12)',0.4,3)
-      +tx2(WX+10,WY+WH+24,'DRILL BIT',8,CH2,'start')
-      +tx2(WX+70,WY+WH+24,drillMm+'mm for '+scrL,8,LT2,'start')
-      +tx2(WX+10,WY+WH+36,'SCREW SPACING',8,CH2,'start')
-      +tx2(WX+104,WY+WH+36,spc+'mm centre-to-centre',8,LT2,'start')
+      +r2(20,WY+WH+18,W-36,42,BG2,'rgba(201,169,110,0.12)',0.4,3)
+      +tx2(28,WY+WH+30,'DRILL BIT',8,CH2,'start')
+      +tx2(96,WY+WH+30,drillMm+'mm for '+scrL,8,LT2,'start')
+      +tx2(28,WY+WH+44,'SPACING',8,CH2,'start')
+      +tx2(96,WY+WH+44,spc+'mm centre-to-centre',8,LT2,'start')
     )
   }
 
-  // ============================================================
-  // CEILING CIRCULAR
-  // ============================================================
   if(it==='ceiling-circular'){
     const d=P.cutoutDiameterMm||209
     const cav=P.requiredCavityDepthMm||115
