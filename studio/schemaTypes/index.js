@@ -1,5 +1,6 @@
 import product from './product'
-import {category, post, distributor, siteSettings} from './other'
 import accessory from './accessory'
+import software from './software'
+import {category, post, distributor, siteSettings} from './other'
 
-export const schemaTypes = [product, category, post, distributor, siteSettings, accessory]
+export const schemaTypes = [product, accessory, software, category, post, distributor, siteSettings]
