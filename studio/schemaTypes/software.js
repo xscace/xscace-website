@@ -43,11 +43,31 @@ export default defineType({
     defineField({ name: 'version', title: 'Current Version', type: 'string', group: 'main' }),
     defineField({ name: 'latestReleaseDate', title: 'Latest Release Date', type: 'date', group: 'main' }),
 
-    // Download links
+    // Download links (mobile — external store URLs)
     defineField({ name: 'appStoreUrl', title: 'App Store URL (iOS)', type: 'url', group: 'download' }),
     defineField({ name: 'playStoreUrl', title: 'Google Play URL (Android)', type: 'url', group: 'download' }),
-    defineField({ name: 'downloadUrlMac', title: 'Download URL (Mac)', type: 'url', group: 'download' }),
-    defineField({ name: 'downloadUrlWindows', title: 'Download URL (Windows)', type: 'url', group: 'download' }),
+
+    // Desktop — upload installer files directly to Sanity (takes priority over URL fields)
+    defineField({
+      name: 'macFile',
+      title: 'Mac Installer (.dmg)',
+      type: 'file',
+      group: 'download',
+      description: 'Upload the .dmg installer. Once uploaded, the Download for Mac button activates automatically.',
+      options: { accept: '.dmg,application/octet-stream' },
+    }),
+    defineField({
+      name: 'windowsFile',
+      title: 'Windows Installer (.exe / .msi)',
+      type: 'file',
+      group: 'download',
+      description: 'Upload the .exe or .msi installer. Once uploaded, the Download for Windows button activates.',
+      options: { accept: '.exe,.msi,application/octet-stream' },
+    }),
+
+    // Desktop — fallback external URLs (used only if no file uploaded above)
+    defineField({ name: 'downloadUrlMac', title: 'Download URL Mac (fallback)', type: 'url', group: 'download', description: 'Only used if no .dmg file is uploaded above.' }),
+    defineField({ name: 'downloadUrlWindows', title: 'Download URL Windows (fallback)', type: 'url', group: 'download', description: 'Only used if no .exe/.msi file is uploaded above.' }),
 
     // Images
     defineField({ name: 'heroImage', title: 'Hero Image', type: 'image', group: 'content', options: { hotspot: true } }),
