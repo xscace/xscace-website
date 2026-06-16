@@ -32,6 +32,18 @@ interface Category {
   order: number
 }
 
+interface SoftwareApp {
+  _id: string
+  name: string
+  slug: { current: string }
+  tagline?: string
+  platform?: string
+  status?: string
+  heroImageUrl?: string
+  appStoreUrl?: string
+  playStoreUrl?: string
+}
+
 const FEATURED_IDS = ['prod-bonsai', 'prod-cane', 'prod-ghost2', 'prod-quadcane', 'prod-acacia6-pw', 'prod-acacia10-pw']
 
 const BADGE_MAP: Record<string, string> = {
@@ -110,62 +122,13 @@ function FeaturedCard({ p }: { p: Product }) {
 }
 
 // ── SOFTWARE SECTION ──────────────────────────────────────────────────────────
-function SoftwareSection() {
-  const apps = [
-    {
-      name: 'XSCACE Network Controller',
-      sub: 'Desktop Application',
-      desc: 'Full DSP control for XSCACE Power Amplifiers. EQ, crossover, delay, and preset management — from your Mac or PC.',
-      platforms: ['macOS', 'Windows'],
-      icon: (
-        <svg viewBox="0 0 48 48" fill="none" className="sw-icon">
-          <rect x="6" y="8" width="36" height="26" rx="2" stroke="#c9a96e" strokeWidth="1.2"/>
-          <line x1="14" y1="34" x2="34" y2="34" stroke="#c9a96e" strokeWidth="1.2"/>
-          <rect x="19" y="34" width="10" height="5" rx="0" stroke="#c9a96e" strokeWidth="1.2"/>
-          {[0,1,2,3].map(i => <rect key={i} x={10+i*8} y={14} width="5" height={8+i*3} rx="0.5" fill="#c9a96e" opacity={0.25+i*0.15}/>)}
-        </svg>
-      ),
-      cta: { label: 'Download', href: 'https://github.com/XSCACE/xscace-releases/releases/latest' },
-    },
-    {
-      name: 'XSCACE Controller',
-      sub: 'iOS & Android App',
-      desc: 'Control your XSCACE streamers from your phone. Source switching, volume, EQ, and X-Sense AI auto-calibration.',
-      platforms: ['iOS', 'Android'],
-      icon: (
-        <svg viewBox="0 0 48 48" fill="none" className="sw-icon">
-          <rect x="14" y="4" width="20" height="40" rx="3" stroke="#c9a96e" strokeWidth="1.2"/>
-          <circle cx="24" cy="39" r="2" stroke="#c9a96e" strokeWidth="0.8" opacity="0.5"/>
-          <line x1="20" y1="8" x2="28" y2="8" stroke="#c9a96e" strokeWidth="1" opacity="0.4"/>
-          {[0,1,2].map(i => <line key={i} x1="18" y1={16+i*6} x2={24+i*3} y2={16+i*6} stroke="#c9a96e" strokeWidth="0.8" opacity={0.6-i*0.15}/>)}
-        </svg>
-      ),
-      cta: { label: 'App Store', href: 'https://apps.apple.com' },
-      cta2: { label: 'Google Play', href: 'https://play.google.com/store/apps/details?id=com.xscace.controller' },
-    },
-    {
-      name: 'XSCACE AI Configurator',
-      sub: 'Web Application',
-      desc: 'Describe your space. Our AI designs the perfect XSCACE system — complete equipment list, layout, and spec sheet.',
-      platforms: ['Browser'],
-      icon: (
-        <svg viewBox="0 0 48 48" fill="none" className="sw-icon">
-          <rect x="6" y="10" width="36" height="28" rx="2" stroke="#c9a96e" strokeWidth="1.2"/>
-          <rect x="6" y="10" width="36" height="7" rx="2" fill="#c9a96e" opacity="0.07"/>
-          <circle cx="24" cy="28" r="7" stroke="#c9a96e" strokeWidth="0.8" opacity="0.45"/>
-          <circle cx="24" cy="28" r="2.5" fill="#c9a96e" opacity="0.5"/>
-          {[0,1,2,3].map(i => {
-            const a = (i/4)*Math.PI*2
-            return <line key={i} x1={24+Math.cos(a)*7} y1={28+Math.sin(a)*7}
-              x2={24+Math.cos(a)*11} y2={28+Math.sin(a)*11}
-              stroke="#c9a96e" strokeWidth="0.8" opacity="0.3"/>
-          })}
-        </svg>
-      ),
-      cta: { label: 'Open Configurator', href: 'https://configurator.xscace.com' },
-    },
-  ]
+const PLATFORM_LABEL: Record<string, string> = {
+  'ios-android': 'iOS & Android',
+  'mac-windows': 'macOS & Windows',
+  'ios': 'iOS', 'android': 'Android', 'mac': 'macOS', 'windows': 'Windows',
+}
 
+function SoftwareSection({ software }: { software: SoftwareApp[] }) {
   return (
     <div className="sw-section products-section" id="software">
       <div className="products-sec-header">
@@ -173,25 +136,98 @@ function SoftwareSection() {
         <h2 className="products-sec-title">The XSCACE <em>Ecosystem</em></h2>
       </div>
       <div className="sw-grid">
-        {apps.map(app => (
-          <div key={app.name} className="sw-card">
-            <div className="sw-card-top">
-              {app.icon}
-              <div className="sw-platforms">
-                {app.platforms.map(p => <span key={p} className="sw-platform">{p}</span>)}
+
+        {/* Apps from Sanity — each links to its dedicated software page */}
+        {software.map(app => {
+          const slug = app.slug?.current
+          const href = slug ? `/software/${slug}` : '#'
+          const platform = app.platform ? (PLATFORM_LABEL[app.platform] || app.platform) : ''
+          const isMobile = app.platform?.includes('ios') || app.platform?.includes('android')
+          return (
+            <a key={app._id} href={href} className="sw-card sw-card--img">
+              {/* Hero image fills card top */}
+              <div className="sw-card-img">
+                {app.heroImageUrl
+                  ? <img src={app.heroImageUrl} alt={app.name} />
+                  : (
+                    <div className="sw-card-img-placeholder">
+                      <svg viewBox="0 0 48 48" fill="none" width="48" height="48">
+                        {isMobile ? (
+                          <>
+                            <rect x="14" y="4" width="20" height="40" rx="3" stroke="#c9a96e" strokeWidth="1.2"/>
+                            <circle cx="24" cy="39" r="2" stroke="#c9a96e" strokeWidth="0.8"/>
+                          </>
+                        ) : (
+                          <>
+                            <rect x="4" y="8" width="40" height="28" rx="2" stroke="#c9a96e" strokeWidth="1.2"/>
+                            <line x1="14" y1="36" x2="34" y2="36" stroke="#c9a96e" strokeWidth="1.2"/>
+                            <rect x="18" y="36" width="12" height="5" stroke="#c9a96e" strokeWidth="1.2"/>
+                          </>
+                        )}
+                      </svg>
+                    </div>
+                  )
+                }
+                <div className="sw-card-img-overlay" />
               </div>
+              {/* Card text */}
+              <div className="sw-card-body">
+                <div className="sw-platforms">
+                  {platform && <span className="sw-platform">{platform}</span>}
+                  {app.status === 'coming-soon' && (
+                    <span className="sw-platform sw-platform--soon">Coming Soon</span>
+                  )}
+                </div>
+                <div className="sw-card-name">{app.name}</div>
+                {app.tagline && <div className="sw-card-tag">{app.tagline}</div>}
+                <div className="sw-card-ctas">
+                  <span className="sw-cta-btn">Learn More →</span>
+                </div>
+              </div>
+            </a>
+          )
+        })}
+
+        {/* Configurator — static card, external link */}
+        <a href="https://configurator.xscace.com" target="_blank" rel="noopener noreferrer" className="sw-card sw-card--img">
+          <div className="sw-card-img sw-card-img--conf">
+            <svg viewBox="0 0 320 200" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:'100%',height:'100%',display:'block'}}>
+              <rect width="320" height="200" fill="#090909"/>
+              {/* Wiring diagram representing the configurator */}
+              <line x1="40" y1="100" x2="100" y2="100" stroke="#c9a96e" strokeWidth="0.8" opacity="0.4"/>
+              <line x1="100" y1="100" x2="100" y2="55" stroke="#c9a96e" strokeWidth="0.8" opacity="0.35"/>
+              <line x1="100" y1="55" x2="210" y2="55" stroke="#c9a96e" strokeWidth="0.8" opacity="0.35"/>
+              <line x1="100" y1="100" x2="210" y2="100" stroke="#c9a96e" strokeWidth="0.8" opacity="0.4"/>
+              <line x1="100" y1="100" x2="100" y2="145" stroke="#c9a96e" strokeWidth="0.8" opacity="0.35"/>
+              <line x1="100" y1="145" x2="210" y2="145" stroke="#c9a96e" strokeWidth="0.8" opacity="0.35"/>
+              <line x1="210" y1="55" x2="280" y2="55" stroke="#c9a96e" strokeWidth="0.8" opacity="0.3"/>
+              <line x1="210" y1="100" x2="280" y2="78" stroke="#c9a96e" strokeWidth="0.8" opacity="0.3"/>
+              <line x1="210" y1="100" x2="280" y2="122" stroke="#c9a96e" strokeWidth="0.8" opacity="0.3"/>
+              <line x1="210" y1="145" x2="280" y2="145" stroke="#c9a96e" strokeWidth="0.8" opacity="0.3"/>
+              {([[40,100],[100,55],[100,100],[100,145],[210,55],[210,100],[210,145],[280,55],[280,78],[280,122],[280,145]] as [number,number][]).map(([x,y],i) => (
+                <circle key={i} cx={x} cy={y} r="4" fill="#090909" stroke="#c9a96e" strokeWidth={i===0?1:0.7} opacity={i===0?0.9:0.5}/>
+              ))}
+              <text x="26" y="90" fill="#c9a96e" fontSize="6.5" fontFamily="monospace" opacity="0.6">SOURCE</text>
+              <text x="88" y="47" fill="#c9a96e" fontSize="5.5" fontFamily="monospace" opacity="0.45">AMP</text>
+              <text x="198" y="47" fill="#c9a96e" fontSize="5.5" fontFamily="monospace" opacity="0.45">SPEAKER</text>
+              <text x="198" y="92" fill="#c9a96e" fontSize="5.5" fontFamily="monospace" opacity="0.45">SPEAKER</text>
+              <text x="198" y="137" fill="#c9a96e" fontSize="5.5" fontFamily="monospace" opacity="0.45">SPEAKER</text>
+              <text x="126" y="97" fill="#c9a96e" fontSize="7" fontFamily="monospace" opacity="0.25">AI CONFIGURED</text>
+            </svg>
+            <div className="sw-card-img-overlay" />
+          </div>
+          <div className="sw-card-body">
+            <div className="sw-platforms">
+              <span className="sw-platform">Web · AI</span>
             </div>
-            <div className="sw-card-sub">{app.sub}</div>
-            <div className="sw-card-name">{app.name}</div>
-            <div className="sw-card-desc">{app.desc}</div>
+            <div className="sw-card-name">System Builder</div>
+            <div className="sw-card-tag">Describe your space. Get a complete system.</div>
             <div className="sw-card-ctas">
-              <a href={app.cta.href} target="_blank" rel="noopener noreferrer" className="sw-cta-btn">{app.cta.label} →</a>
-              {'cta2' in app && app.cta2 && (
-                <a href={app.cta2.href} target="_blank" rel="noopener noreferrer" className="sw-cta-btn sw-cta-ghost">{app.cta2.label} →</a>
-              )}
+              <span className="sw-cta-btn">Open Builder →</span>
             </div>
           </div>
-        ))}
+        </a>
+
       </div>
     </div>
   )
@@ -229,7 +265,15 @@ function ProductCard({ p, delay }: { p: Product; delay: number }) {
 }
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
-export default function ProductsClient({ products, categories }: { products: Product[]; categories: Category[] }) {
+export default function ProductsClient({
+  products,
+  categories,
+  software = [],
+}: {
+  products: Product[]
+  categories: Category[]
+  software?: SoftwareApp[]
+}) {
   const searchParams = useSearchParams()
   const [activeFilter, setActiveFilter] = useState(() => searchParams.get('cat') || 'all')
   const [gridVisible, setGridVisible] = useState(false)
@@ -251,7 +295,6 @@ export default function ProductsClient({ products, categories }: { products: Pro
 
   useEffect(() => { setTimeout(() => setGridVisible(true), 100) }, [])
 
-  // Reveal cards on scroll
   useEffect(() => {
     const obs = new IntersectionObserver(entries => {
       entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible') })
@@ -260,18 +303,12 @@ export default function ProductsClient({ products, categories }: { products: Pro
     return () => obs.disconnect()
   }, [catalogue])
 
-  // Scroll spy for side nav
   useEffect(() => {
     const sections = ['featured', 'software', 'catalogue']
     const obs = new IntersectionObserver(entries => {
-      entries.forEach(e => {
-        if (e.isIntersecting) setActiveSection(e.target.id)
-      })
+      entries.forEach(e => { if (e.isIntersecting) setActiveSection(e.target.id) })
     }, { rootMargin: '-40% 0px -55% 0px' })
-    sections.forEach(id => {
-      const el = document.getElementById(id)
-      if (el) obs.observe(el)
-    })
+    sections.forEach(id => { const el = document.getElementById(id); if (el) obs.observe(el) })
     return () => obs.disconnect()
   }, [])
 
@@ -282,7 +319,6 @@ export default function ProductsClient({ products, categories }: { products: Pro
   return (
     <div className="products-pg">
 
-      {/* ── SIDE NAV ── */}
       <aside className="products-sidenav">
         <div className="sidenav-logo">
           <div className="sidenav-label">Products</div>
@@ -290,13 +326,9 @@ export default function ProductsClient({ products, categories }: { products: Pro
         <div className="sidenav-links">
           <div className="sidenav-section-label">Highlights</div>
           <button className={`sidenav-link${activeSection === 'featured' ? ' active' : ''}`}
-            onClick={() => scrollTo('featured')}>
-            Featured
-          </button>
+            onClick={() => scrollTo('featured')}>Featured</button>
           <button className={`sidenav-link${activeSection === 'software' ? ' active' : ''}`}
-            onClick={() => scrollTo('software')}>
-            Software & Apps
-          </button>
+            onClick={() => scrollTo('software')}>Software & Apps</button>
           <div className="sidenav-divider"/>
           <div className="sidenav-section-label">Catalogue</div>
           <button className={`sidenav-link${activeSection === 'catalogue' && activeFilter === 'all' ? ' active' : ''}`}
@@ -320,17 +352,14 @@ export default function ProductsClient({ products, categories }: { products: Pro
         </div>
       </aside>
 
-      {/* ── MAIN CONTENT ── */}
       <div className="products-main" ref={mainRef}>
 
-        {/* Hero */}
         <div className="products-pg-hero">
           <div className="products-pg-ey">Full Catalogue · {products.length} Products</div>
           <h1 className="products-pg-title">Products</h1>
           <p className="products-pg-sub">Architectural speakers and amplifiers engineered for spaces where sound should be felt, not seen.</p>
         </div>
 
-        {/* Featured */}
         <div className="feat-section products-section" id="featured">
           <div className="products-sec-header">
             <div className="products-sec-ey">Featured</div>
@@ -354,17 +383,13 @@ export default function ProductsClient({ products, categories }: { products: Pro
           </div>
         </div>
 
-        {/* Software */}
-        <SoftwareSection />
+        <SoftwareSection software={software} />
 
-        {/* Catalogue */}
         <div className="catalogue-section products-section" id="catalogue">
           <div className="products-sec-header">
             <div className="products-sec-ey">Full Catalogue</div>
             <h2 className="catalogue-title">Every <em>product</em></h2>
           </div>
-
-          {/* Grid */}
           <div ref={gridRef} className="catalogue-grid"
             style={{ opacity: gridVisible ? 1 : 0, transition: 'opacity .18s ease' }}>
             {catalogue.map((p, i) => <ProductCard key={p._id} p={p} delay={i * 30}/>)}
