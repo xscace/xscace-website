@@ -115,17 +115,26 @@ function injectScript(src: string): Promise<void> {
   })
 }
 
+// Preload Three.js scripts as soon as the products page loads
+if (typeof window !== 'undefined') {
+  setTimeout(() => {
+    injectScript(THREE_CDN).then(() => {
+      const THREE = (window as any).THREE
+      if (THREE && !THREE.GLTFLoader) injectScript(GLTF_CDN)
+    }).catch(() => {})
+  }, 500)
+}
+
 function ModelViewer({ src, hovered }: { src: string; hovered: boolean }) {
-  const mountRef = useRef<HTMLDivElement>(null)
-  const rendererRef = useRef<any>(null)
-  const cameraRef = useRef<any>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
   const frameRef = useRef<number>(0)
   const targetRotRef = useRef({ x: -0.15, y: 0 })
   const currentRotRef = useRef({ x: -0.15, y: 0 })
+  const readyRef = useRef(false)
 
   useEffect(() => {
-    const el = mountRef.current
-    if (!el) return
+    const canvas = canvasRef.current
+    if (!canvas) return
     let cancelled = false
 
     const init = async () => {
@@ -136,32 +145,28 @@ function ModelViewer({ src, hovered }: { src: string; hovered: boolean }) {
         if (!THREE.GLTFLoader) await injectScript(GLTF_CDN)
         if (cancelled) return
 
-        // Use the card image area dimensions (feat-card-img is 4/5 aspect ratio)
-        // Get size from parent element which is visible and has real dimensions
-        const parent = el.closest('.feat-card-img') as HTMLElement
-        const W = parent ? parent.offsetWidth : 300
-        const H = parent ? parent.offsetHeight : 400
+        // Size canvas from the actual card — walk up to feat-card-wrap and measure
+        const card = canvas.closest('.feat-card-wrap') as HTMLElement
+        const W = card ? card.offsetWidth : 300
+        const H = Math.round(W * 1.25) // 4:5 ratio matching feat-card-img
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true })
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-        renderer.setSize(W, H)
+        renderer.setSize(W, H, false) // false = don't set CSS size
         renderer.toneMapping = THREE.ACESFilmicToneMapping
-        renderer.toneMappingExposure = 1.2
-        el.appendChild(renderer.domElement)
-        rendererRef.current = renderer
+        renderer.toneMappingExposure = 1.4
 
         const scene = new THREE.Scene()
-        const camera = new THREE.PerspectiveCamera(40, W / H, 0.01, 100)
-        camera.position.set(0, 0, 3.5)
-        cameraRef.current = camera
+        const camera = new THREE.PerspectiveCamera(38, W / H, 0.01, 100)
+        camera.position.set(0, 0, 3.8)
 
-        scene.add(new THREE.AmbientLight(0xffffff, 0.4))
-        const key = new THREE.DirectionalLight(0xfff5e0, 2.5)
+        scene.add(new THREE.AmbientLight(0xffffff, 0.5))
+        const key = new THREE.DirectionalLight(0xfff5e0, 3.0)
         key.position.set(2, 3, 2); scene.add(key)
-        const fill = new THREE.DirectionalLight(0xc9a96e, 0.6)
+        const fill = new THREE.DirectionalLight(0xc9a96e, 0.8)
         fill.position.set(-2, 1, 1); scene.add(fill)
-        const rim = new THREE.DirectionalLight(0xffffff, 0.8)
-        rim.position.set(0, -2, -2); scene.add(rim)
+        const rim = new THREE.DirectionalLight(0xffffff, 1.0)
+        rim.position.set(0, -2, -3); scene.add(rim)
 
         const loader = new THREE.GLTFLoader()
         loader.load(src, (gltf: any) => {
@@ -170,54 +175,58 @@ function ModelViewer({ src, hovered }: { src: string; hovered: boolean }) {
           const box = new THREE.Box3().setFromObject(model)
           const centre = box.getCenter(new THREE.Vector3())
           const size = box.getSize(new THREE.Vector3())
-          const scale = 2.2 / Math.max(size.x, size.y, size.z)
+          const scale = 2.0 / Math.max(size.x, size.y, size.z)
           model.scale.setScalar(scale)
           model.position.sub(centre.multiplyScalar(scale))
           scene.add(model)
+          readyRef.current = true
 
           const animate = () => {
+            if (cancelled) return
             frameRef.current = requestAnimationFrame(animate)
-            currentRotRef.current.x += (targetRotRef.current.x - currentRotRef.current.x) * 0.06
-            currentRotRef.current.y += (targetRotRef.current.y - currentRotRef.current.y) * 0.06
+            currentRotRef.current.x += (targetRotRef.current.x - currentRotRef.current.x) * 0.07
+            currentRotRef.current.y += (targetRotRef.current.y - currentRotRef.current.y) * 0.07
             model.rotation.x = currentRotRef.current.x
             model.rotation.y = currentRotRef.current.y
             renderer.render(scene, camera)
           }
           animate()
-        }, undefined, (err: any) => console.warn('GLB load failed:', src, err))
+        },
+        undefined,
+        (err: any) => console.warn('[3D] GLB failed:', src, err))
 
-      } catch(e) { console.warn('3D init error', e) }
+      } catch(e) { console.warn('[3D] init error', e) }
     }
 
-    init()
-
+    // Small delay so the DOM has painted and card has real dimensions
+    const t = setTimeout(init, 100)
     return () => {
       cancelled = true
+      clearTimeout(t)
       cancelAnimationFrame(frameRef.current)
-      if (rendererRef.current) {
-        rendererRef.current.dispose()
-        if (el.firstChild) el.removeChild(el.firstChild)
-        rendererRef.current = null
-      }
     }
   }, [src])
 
-  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const onMouseMove = (e: React.MouseEvent) => {
     const r = e.currentTarget.getBoundingClientRect()
     const x = ((e.clientX - r.left) / r.width - 0.5) * 2
     const y = ((e.clientY - r.top) / r.height - 0.5) * 2
-    targetRotRef.current = { x: y * -0.4 - 0.1, y: x * 0.6 }
+    targetRotRef.current = { x: y * -0.4 - 0.1, y: x * 0.65 }
   }
 
   return (
-    <div ref={mountRef} onMouseMove={onMouseMove}
+    <canvas
+      ref={canvasRef}
+      onMouseMove={onMouseMove}
       onMouseLeave={() => { targetRotRef.current = { x: -0.15, y: 0 } }}
       style={{
         position: 'absolute', inset: 0,
+        width: '100%', height: '100%',
         opacity: hovered ? 1 : 0,
         transition: 'opacity 0.5s ease',
         pointerEvents: hovered ? 'all' : 'none',
         zIndex: 3,
+        display: 'block',
       }}
     />
   )
