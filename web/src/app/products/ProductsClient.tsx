@@ -302,7 +302,7 @@ function FeaturedCard({ p }: { p: Product }) {
       onMouseLeave={() => setHovered(false)}
     >
       <a href={`/products/${p.category?.slug?.current}/${p.slug?.current}`} className="feat-card">
-        <div className="feat-card-img" style={{ position: 'relative', overflow: 'hidden' }}>
+        <div className="feat-card-img" style={{ position: 'relative', overflow: 'hidden', background: hovered && has3d ? '#000' : 'transparent', transition: 'background 0.4s ease' }}>
 
           {/* Hero image — always visible at rest */}
           {imgUrl && (
