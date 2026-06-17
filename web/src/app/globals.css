@@ -981,7 +981,6 @@ a.findus-contact-val:hover { color: #c9a96e; }
 
 .hv-card {
   flex: 1;
-  max-width: 260px;
   display: flex;
   flex-direction: column;
   border: 1px solid #1c1c1c;
@@ -1026,6 +1025,11 @@ a.findus-contact-val:hover { color: #c9a96e; }
 }
 .hv-before-img { background: #000; }
 .hv-after-img  { background: #090807; }
+/* Show close button on touch devices */
+@media (hover: none) {
+  .hv-collapse-btn { display: block !important; }
+}
+
 .hv-img-placeholder {
   display: flex;
   flex-direction: column;

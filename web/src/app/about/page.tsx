@@ -41,8 +41,59 @@ function WaveDivider() {
   return <canvas ref={canvasRef} style={{width:'100%',height:'40px',display:'block'}} aria-hidden/>
 }
 
-// ── ABOUT HERO — before/after image cards ─────────────────────────────────
+// ── ABOUT HERO — before/after with expanding slideshow ────────────────────
+const LOCATION_IMAGES = [
+  '/after-speaker.jpg',
+  '/location-1.jpeg',
+  '/location-2.jpeg',
+  '/location-3.jpeg',
+  '/location-4.jpeg',
+]
+
 function AboutHero() {
+  const [expanded, setExpanded] = useState(false)
+  const [slideIndex, setSlideIndex] = useState(0)
+  const [prevIndex, setPrevIndex] = useState<number|null>(null)
+  const [fading, setFading] = useState(false)
+  const slideTimer = useRef<ReturnType<typeof setTimeout>|null>(null)
+  const fadeTimer = useRef<ReturnType<typeof setTimeout>|null>(null)
+
+  // Advance slide with crossfade
+  const advance = useCallback(() => {
+    setFading(true)
+    fadeTimer.current = setTimeout(() => {
+      setSlideIndex(i => {
+        setPrevIndex(i)
+        return (i + 1) % LOCATION_IMAGES.length
+      })
+      setFading(false)
+    }, 400)
+  }, [])
+
+  useEffect(() => {
+    if (!expanded) {
+      // Reset when collapsed
+      if (slideTimer.current) clearInterval(slideTimer.current)
+      if (fadeTimer.current) clearTimeout(fadeTimer.current)
+      setSlideIndex(0)
+      setPrevIndex(null)
+      setFading(false)
+      return
+    }
+    // Start slideshow
+    slideTimer.current = setInterval(advance, 2200)
+    return () => {
+      if (slideTimer.current) clearInterval(slideTimer.current)
+      if (fadeTimer.current) clearTimeout(fadeTimer.current)
+    }
+  }, [expanded, advance])
+
+  const handleAfterClick = () => setExpanded(true)
+  const handleCollapse = (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation()
+    setExpanded(false)
+  }
+
   return (
     <div className="hero-v2-layout">
       <div className="hero-v2-text">
@@ -58,31 +109,137 @@ function AboutHero() {
           Explore Products →
         </a>
       </div>
-      <div className="hero-v2-cards">
-        <div className="hv-card hv-before">
+
+      <div className="hero-v2-cards" style={{position:'relative'}}>
+
+        {/* BEFORE card — shrinks when after is expanded */}
+        <div
+          className="hv-card hv-before"
+          style={{
+            flex: expanded ? '0 0 28%' : '1',
+            transition: 'flex 0.55s cubic-bezier(.22,1,.36,1)',
+            overflow: 'hidden',
+          }}
+        >
           <div className="hv-card-label hv-before-label">
             <span className="hv-label-dot hv-dot-bad"/>Before
           </div>
-          <div className="hv-img-slot hv-before-img">
-            <img src="/before-speaker.jpg" alt="Standard speaker installation — bulky, visually dominant" style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+          <div className="hv-img-slot hv-before-img" style={{overflow:'hidden'}}>
+            <img
+              src="/before-speaker.jpg"
+              alt="Standard speaker installation"
+              style={{
+                width:'100%', height:'100%', objectFit:'cover', display:'block',
+                filter: expanded ? 'grayscale(60%) brightness(0.6)' : 'none',
+                transition: 'filter 0.55s ease',
+              }}
+            />
           </div>
-          <div className="hv-card-caption">
+          <div className="hv-card-caption" style={{opacity: expanded ? 0.3 : 1, transition:'opacity 0.4s ease'}}>
             <div className="hv-caption-main">Standard speaker</div>
             <div className="hv-caption-sub">Bulky · Visually dominant · Disrupts the room</div>
           </div>
         </div>
-        <div className="hv-card hv-after">
-          <div className="hv-card-label hv-after-label">
+
+        {/* AFTER card — expands on hover/tap, runs slideshow */}
+        <div
+          className="hv-card hv-after"
+          onClick={!expanded ? handleAfterClick : undefined}
+          onMouseEnter={!expanded ? handleAfterClick : undefined}
+          onMouseLeave={expanded ? () => setExpanded(false) : undefined}
+          style={{
+            flex: expanded ? '0 0 72%' : '1',
+            transition: 'flex 0.55s cubic-bezier(.22,1,.36,1)',
+            cursor: expanded ? 'default' : 'pointer',
+            overflow: 'hidden',
+            position: 'relative',
+          }}
+        >
+          <div className="hv-card-label hv-after-label" style={{zIndex:4,position:'relative'}}>
             <span className="hv-label-dot hv-dot-good"/>After
           </div>
-          <div className="hv-img-slot hv-after-img">
-            <img src="/after-speaker.jpg" alt="XSCACE speaker installed — 23mm, invisible, room intact" style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+
+          {/* Slideshow images */}
+          <div className="hv-img-slot hv-after-img" style={{position:'relative', overflow:'hidden'}}>
+
+            {/* Static after-speaker always as base */}
+            <img
+              src={LOCATION_IMAGES[0]}
+              alt="XSCACE installed"
+              style={{
+                position:'absolute', inset:0,
+                width:'100%', height:'100%', objectFit:'cover', display:'block',
+              }}
+            />
+
+            {/* Slideshow layer — only visible when expanded */}
+            {expanded && LOCATION_IMAGES.map((src, i) => (
+              <img
+                key={src}
+                src={src}
+                alt={`Location ${i}`}
+                style={{
+                  position:'absolute', inset:0,
+                  width:'100%', height:'100%', objectFit:'cover', display:'block',
+                  opacity: i === slideIndex ? (fading ? 0 : 1) : 0,
+                  transition: i === slideIndex ? 'opacity 0.4s ease' : 'none',
+                  zIndex: i === slideIndex ? 2 : 1,
+                }}
+              />
+            ))}
+
+            {/* Dot indicators */}
+            {expanded && (
+              <div style={{
+                position:'absolute', bottom:14, left:'50%', transform:'translateX(-50%)',
+                display:'flex', gap:6, zIndex:5,
+              }}>
+                {LOCATION_IMAGES.map((_, i) => (
+                  <div
+                    key={i}
+                    onClick={e => { e.stopPropagation(); setPrevIndex(slideIndex); setSlideIndex(i) }}
+                    style={{
+                      width: i === slideIndex ? 16 : 5,
+                      height:5, borderRadius:3,
+                      background: i === slideIndex ? '#c9a96e' : 'rgba(201,169,110,0.3)',
+                      transition: 'all 0.3s ease',
+                      cursor:'pointer',
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Collapse button — mobile tap */}
+            {expanded && (
+              <button
+                onClick={handleCollapse}
+                onTouchEnd={handleCollapse}
+                style={{
+                  position:'absolute', top:12, right:12, zIndex:10,
+                  background:'rgba(0,0,0,0.6)', border:'0.5px solid rgba(201,169,110,0.3)',
+                  color:'#c9a96e', fontFamily:'DM Mono,monospace', fontSize:9,
+                  letterSpacing:'.12em', padding:'4px 10px', cursor:'pointer',
+                  display: 'none', // hidden on desktop (mouse leave handles it)
+                }}
+                className="hv-collapse-btn"
+              >
+                ✕ CLOSE
+              </button>
+            )}
           </div>
-          <div className="hv-card-caption">
-            <div className="hv-caption-main">XSCACE installed</div>
-            <div className="hv-caption-sub">23mm · Invisible · Room intact</div>
+
+          {/* Caption */}
+          <div className="hv-card-caption" style={{position:'relative',zIndex:4}}>
+            <div className="hv-caption-main">
+              {expanded ? `${slideIndex + 1} / ${LOCATION_IMAGES.length}` : 'XSCACE installed'}
+            </div>
+            <div className="hv-caption-sub">
+              {expanded ? 'Hover to browse · tap dot to jump' : '23mm · Invisible · Room intact'}
+            </div>
           </div>
         </div>
+
       </div>
     </div>
   )
