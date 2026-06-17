@@ -265,63 +265,59 @@ function FeaturedCard({ p }: { p: Product }) {
       className={`feat-card-wrap${hovered ? ' feat-card-wrap--active' : ''}`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      style={{ perspective: '900px' }}
     >
-      <a href={`/products/${p.category?.slug?.current}/${p.slug?.current}`} className="feat-card"
-        style={{
-          transform: hovered && has3d ? 'rotateX(2deg) translateZ(0px)' : 'none',
-          transition: 'transform 0.5s cubic-bezier(.22,1,.36,1)',
-        }}
-      >
+      <a href={`/products/${p.category?.slug?.current}/${p.slug?.current}`} className="feat-card">
+        {/* Image area — becomes pure black void when 3D is active */}
         <div className="feat-card-img" style={{
-          position: 'relative', overflow: 'visible',
-          boxShadow: hovered && has3d ? '0 32px 80px rgba(0,0,0,0.85), 0 0 0 0.5px rgba(201,169,110,0.15)' : 'none',
-          transition: 'box-shadow 0.5s ease',
+          position: 'relative',
+          overflow: 'visible',
+          background: '#000',
+          // Champagne hairline border glows on hover when 3D active
+          outline: hovered && has3d ? '0.5px solid rgba(201,169,110,0.3)' : '0.5px solid transparent',
+          transition: 'outline 0.5s ease',
         }}>
-          {/* Static hero image — base layer */}
+
+          {/* Hero image — fades to black when 3D activates */}
           {imgUrl && (
             <img src={imgUrl} alt={p.productName} style={{
-              position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
-              opacity: hovered && has3d ? 0.15 : (p.heroVideoUrl && hovered && !has3d) ? 0 : 1,
-              transition: 'opacity 0.5s ease',
+              position: 'absolute', inset: 0,
+              width: '100%', height: '100%', objectFit: 'cover',
+              opacity: hovered && has3d ? 0 : (p.heroVideoUrl && hovered && !has3d) ? 0 : 1,
+              transition: 'opacity 0.6s ease',
             }}/>
           )}
-          {!imgUrl && <div className="feat-card-img-placeholder"><span>{p.productName[0]}</span></div>}
+          {!imgUrl && !has3d && <div className="feat-card-img-placeholder"><span>{p.productName[0]}</span></div>}
 
           {/* Video — only when no 3D */}
           {p.heroVideoUrl && !has3d && (
             <video ref={videoRef} src={p.heroVideoUrl} muted loop playsInline style={{
-              position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+              position: 'absolute', inset: 0,
+              width: '100%', height: '100%', objectFit: 'cover',
               opacity: hovered ? 1 : 0, transition: 'opacity 0.4s ease',
             }}/>
           )}
 
-          {/* 3D model — floats above card on hover */}
+          {/* 3D canvas — overflows card on all sides when hovered */}
           {has3d && (
             <div style={{
               position: 'absolute',
-              inset: 0,
-              bottom: hovered ? '-30%' : '0%',
-              transition: 'bottom 0.6s cubic-bezier(.22,1,.36,1)',
-              overflow: 'visible',
+              // Expand 20px beyond card on all sides when hovered, sit flush otherwise
+              top: hovered ? '-20px' : '0px',
+              left: hovered ? '-20px' : '0px',
+              right: hovered ? '-20px' : '0px',
+              bottom: hovered ? '-20px' : '0px',
+              transition: 'top 0.5s cubic-bezier(.22,1,.36,1), left 0.5s cubic-bezier(.22,1,.36,1), right 0.5s cubic-bezier(.22,1,.36,1), bottom 0.5s cubic-bezier(.22,1,.36,1)',
               zIndex: 10,
               pointerEvents: hovered ? 'all' : 'none',
+              background: '#000',
             }}>
               <ModelViewer src={p.model3dUrl!} hovered={hovered} />
             </div>
           )}
 
-          {/* Champagne vignette overlay — dims image when 3D active */}
-          {has3d && (
-            <div style={{
-              position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
-              background: 'radial-gradient(ellipse at 50% 80%, rgba(201,169,110,0.04) 0%, rgba(0,0,0,0.6) 100%)',
-              opacity: hovered ? 1 : 0, transition: 'opacity 0.5s ease',
-            }}/>
-          )}
-
-          {badge && <div className="feat-badge" style={{zIndex:20}}>{badge}</div>}
+          {badge && <div className="feat-badge" style={{zIndex:20,position:'absolute',top:14,left:14}}>{badge}</div>}
         </div>
+
         <div className="feat-card-body">
           <div className="feat-card-cat">{p.series || p.subCategory}</div>
           <div className="feat-card-name">{p.productName}</div>
