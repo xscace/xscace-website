@@ -374,16 +374,43 @@ function SoftwareSection({ software }: { software: SoftwareApp[] }) {
               <div className="sw-card-img" style={{background:'#000',display:'flex',alignItems:'center',justifyContent:'center'}}>
                 {app.heroImageUrl ? (
                   isMobile ? (
-                    /* Phone frame mockup for mobile apps */
-                    <div style={{position:'relative',height:'188px',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                    /* 3-phone stack mockup for mobile apps */
+                    <div style={{position:'relative',height:'188px',width:'100%',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                      {/* Back-right phone — X-Sense */}
                       <div style={{
-                        position:'relative',width:'82px',height:'168px',
+                        position:'absolute',right:'12%',top:'14px',
+                        width:'72px',height:'148px',
+                        border:'1.5px solid #222',borderRadius:'10px',
+                        background:'#080808',overflow:'hidden',
+                        boxShadow:'0 0 0 1px #111, 0 8px 24px rgba(0,0,0,0.9)',
+                        opacity:0.65,transform:'translateX(8px)',zIndex:1,
+                      }}>
+                        <div style={{position:'absolute',top:0,left:'50%',transform:'translateX(-50%)',width:'20px',height:'2.5px',background:'#1a1a1a',borderRadius:'0 0 3px 3px'}}/>
+                        <img src="https://cdn.sanity.io/images/7r0kq57d/production/5ebe6a31756bdef75a481f778138ed5c9adbe278.png?w=400" alt="X-Sense" style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'top'}}/>
+                      </div>
+                      {/* Back-left phone — EQ */}
+                      <div style={{
+                        position:'absolute',left:'12%',top:'14px',
+                        width:'72px',height:'148px',
+                        border:'1.5px solid #222',borderRadius:'10px',
+                        background:'#080808',overflow:'hidden',
+                        boxShadow:'0 0 0 1px #111, 0 8px 24px rgba(0,0,0,0.9)',
+                        opacity:0.65,transform:'translateX(-8px)',zIndex:1,
+                      }}>
+                        <div style={{position:'absolute',top:0,left:'50%',transform:'translateX(-50%)',width:'20px',height:'2.5px',background:'#1a1a1a',borderRadius:'0 0 3px 3px'}}/>
+                        <img src="https://cdn.sanity.io/images/7r0kq57d/production/82649b5de87330a015e6221c047fba3664b1f712.png?w=400" alt="Parametric EQ" style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'top'}}/>
+                      </div>
+                      {/* Front-center phone — Device List */}
+                      <div style={{
+                        position:'relative',
+                        width:'82px',height:'168px',
                         border:'1.5px solid #2a2a2a',borderRadius:'12px',
                         background:'#0a0a0a',overflow:'hidden',
-                        boxShadow:'0 0 0 1px #111, 0 8px 32px rgba(0,0,0,0.8)',
+                        boxShadow:'0 0 0 1px #181818, 0 12px 40px rgba(0,0,0,0.95)',
+                        zIndex:2,
                       }}>
                         <div style={{position:'absolute',top:0,left:'50%',transform:'translateX(-50%)',width:'24px',height:'3px',background:'#1a1a1a',borderRadius:'0 0 3px 3px'}}/>
-                        <img src={app.heroImageUrl} alt={app.name} style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'top'}}/>
+                        <img src="https://cdn.sanity.io/images/7r0kq57d/production/ce08e3322ddd8d7a9a82aa678da646819d08f759.png?w=400" alt={app.name} style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'top'}}/>
                       </div>
                     </div>
                   ) : (
