@@ -43,6 +43,7 @@ function WaveDivider() {
 
 // ── ABOUT HERO — before/after with expanding slideshow ────────────────────
 const LOCATION_IMAGES = [
+  '/after-speaker.jpg',
   '/location-1.jpeg',
   '/location-2.jpeg',
   '/location-3.jpeg',
@@ -161,13 +162,16 @@ function AboutHero() {
           {/* Slideshow images */}
           <div className="hv-img-slot hv-after-img" style={{position:'relative', overflow:'hidden'}}>
 
-            {/* Static after-speaker always as base */}
+            {/* Static after-speaker — rest state only, fades out when slideshow starts */}
             <img
-              src={LOCATION_IMAGES[0]}
+              src="/after-speaker.jpg"
               alt="XSCACE installed"
               style={{
                 position:'absolute', inset:0,
                 width:'100%', height:'100%', objectFit:'cover', display:'block',
+                opacity: expanded ? 0 : 1,
+                transition: 'opacity 0.4s ease',
+                zIndex: 1,
               }}
             />
 
