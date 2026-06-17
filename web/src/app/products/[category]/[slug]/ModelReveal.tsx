@@ -318,7 +318,7 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
         // ── Load GLB ──
         if (modelUrl) {
           let url = modelUrl
-          if (modelUrl.includes('/models/')) url = `/api/models/${modelUrl.split('/models/').pop()}`
+          if (modelUrl.includes('/models/')) url = `/models/${modelUrl.split('/models/').pop()}`
           else if (!modelUrl.startsWith('http')) url = modelUrl.startsWith('/') ? modelUrl : `/${modelUrl}`
 
           new THREE.GLTFLoader().load(url, (gltf: any) => {

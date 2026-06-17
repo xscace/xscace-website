@@ -312,7 +312,7 @@ function FeaturedCard({ p }: { p: Product }) {
               background: hovered ? '#000' : 'transparent',
               transition2: 'background 0.3s ease',
             }}>
-              <ModelViewer src={p.model3dUrl!.replace('/models/', '/api/models/')} hovered={hovered} />
+              <ModelViewer src={p.model3dUrl!} hovered={hovered} />
             </div>
           )}
 
