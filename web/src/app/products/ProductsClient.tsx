@@ -117,15 +117,15 @@ function injectScript(src: string): Promise<void> {
 
 function ModelViewer({ src, hovered }: { src: string; hovered: boolean }) {
   const mountRef = useRef<HTMLDivElement>(null)
-  const stateRef = useRef<{ renderer: any; frame: number } | null>(null)
+  const rendererRef = useRef<any>(null)
+  const cameraRef = useRef<any>(null)
+  const frameRef = useRef<number>(0)
   const targetRotRef = useRef({ x: -0.15, y: 0 })
   const currentRotRef = useRef({ x: -0.15, y: 0 })
-  const loadedRef = useRef(false)
 
   useEffect(() => {
     const el = mountRef.current
-    if (!el || loadedRef.current) return
-    loadedRef.current = true
+    if (!el) return
     let cancelled = false
 
     const init = async () => {
@@ -136,18 +136,24 @@ function ModelViewer({ src, hovered }: { src: string; hovered: boolean }) {
         if (!THREE.GLTFLoader) await injectScript(GLTF_CDN)
         if (cancelled) return
 
-        const W = el.clientWidth || 300
-        const H = el.clientHeight || 400
+        // Use the card image area dimensions (feat-card-img is 4/5 aspect ratio)
+        // Get size from parent element which is visible and has real dimensions
+        const parent = el.closest('.feat-card-img') as HTMLElement
+        const W = parent ? parent.offsetWidth : 300
+        const H = parent ? parent.offsetHeight : 400
+
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
         renderer.setSize(W, H)
         renderer.toneMapping = THREE.ACESFilmicToneMapping
         renderer.toneMappingExposure = 1.2
         el.appendChild(renderer.domElement)
+        rendererRef.current = renderer
 
         const scene = new THREE.Scene()
         const camera = new THREE.PerspectiveCamera(40, W / H, 0.01, 100)
         camera.position.set(0, 0, 3.5)
+        cameraRef.current = camera
 
         scene.add(new THREE.AmbientLight(0xffffff, 0.4))
         const key = new THREE.DirectionalLight(0xfff5e0, 2.5)
@@ -157,7 +163,6 @@ function ModelViewer({ src, hovered }: { src: string; hovered: boolean }) {
         const rim = new THREE.DirectionalLight(0xffffff, 0.8)
         rim.position.set(0, -2, -2); scene.add(rim)
 
-        let frameId = 0
         const loader = new THREE.GLTFLoader()
         loader.load(src, (gltf: any) => {
           if (cancelled) return
@@ -171,7 +176,7 @@ function ModelViewer({ src, hovered }: { src: string; hovered: boolean }) {
           scene.add(model)
 
           const animate = () => {
-            frameId = requestAnimationFrame(animate)
+            frameRef.current = requestAnimationFrame(animate)
             currentRotRef.current.x += (targetRotRef.current.x - currentRotRef.current.x) * 0.06
             currentRotRef.current.y += (targetRotRef.current.y - currentRotRef.current.y) * 0.06
             model.rotation.x = currentRotRef.current.x
@@ -179,23 +184,21 @@ function ModelViewer({ src, hovered }: { src: string; hovered: boolean }) {
             renderer.render(scene, camera)
           }
           animate()
-          stateRef.current = { renderer, frame: frameId }
-        })
+        }, undefined, (err: any) => console.warn('GLB load failed:', src, err))
 
-        stateRef.current = { renderer, frame: frameId }
-      } catch(e) { console.warn('3D error', e) }
+      } catch(e) { console.warn('3D init error', e) }
     }
 
     init()
+
     return () => {
       cancelled = true
-      if (stateRef.current) {
-        cancelAnimationFrame(stateRef.current.frame)
-        stateRef.current.renderer.dispose()
+      cancelAnimationFrame(frameRef.current)
+      if (rendererRef.current) {
+        rendererRef.current.dispose()
         if (el.firstChild) el.removeChild(el.firstChild)
-        stateRef.current = null
+        rendererRef.current = null
       }
-      loadedRef.current = false
     }
   }, [src])
 
