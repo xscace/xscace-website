@@ -32,7 +32,8 @@ async function getProductsData() {
       *[_type == "software"] | order(name asc) {
         _id, name, slug, tagline, platform, status,
         appStoreUrl, playStoreUrl,
-        "heroImageRef": heroImage.asset._ref
+        "heroImageRef": heroImage.asset._ref,
+        "screenshotRefs": screenshots[]{caption, "ref": image.asset._ref}
       }
     `),
   ])
@@ -54,6 +55,7 @@ async function getProductsData() {
   const software = softwareApps.map((app: any) => ({
     ...app,
     heroImageUrl: app.heroImageRef ? imgUrl(app.heroImageRef) : '',
+    screenshotUrls: (app.screenshotRefs || []).map((s: any) => ({ caption: s.caption, url: imgUrl(s.ref, 400) })),
   }))
 
   return { products: products2, categories, software }
