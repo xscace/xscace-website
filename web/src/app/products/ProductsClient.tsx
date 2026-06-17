@@ -113,6 +113,7 @@ const MODEL_SETTINGS: Record<string, {
   'prod-ghost2':    { cam:[0,0,3],            rot:[0.308,0,0],           fov:51, exposure:0.4,  ambient:0.1, key:2.4, fill:0.8 },
   'prod-acacia6-pw':{ cam:[0,0.02,3.48],      rot:[-0.002,-0.732,0],    fov:53, exposure:0.9,  ambient:1.3, key:2.1, fill:0.5 },
   'prod-xylem3':    { cam:[-0.34,-0.59,3],    rot:[-5.882,0.998,0.038], fov:44, exposure:0.3,  ambient:0,   key:0.7, fill:2.5 },
+  'prod-quadcane':  { cam:[0,0,3.5],              rot:[0,0,0],               fov:40, exposure:1.4,  ambient:0.5, key:3.0, fill:1.0 },
 }
 const DEFAULT_SETTINGS = { cam:[0,0,3.5] as [number,number,number], rot:[0,0,0] as [number,number,number], fov:40, exposure:1.4, ambient:0.5, key:3.0, fill:1.0 }
 
@@ -150,9 +151,12 @@ function ModelViewer({ src, hovered, productId }: { src: string; hovered: boolea
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const frameRef = useRef<number>(0)
   const modelRef = useRef<any>(null)
-  const isDragging = useRef(false)
-  const lastMouse = useRef({ x: 0, y: 0 })
-  const dragRot = useRef({ x: 0, y: 0 })
+  // Current rotation (lerped toward target)
+  const curRot = useRef({ x: 0, y: 0 })
+  // Target rotation — driven by mouse position
+  const tgtRot = useRef({ x: 0, y: 0 })
+  const baseRot = useRef({ x: 0, y: 0 })
+  const isHoveredRef = useRef(false)
 
   const settings = (productId && MODEL_SETTINGS[productId]) ? MODEL_SETTINGS[productId] : DEFAULT_SETTINGS
 
@@ -201,15 +205,22 @@ function ModelViewer({ src, hovered, productId }: { src: string; hovered: boolea
           const size = box.getSize(new THREE.Vector3())
           model.scale.setScalar(2.0 / Math.max(size.x, size.y, size.z))
           model.position.sub(centre.multiplyScalar(2.0 / Math.max(size.x, size.y, size.z)))
-          // Apply calibrated base rotation
           model.rotation.set(...settings.rot)
           scene.add(model)
           modelRef.current = model
-          dragRot.current = { x: settings.rot[0], y: settings.rot[1] }
+          // Set base rotation refs
+          baseRot.current = { x: settings.rot[0], y: settings.rot[1] }
+          curRot.current  = { x: settings.rot[0], y: settings.rot[1] }
+          tgtRot.current  = { x: settings.rot[0], y: settings.rot[1] }
 
           const animate = () => {
             if (cancelled) return
             frameRef.current = requestAnimationFrame(animate)
+            // Smooth lerp toward target
+            curRot.current.x += (tgtRot.current.x - curRot.current.x) * 0.08
+            curRot.current.y += (tgtRot.current.y - curRot.current.y) * 0.08
+            model.rotation.x = curRot.current.x
+            model.rotation.y = curRot.current.y
             renderer.render(scene, camera)
           }
           animate()
@@ -219,37 +230,41 @@ function ModelViewer({ src, hovered, productId }: { src: string; hovered: boolea
     }
 
     const t = setTimeout(init, 80)
-    return () => {
-      cancelled = true; clearTimeout(t)
-      cancelAnimationFrame(frameRef.current)
-    }
+    return () => { cancelled = true; clearTimeout(t); cancelAnimationFrame(frameRef.current) }
   }, [src, productId])
 
-  // Mouse drag rotation
-  const onMouseDown = (e: React.MouseEvent) => {
-    isDragging.current = true
-    lastMouse.current = { x: e.clientX, y: e.clientY }
-    e.preventDefault()
-  }
+  // Sync hovered state to ref so event handlers can read it
+  useEffect(() => {
+    isHoveredRef.current = hovered
+    if (!hovered) {
+      // On leave — smoothly return to base rotation
+      tgtRot.current = { x: baseRot.current.x, y: baseRot.current.y }
+    }
+  }, [hovered])
+
+  // Mouse move — model follows pointer within card bounds
   const onMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging.current || !modelRef.current) return
-    const dx = e.clientX - lastMouse.current.x
-    const dy = e.clientY - lastMouse.current.y
-    lastMouse.current = { x: e.clientX, y: e.clientY }
-    dragRot.current.y += dx * 0.012
-    dragRot.current.x += dy * 0.012
-    modelRef.current.rotation.x = dragRot.current.x
-    modelRef.current.rotation.y = dragRot.current.y
+    if (!modelRef.current) return
+    const r = e.currentTarget.getBoundingClientRect()
+    // Map mouse to -1..1 within card
+    const nx = ((e.clientX - r.left) / r.width - 0.5) * 2
+    const ny = ((e.clientY - r.top) / r.height - 0.5) * 2
+    // Offset from base rotation — ±0.35 rad range
+    tgtRot.current = {
+      x: baseRot.current.x + ny * -0.35,
+      y: baseRot.current.y + nx * 0.45,
+    }
   }
-  const onMouseUp = () => { isDragging.current = false }
+
+  const onMouseLeave = () => {
+    tgtRot.current = { x: baseRot.current.x, y: baseRot.current.y }
+  }
 
   return (
     <canvas
       ref={canvasRef}
-      onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
-      onMouseUp={onMouseUp}
-      onMouseLeave={onMouseUp}
+      onMouseLeave={onMouseLeave}
       style={{
         position: 'absolute', inset: 0,
         width: '100%', height: '100%',
@@ -257,7 +272,7 @@ function ModelViewer({ src, hovered, productId }: { src: string; hovered: boolea
         transition: 'opacity 0.5s ease',
         pointerEvents: hovered ? 'all' : 'none',
         zIndex: 3, display: 'block',
-        cursor: isDragging.current ? 'grabbing' : 'grab',
+        cursor: 'crosshair',
       }}
     />
   )
@@ -288,13 +303,16 @@ function FeaturedCard({ p }: { p: Product }) {
         {/* Image area — becomes pure black void when 3D is active */}
         <div className="feat-card-img" style={{
           position: 'relative',
-          overflow: 'visible',
+          overflow: 'hidden',
           background: '#000',
-          outline: hovered && has3d ? '0.5px solid rgba(201,169,110,0.3)' : 'none',
-          transition: 'outline 0.5s ease',
+          // Champagne glow emanates from outside card edges on hover
+          boxShadow: hovered && has3d
+            ? '0 0 0 1px rgba(201,169,110,0.18), 0 24px 80px rgba(0,0,0,0.9), 0 0 40px rgba(201,169,110,0.04)'
+            : 'none',
+          transition: 'box-shadow 0.5s ease',
         }}>
 
-          {/* Hero image — always visible at rest, fades out when 3D hovers */}
+          {/* Hero image — fades out when 3D activates */}
           {imgUrl && (
             <img src={imgUrl} alt={p.productName} style={{
               position: 'absolute', inset: 0,
@@ -316,22 +334,9 @@ function FeaturedCard({ p }: { p: Product }) {
             }}/>
           )}
 
-          {/* 3D — hidden until hover, then expands beyond card bounds */}
+          {/* 3D canvas — fills card, pointer following rotation */}
           {has3d && (
-            <div style={{
-              position: 'absolute',
-              top: hovered ? '-24px' : '0px',
-              left: hovered ? '-24px' : '0px',
-              right: hovered ? '-24px' : '0px',
-              bottom: hovered ? '-24px' : '0px',
-              transition: 'top 0.55s cubic-bezier(.22,1,.36,1), left 0.55s cubic-bezier(.22,1,.36,1), right 0.55s cubic-bezier(.22,1,.36,1), bottom 0.55s cubic-bezier(.22,1,.36,1)',
-              zIndex: 5,
-              pointerEvents: hovered ? 'all' : 'none',
-              background: hovered ? '#000' : 'transparent',
-              transition2: 'background 0.3s ease',
-            }}>
-              <ModelViewer src={`/api/glb/${p.model3dUrl!.split('/').pop()}`} hovered={hovered} productId={p._id} />
-            </div>
+            <ModelViewer src={`/api/glb/${p.model3dUrl!.split('/').pop()}`} hovered={hovered} productId={p._id} />
           )}
 
           {badge && <div className="feat-badge" style={{zIndex:20,position:'absolute',top:14,left:14}}>{badge}</div>}
@@ -343,7 +348,7 @@ function FeaturedCard({ p }: { p: Product }) {
           {p.tagline && <div className="feat-card-tag">{p.tagline}</div>}
           {getSpec(p) && <div className="feat-card-spec">{getSpec(p)}</div>}
           <div className="feat-card-cta">
-            {has3d && hovered ? 'Drag to rotate · Click to explore →' : 'View Product →'}
+            {has3d && hovered ? 'Move cursor to explore →' : 'View Product →'}
           </div>
         </div>
       </a>

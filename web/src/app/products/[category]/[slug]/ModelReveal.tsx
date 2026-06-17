@@ -213,6 +213,7 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
     'prod-ghost2':    { cam:[0,0,3],            rot:[0.308,0,0],           fov:51, exposure:0.4,  ambient:0.1, key:2.4, fill:0.8 },
     'prod-acacia6-pw':{ cam:[0,0.02,3.48],      rot:[-0.002,-0.732,0],    fov:53, exposure:0.9,  ambient:1.3, key:2.1, fill:0.5 },
     'prod-xylem3':    { cam:[-0.34,-0.59,3],    rot:[-5.882,0.998,0.038], fov:44, exposure:0.3,  ambient:0,   key:0.7, fill:2.5 },
+    'prod-quadcane':  { cam:[0,0,3.5],              rot:[0,0,0],               fov:40, exposure:1.4,  ambient:0.5, key:3.0, fill:1.0 },
   }
   const s = (productId && MODEL_SETTINGS[productId]) ? MODEL_SETTINGS[productId]
     : { cam:[0,0,0.82] as [number,number,number], rot:[0,0,0] as [number,number,number], fov:28, exposure:0.75, ambient:0.04, key:0.08, fill:0.2 }
@@ -353,7 +354,7 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
             const centre = box.getCenter(new THREE.Vector3())
             const size = box.getSize(new THREE.Vector3())
             model.position.sub(centre)
-            model.scale.setScalar(0.46 / Math.max(size.x, size.y, size.z))
+            model.scale.setScalar(2.0 / Math.max(size.x, size.y, size.z))
             model.rotation.set(...s.rot)
 
             const group = new THREE.Group()
