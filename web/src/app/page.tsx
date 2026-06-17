@@ -227,6 +227,36 @@ export default function HomePage() {
   </div>
 </section>
 
+
+<div className="scale-strip">
+  <div className="scale-strip-ey">
+    <em>Smaller than you'd expect</em>
+  </div>
+  <div className="scale-panels">
+    <div className="scale-panel">
+      <div className="scale-img-wrap">
+        <img src="/bonsai-scale.png" alt="Bonsai speaker held between fingers" className="scale-img" />
+      </div>
+      <div className="scale-caption">
+        <div className="scale-name">Bonsai</div>
+        <div className="scale-rule"></div>
+        <div className="scale-spec">World&apos;s Smallest · 12mm Thin</div>
+      </div>
+    </div>
+    <div className="scale-divider"></div>
+    <div className="scale-panel">
+      <div className="scale-img-wrap">
+        <img src="/cane-scale.png" alt="Cane speaker held in hand" className="scale-img" />
+      </div>
+      <div className="scale-caption">
+        <div className="scale-name">Cane</div>
+        <div className="scale-rule"></div>
+        <div className="scale-spec">Slim Array · 23mm Thin</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div className="cat-strip reveal">
   <a href="/products?cat=slim-array-series" className="cat-item"><div className="cat-n cat-n--champ">Slim Array</div><div className="cat-c">04 products</div></a>
   <a href="/products?cat=in-ceiling-series" className="cat-item"><div className="cat-n cat-n--champ">In-Ceiling</div><div className="cat-c">04 products</div></a>
