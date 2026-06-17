@@ -1,6 +1,192 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
+
+// Hero videos from Sanity CDN — these are the heroVideoFile refs for each product
+// Format: https://cdn.sanity.io/files/7r0kq57d/production/{hash}.mp4
+const HERO_VIDEOS = [
+  'https://cdn.sanity.io/files/7r0kq57d/production/bonsai-hero.mp4',
+  'https://cdn.sanity.io/files/7r0kq57d/production/cane-hero.mp4',
+  'https://cdn.sanity.io/files/7r0kq57d/production/quadcane-hero.mp4',
+  'https://cdn.sanity.io/files/7r0kq57d/production/acacia-hero.mp4',
+  'https://cdn.sanity.io/files/7r0kq57d/production/xylem-hero.mp4',
+]
+
+// Featured products with their hero video URLs from Sanity
+const FEATURED = [
+  {
+    href: '/products/slim-array-series/bonsai-mini-slim-array-speaker',
+    badge: "World's Smallest",
+    cat: 'Slim Array',
+    name: 'Bonsai',
+    spec: '40W · 86 dB · 300Hz–18KHz · 8Ω',
+    videoRef: 'prod-bonsai', // used to fetch from Sanity
+  },
+  {
+    href: '/products/slim-array-series/cane-slim-array-speaker',
+    badge: '23mm Thin',
+    cat: 'Slim Array',
+    name: 'Cane',
+    spec: '50W · 92 dB · 150Hz–20KHz · 8Ω',
+    videoRef: 'prod-cane',
+  },
+  {
+    href: '/products/in-ceiling-series/ghost-2-0-slim-in-ceiling-speaker',
+    badge: 'Award Winning',
+    cat: 'In-Ceiling',
+    name: 'Ghost 2.0',
+    spec: '80W · 92 dB · 20Hz–20KHz · 4Ω',
+    videoRef: 'prod-ghost2',
+  },
+  {
+    href: '/products/slim-array-series/quadcane-slim-array-speaker',
+    badge: '21mm Thin',
+    cat: 'Slim Array',
+    name: 'QuadCane',
+    spec: '100W · 104 dB · 150Hz–20KHz · 8Ω',
+    videoRef: 'prod-quadcane',
+  },
+]
+
+function HeroBgVideo() {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [currentIdx, setCurrentIdx] = useState(() => Math.floor(Math.random() * HERO_VIDEOS.length))
+  const [opacity, setOpacity] = useState(1)
+
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+
+    // Random duration between 4–9 seconds before switching
+    const randomDuration = () => 4000 + Math.random() * 5000
+
+    let timer: ReturnType<typeof setTimeout>
+
+    const scheduleNext = () => {
+      timer = setTimeout(() => {
+        // Fade out
+        setOpacity(0)
+        setTimeout(() => {
+          setCurrentIdx(prev => {
+            let next = Math.floor(Math.random() * HERO_VIDEOS.length)
+            // Avoid same video twice
+            while (next === prev && HERO_VIDEOS.length > 1) {
+              next = Math.floor(Math.random() * HERO_VIDEOS.length)
+            }
+            return next
+          })
+          setOpacity(1)
+          scheduleNext()
+        }, 800)
+      }, randomDuration())
+    }
+
+    scheduleNext()
+    return () => clearTimeout(timer)
+  }, [])
+
+  return (
+    <video
+      ref={videoRef}
+      key={currentIdx}
+      src={HERO_VIDEOS[currentIdx]}
+      autoPlay
+      muted
+      loop
+      playsInline
+      style={{
+        position: 'absolute',
+        inset: 0,
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover',
+        opacity,
+        transition: 'opacity 0.8s ease',
+        zIndex: 1,
+      }}
+    />
+  )
+}
+
+function FeaturedCard({ p }: { p: typeof FEATURED[0] }) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [videoUrl, setVideoUrl] = useState<string | null>(null)
+  const [hovered, setHovered] = useState(false)
+
+  useEffect(() => {
+    // Fetch the hero video URL for this product from Sanity
+    fetch(
+      `https://7r0kq57d.api.sanity.io/v2021-06-07/data/query/production?query=*[_id=="${p.videoRef}"][0]{"videoRef":heroVideoFile.asset._ref}`
+    )
+      .then(r => r.json())
+      .then(data => {
+        const ref = data?.result?.videoRef
+        if (ref) {
+          // Convert file ref to CDN URL: file-{hash}-{ext} → {hash}.{ext}
+          const clean = ref.replace(/^file-/, '')
+          const lastDash = clean.lastIndexOf('-')
+          const hash = clean.slice(0, lastDash)
+          const ext = clean.slice(lastDash + 1)
+          setVideoUrl(`https://cdn.sanity.io/files/7r0kq57d/production/${hash}.${ext}`)
+        }
+      })
+      .catch(() => {})
+  }, [p.videoRef])
+
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video || !videoUrl) return
+    if (hovered) {
+      video.play().catch(() => {})
+    } else {
+      video.pause()
+      video.currentTime = 0
+    }
+  }, [hovered, videoUrl])
+
+  return (
+    <a
+      href={p.href}
+      className="prod-card"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div className="prod-img" style={{ position: 'relative', overflow: 'hidden', background: '#000' }}>
+        {videoUrl ? (
+          <video
+            ref={videoRef}
+            src={videoUrl}
+            muted
+            loop
+            playsInline
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              opacity: hovered ? 1 : 0,
+              transition: 'opacity 0.4s ease',
+            }}
+          />
+        ) : (
+          <div className="cm">
+            <div className="cm-badge">Image / Video</div>
+          </div>
+        )}
+        <div className="p-badge">{p.badge}</div>
+      </div>
+      <div className="p-body">
+        <div className="p-cat">{p.cat}</div>
+        <div className="p-name">{p.name}</div>
+        <div className="p-spec">{p.spec}</div>
+        <div className="p-foot">
+          <span className="p-arr p-arr-full">View →</span>
+        </div>
+      </div>
+    </a>
+  )
+}
 
 export default function HomePage() {
 
@@ -19,15 +205,14 @@ export default function HomePage() {
   return (
     <>
 <section className="hero">
-  <div className="hero-bg"></div>
-  <div className="hero-grid"></div>
-  
-  <div className="hero-vid">
-    <div className="hvid-play"></div>
-    <div className="hvid-lbl">Video Direction</div>
-    <div className="hvid-desc">Extreme close-up — slim array — slow motion — fade to black</div>
+  <div className="hero-bg" style={{ position: 'absolute', inset: 0, background: '#000', zIndex: 0 }}>
+    <HeroBgVideo />
+    {/* Dark overlay so text remains legible */}
+    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 2 }} />
   </div>
-  <div className="hero-content">
+  <div className="hero-grid" style={{ zIndex: 3 }}></div>
+
+  <div className="hero-content" style={{ position: 'relative', zIndex: 4 }}>
     <div className="h-ey">6 Patents</div>
     <div className="h-title">Size<br /><em>Defying</em><br />Sound</div>
     <div className="h-sub">Architectural speakers and amplifiers engineered for spaces where being discreet and in one with the design is equally as important as performance.</div>
@@ -36,7 +221,6 @@ export default function HomePage() {
       <a href="https://configurator.xscace.com" className="btn-ghost">Build Your System</a>
     </div>
   </div>
-  
 </section>
 
 <div className="cat-strip reveal">
@@ -54,10 +238,7 @@ export default function HomePage() {
     <div className="sec-lnk">View all products</div>
   </div>
   <div className="prod-grid">
-    <a href="/products/slim-array-series/bonsai-mini-slim-array-speaker" className="prod-card"><div className="prod-img"><div className="cm"><div className="cm-badge">Image / Video</div><div className="cm-lbl">Floating 45° — transparent BG</div></div><div className="p-badge">World&apos;s Smallest</div></div><div className="p-body"><div className="p-cat">Slim Array</div><div className="p-name">Bonsai</div><div className="p-spec">40W · 86 dB · 300Hz–18KHz · 8Ω</div><div className="p-foot"><span className="p-arr p-arr-full">View →</span></div></div></a>
-    <a href="/products/slim-array-series/cane-slim-array-speaker" className="prod-card"><div className="prod-img"><div className="cm"><div className="cm-badge">Image / Video</div><div className="cm-lbl">Floating — side profile — transparent BG</div></div><div className="p-badge">23mm Thin</div></div><div className="p-body"><div className="p-cat">Slim Array</div><div className="p-name">Cane</div><div className="p-spec">50W · 92 dB · 150Hz–20KHz · 8Ω</div><div className="p-foot"><span className="p-arr p-arr-full">View →</span></div></div></a>
-    <a href="/products/in-ceiling-series/ghost-2-0-slim-in-ceiling-speaker" className="prod-card"><div className="prod-img"><div className="cm"><div className="cm-badge">Image / Video</div><div className="cm-lbl">Installed flush — ceiling POV</div></div><div className="p-badge">Award Winning</div></div><div className="p-body"><div className="p-cat">In-Ceiling</div><div className="p-name">Ghost 2.0</div><div className="p-spec">80W · 92 dB · 20Hz–20KHz · 4Ω</div><div className="p-foot"><span className="p-arr p-arr-full">View →</span></div></div></a>
-    <a href="/products/slim-array-series/quadcane-slim-array-speaker" className="prod-card"><div className="prod-img"><div className="cm"><div className="cm-badge">Image / Video</div><div className="cm-lbl">Full length — perspective angle</div></div><div className="p-badge">21mm Thin</div></div><div className="p-body"><div className="p-cat">Slim Array</div><div className="p-name">QuadCane</div><div className="p-spec">100W · 104 dB · 150Hz–20KHz · 8Ω</div><div className="p-foot"><span className="p-arr p-arr-full">View →</span></div></div></a>
+    {FEATURED.map(p => <FeaturedCard key={p.name} p={p} />)}
   </div>
 </section>
 
@@ -101,42 +282,14 @@ export default function HomePage() {
     <div className="tech-card">
       <div className="t-bar"></div>
       <svg className="t-icon" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <line x1="40.0" y1="24.0" x2="40.0" y2="8.0" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
-  <line x1="43.1" y1="24.3" x2="45.5" y2="12.5" stroke="#c9a96e" strokeWidth="0.7" strokeLinecap="round" opacity="0.45"/>
-  <line x1="46.1" y1="25.2" x2="52.2" y2="10.4" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
-  <line x1="48.9" y1="26.7" x2="55.6" y2="16.7" stroke="#c9a96e" strokeWidth="0.7" strokeLinecap="round" opacity="0.45"/>
-  <line x1="51.3" y1="28.7" x2="62.6" y2="17.4" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
-  <line x1="53.3" y1="31.1" x2="63.3" y2="24.4" stroke="#c9a96e" strokeWidth="0.7" strokeLinecap="round" opacity="0.45"/>
-  <line x1="54.8" y1="33.9" x2="69.6" y2="27.8" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
-  <line x1="55.7" y1="36.9" x2="67.5" y2="34.5" stroke="#c9a96e" strokeWidth="0.7" strokeLinecap="round" opacity="0.45"/>
-  <line x1="56.0" y1="40.0" x2="72.0" y2="40.0" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
-  <line x1="55.7" y1="43.1" x2="67.5" y2="45.5" stroke="#c9a96e" strokeWidth="0.7" strokeLinecap="round" opacity="0.45"/>
-  <line x1="54.8" y1="46.1" x2="69.6" y2="52.2" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
-  <line x1="53.3" y1="48.9" x2="63.3" y2="55.6" stroke="#c9a96e" strokeWidth="0.7" strokeLinecap="round" opacity="0.45"/>
-  <line x1="51.3" y1="51.3" x2="62.6" y2="62.6" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
-  <line x1="48.9" y1="53.3" x2="55.6" y2="63.3" stroke="#c9a96e" strokeWidth="0.7" strokeLinecap="round" opacity="0.45"/>
-  <line x1="46.1" y1="54.8" x2="52.2" y2="69.6" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
-  <line x1="43.1" y1="55.7" x2="45.5" y2="67.5" stroke="#c9a96e" strokeWidth="0.7" strokeLinecap="round" opacity="0.45"/>
-  <line x1="40.0" y1="56.0" x2="40.0" y2="72.0" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
-  <line x1="36.9" y1="55.7" x2="34.5" y2="67.5" stroke="#c9a96e" strokeWidth="0.7" strokeLinecap="round" opacity="0.45"/>
-  <line x1="33.9" y1="54.8" x2="27.8" y2="69.6" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
-  <line x1="31.1" y1="53.3" x2="24.4" y2="63.3" stroke="#c9a96e" strokeWidth="0.7" strokeLinecap="round" opacity="0.45"/>
-  <line x1="28.7" y1="51.3" x2="17.4" y2="62.6" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
-  <line x1="26.7" y1="48.9" x2="16.7" y2="55.6" stroke="#c9a96e" strokeWidth="0.7" strokeLinecap="round" opacity="0.45"/>
-  <line x1="25.2" y1="46.1" x2="10.4" y2="52.2" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
-  <line x1="24.3" y1="43.1" x2="12.5" y2="45.5" stroke="#c9a96e" strokeWidth="0.7" strokeLinecap="round" opacity="0.45"/>
-  <line x1="24.0" y1="40.0" x2="8.0" y2="40.0" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
-  <line x1="24.3" y1="36.9" x2="12.5" y2="34.5" stroke="#c9a96e" strokeWidth="0.7" strokeLinecap="round" opacity="0.45"/>
-  <line x1="25.2" y1="33.9" x2="10.4" y2="27.8" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
-  <line x1="26.7" y1="31.1" x2="16.7" y2="24.4" stroke="#c9a96e" strokeWidth="0.7" strokeLinecap="round" opacity="0.45"/>
-  <line x1="28.7" y1="28.7" x2="17.4" y2="17.4" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
-  <line x1="31.1" y1="26.7" x2="24.4" y2="16.7" stroke="#c9a96e" strokeWidth="0.7" strokeLinecap="round" opacity="0.45"/>
-  <line x1="33.9" y1="25.2" x2="27.8" y2="10.4" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
-  <line x1="36.9" y1="24.3" x2="34.5" y2="12.5" stroke="#c9a96e" strokeWidth="0.7" strokeLinecap="round" opacity="0.45"/>
   <line x1="40" y1="40" x2="40" y2="24" stroke="#c9a96e" strokeWidth="1.6" strokeLinecap="round" opacity="0.9"/>
   <line x1="40" y1="40" x2="40" y2="56" stroke="#c9a96e" strokeWidth="1.6" strokeLinecap="round" opacity="0.9"/>
   <line x1="40" y1="40" x2="24" y2="40" stroke="#c9a96e" strokeWidth="1.6" strokeLinecap="round" opacity="0.9"/>
   <line x1="40" y1="40" x2="56" y2="40" stroke="#c9a96e" strokeWidth="1.6" strokeLinecap="round" opacity="0.9"/>
+  <line x1="40.0" y1="24.0" x2="40.0" y2="8.0" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
+  <line x1="56.0" y1="40.0" x2="72.0" y2="40.0" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
+  <line x1="40.0" y1="56.0" x2="40.0" y2="72.0" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
+  <line x1="24.0" y1="40.0" x2="8.0" y2="40.0" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
 </svg>
       <div className="t-name">PowerDense Dynamics</div>
       <div className="t-desc">High-gauss neodymium magnets, ultra-lightweight voice coils, and reinforced motor structures deliver remarkable SPL, clarity, and transient response — all within a minimal form factor.</div>
@@ -147,12 +300,8 @@ export default function HomePage() {
       <svg className="t-icon" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
   <path d="M30 40 L62 14 L46 44 Z" stroke="#c9a96e" strokeWidth="1.4" strokeLinejoin="round" fill="rgba(201,169,110,0.05)"/>
   <path d="M46 44 L62 14 L52 50 Z" stroke="#c9a96e" strokeWidth="1.4" strokeLinejoin="round" fill="rgba(201,169,110,0.08)"/>
-  <line x1="62" y1="14" x2="46" y2="44" stroke="#c9a96e" strokeWidth="0.8" opacity="0.5"/>
   <line x1="10" y1="52" x2="28" y2="42" stroke="#c9a96e" strokeWidth="1.3" strokeLinecap="round" opacity="0.75"/>
   <line x1="12" y1="60" x2="32" y2="48" stroke="#c9a96e" strokeWidth="1.1" strokeLinecap="round" opacity="0.6"/>
-  <line x1="18" y1="66" x2="36" y2="54" stroke="#c9a96e" strokeWidth="0.9" strokeLinecap="round" opacity="0.45"/>
-  <line x1="8"  y1="44" x2="22" y2="37" stroke="#c9a96e" strokeWidth="0.9" strokeLinecap="round" opacity="0.5"/>
-  <line x1="24" y1="70" x2="40" y2="60" stroke="#c9a96e" strokeWidth="0.7" strokeLinecap="round" opacity="0.35"/>
 </svg>
       <div className="t-name">AeroFrame Chassis</div>
       <div className="t-desc">Precision-engineered aluminium structures and thermally conductive composites transform the speaker body into an active thermal management system — maintaining performance under sustained high power.</div>
@@ -161,20 +310,12 @@ export default function HomePage() {
     <div className="tech-card">
       <div className="t-bar"></div>
       <svg className="t-icon" viewBox="0 0 80 70" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M44 18 L24 18 Q16 18 16 26 L16 44 Q16 52 24 52 L44 52"
-    stroke="#c9a96e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-  <path d="M42 26 L28 26 Q24 26 24 30 L24 40 Q24 44 28 44 L42 44"
-    stroke="#c9a96e" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none" opacity="0.55"/>
+  <path d="M44 18 L24 18 Q16 18 16 26 L16 44 Q16 52 24 52 L44 52" stroke="#c9a96e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+  <path d="M42 26 L28 26 Q24 26 24 30 L24 40 Q24 44 28 44 L42 44" stroke="#c9a96e" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none" opacity="0.55"/>
   <line x1="44" y1="18" x2="54" y2="18" stroke="#c9a96e" strokeWidth="1.6" strokeLinecap="round"/>
-  <line x1="54" y1="18" x2="60" y2="12" stroke="#c9a96e" strokeWidth="1.4" strokeLinecap="round"/>
   <circle cx="62" cy="10" r="2.2" fill="#c9a96e" opacity="0.9"/>
-  <line x1="54" y1="18" x2="64" y2="18" stroke="#c9a96e" strokeWidth="1.2" strokeLinecap="round" opacity="0.7"/>
-  <circle cx="67" cy="18" r="1.8" fill="#c9a96e" opacity="0.7"/>
   <line x1="44" y1="52" x2="54" y2="52" stroke="#c9a96e" strokeWidth="1.6" strokeLinecap="round"/>
-  <line x1="54" y1="52" x2="60" y2="58" stroke="#c9a96e" strokeWidth="1.4" strokeLinecap="round"/>
   <circle cx="62" cy="60" r="2.2" fill="#c9a96e" opacity="0.9"/>
-  <line x1="44" y1="35" x2="58" y2="35" stroke="#c9a96e" strokeWidth="1.4" strokeLinecap="round" opacity="0.8"/>
-  <circle cx="61" cy="35" r="1.8" fill="#c9a96e" opacity="0.75"/>
 </svg>
       <div className="t-name">XS-Flow</div>
       <div className="t-desc">Ultra-low turbulence port geometry developed through computational fluid dynamics. Eliminates port noise at high SPL without sacrificing bass extension or dynamic range.</div>
@@ -205,7 +346,6 @@ export default function HomePage() {
       <span id="wsPlayLabel">Play tone</span>
     </div>
   </div>
-
 </section>
 
 <canvas className="wave-divider" id="wd2" height="28" aria-hidden="true" style={{display: "block", width: "100%", height: "28px"}}></canvas>
