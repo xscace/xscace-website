@@ -120,7 +120,14 @@ if (typeof window !== 'undefined') {
   setTimeout(() => {
     injectScript(THREE_CDN).then(() => {
       const THREE = (window as any).THREE
-      if (THREE && !THREE.GLTFLoader) injectScript(GLTF_CDN)
+      if (THREE && !THREE.GLTFLoader) {
+        injectScript(GLTF_CDN).then(() => {
+          if (!(window as any).THREE?.DRACOLoader) {
+            injectScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/draco_wasm_wrapper.js').catch(() => {})
+            injectScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js').catch(() => {})
+          }
+        })
+      }
     }).catch(() => {})
   }, 500)
 }
@@ -143,6 +150,9 @@ function ModelViewer({ src, hovered }: { src: string; hovered: boolean }) {
         const THREE = (window as any).THREE
         if (!THREE || cancelled) return
         if (!THREE.GLTFLoader) await injectScript(GLTF_CDN)
+        if (!THREE.DRACOLoader) {
+          await injectScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js')
+        }
         if (cancelled) return
 
         // Size canvas from the actual card — walk up to feat-card-wrap and measure
@@ -168,7 +178,10 @@ function ModelViewer({ src, hovered }: { src: string; hovered: boolean }) {
         const rim = new THREE.DirectionalLight(0xffffff, 1.0)
         rim.position.set(0, -2, -3); scene.add(rim)
 
+        const dracoLoader = new THREE.DRACOLoader()
+        dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/')
         const loader = new THREE.GLTFLoader()
+        loader.setDRACOLoader(dracoLoader)
         loader.load(src, (gltf: any) => {
           if (cancelled) return
           const model = gltf.scene
