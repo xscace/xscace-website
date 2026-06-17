@@ -208,6 +208,10 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
           await inject('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js')
           await new Promise(r => setTimeout(r, 80))
         }
+        if (!(window as any).THREE?.DRACOLoader) {
+          await inject('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js')
+          await new Promise(r => setTimeout(r, 60))
+        }
         if (!(window as any).THREE?.RGBELoader) {
           await inject('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js')
           await new Promise(r => setTimeout(r, 60))
@@ -321,7 +325,11 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
           if (modelUrl.includes('/models/')) url = `/api/glb/${modelUrl.split('/models/').pop()}`
           else if (!modelUrl.startsWith('http')) url = modelUrl.startsWith('/') ? modelUrl : `/${modelUrl}`
 
-          new THREE.GLTFLoader().load(url, (gltf: any) => {
+          const dracoLoader = new THREE.DRACOLoader()
+          dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/')
+          const gltfLoader = new THREE.GLTFLoader()
+          gltfLoader.setDRACOLoader(dracoLoader)
+          gltfLoader.load(url, (gltf: any) => {
             if (cancelled) return
             const model = gltf.scene
             const box = new THREE.Box3().setFromObject(model)
