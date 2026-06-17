@@ -238,7 +238,7 @@ export default function HomePage() {
         <img src="/bonsai-scale.png" alt="Bonsai speaker held between fingers" className="scale-img" />
       </div>
       <div className="scale-caption">
-        <div className="scale-name">Bonsai</div>
+        <a href="/products/slim-array-series/bonsai-mini-slim-array-speaker" className="scale-name scale-name--link">Bonsai</a>
         <div className="scale-rule"></div>
         <div className="scale-spec">World&apos;s Smallest · 12mm Thin</div>
       </div>
@@ -249,7 +249,7 @@ export default function HomePage() {
         <img src="/cane-scale.png" alt="Cane speaker held in hand" className="scale-img" />
       </div>
       <div className="scale-caption">
-        <div className="scale-name">Cane</div>
+        <a href="/products/slim-array-series/cane-slim-array-speaker" className="scale-name scale-name--link">Cane</a>
         <div className="scale-rule"></div>
         <div className="scale-spec">Slim Array · 23mm Thin</div>
       </div>

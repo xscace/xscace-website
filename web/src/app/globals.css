@@ -140,6 +140,12 @@ body{background:#000;color:#d8d4cc;font-family:'DM Sans',sans-serif;font-size:13
   color: #eeebe5;
   margin-bottom: 10px;
 }
+.scale-name--link {
+  text-decoration: none;
+  display: block;
+  transition: color .2s;
+}
+.scale-name--link:hover { color: #c9a96e; }
 .scale-rule {
   width: 32px;
   height: 0.5px;
