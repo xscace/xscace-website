@@ -110,10 +110,10 @@ const MODEL_SETTINGS: Record<string, {
 }> = {
   'prod-bonsai':    { cam:[-0.12,0.84,3.27], rot:[0.108,-1.032,-1.542], fov:41, exposure:3.35, ambient:0,   key:0.1, fill:0.5 },
   'prod-cane':      { cam:[-0.08,0.34,3.03], rot:[0.248,-0.942,-1.502], fov:43, exposure:0.6,  ambient:1.1, key:2.4, fill:1.0 },
-  'prod-ghost2':    { cam:[0,0,3],            rot:[0.308,0,0],           fov:51, exposure:0.4,  ambient:0.1, key:2.4, fill:0.8 },
-  'prod-acacia6-pw':{ cam:[0,0.02,3.48],      rot:[-0.002,-0.732,0],    fov:53, exposure:0.9,  ambient:1.3, key:2.1, fill:0.5 },
-  'prod-xylem3':    { cam:[-0.36,-0.55,3.77], rot:[-2.542,0.000,0.000], fov:40, exposure:1.15, ambient:0,   key:0.0, fill:1.0 },
-  'prod-quadcane':  { cam:[0.04,-0.02,1.52],      rot:[0.268,-1.202,0.058],  fov:40, exposure:0.25, ambient:0,   key:1.4, fill:2.2 },
+  'prod-ghost2':    { cam:[-0.01,0,3],          rot:[0.318,-0.012,0.000],  fov:69, exposure:0.9,  ambient:0,   key:0.8, fill:0   },
+  'prod-acacia6-pw':{ cam:[0,0,3],              rot:[0.000,-0.702,0.000],  fov:78, exposure:0.15, ambient:0,   key:5.0, fill:0.8 },
+  'prod-xylem3':    { cam:[-0.01,-0.67,3],      rot:[-2.512,0.000,0.000],  fov:78, exposure:0.6,  ambient:0,   key:0.0, fill:1.6 },
+  'prod-quadcane':  { cam:[0.18,-0.14,2.43],    rot:[2.308,1.588,-0.702],  fov:45, exposure:1.05, ambient:0,   key:0.0, fill:0.7 },
 }
 const DEFAULT_SETTINGS = { cam:[0,0,3.5] as [number,number,number], rot:[0,0,0] as [number,number,number], fov:40, exposure:1.4, ambient:0.5, key:3.0, fill:1.0 }
 
