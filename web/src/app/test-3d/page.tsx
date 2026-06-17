@@ -111,7 +111,7 @@ function ModelTest({ name, file }: { name: string; file: string }) {
         await ensureThree()
         if (cancelled) return
         const THREE = (window as any).THREE
-        const W = el.clientWidth || 500, H = 380
+        const W = el.clientWidth || 360, H = el.clientHeight || 450
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
         renderer.setSize(W, H)
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
@@ -220,13 +220,13 @@ function ModelTest({ name, file }: { name: string; file: string }) {
       </div>
       {info && <div style={{ padding: '4px 16px', background: '#0a0a0a', fontFamily: 'monospace', fontSize: 10, color: '#555' }}>{info}</div>}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px' }}>
-        {/* Canvas */}
+      <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr' }}>
+        {/* Canvas — exact card media size: 360×450 (4:5 ratio) */}
         <div
           ref={mountRef}
           onMouseDown={onMouseDown} onMouseMove={onMouseMove}
           onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
-          style={{ height: 380, background: '#050505', cursor: isDragging.current ? 'grabbing' : 'grab' }}
+          style={{ width: 360, height: 450, background: '#050505', cursor: isDragging.current ? 'grabbing' : 'grab', flexShrink: 0 }}
         />
 
         {/* Controls */}
