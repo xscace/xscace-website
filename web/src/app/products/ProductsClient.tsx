@@ -25,6 +25,7 @@ interface Product {
   category: { name: string; slug: { current: string } }
   heroVideoUrl?: string | null
   fallbackImageUrl?: string | null
+  model3dUrl?: string | null
 }
 
 interface Category {
@@ -100,47 +101,212 @@ function TiltCard({ children, className, onMouseEnter, onMouseLeave }: { childre
 }
 
 // ── FEATURED CARD ─────────────────────────────────────────────────────────────
+// ── 3D MODEL VIEWER ──────────────────────────────────────────────────────────
+function ModelViewer({ src, hovered }: { src: string; hovered: boolean }) {
+  const mountRef = useRef<HTMLDivElement>(null)
+  const sceneRef = useRef<any>(null)
+  const frameRef = useRef<number>(0)
+  const mouseRef = useRef({ x: 0, y: 0 })
+  const targetRotRef = useRef({ x: -0.15, y: 0 })
+  const currentRotRef = useRef({ x: -0.15, y: 0 })
+
+  useEffect(() => {
+    const el = mountRef.current
+    if (!el) return
+
+    let THREE: any, renderer: any, scene: any, camera: any, model: any, loader: any
+
+    const init = async () => {
+      THREE = (await import('three' as any)).default || await import('three' as any)
+      const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js' as any)
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+      renderer.setSize(el.clientWidth, el.clientHeight)
+      renderer.outputColorSpace = THREE.SRGBColorSpace
+      renderer.toneMapping = THREE.ACESFilmicToneMapping
+      renderer.toneMappingExposure = 1.2
+      el.appendChild(renderer.domElement)
+
+      scene = new THREE.Scene()
+
+      // Camera
+      camera = new THREE.PerspectiveCamera(40, el.clientWidth / el.clientHeight, 0.01, 100)
+      camera.position.set(0, 0, 3.5)
+
+      // Lighting — 3-point setup
+      const ambient = new THREE.AmbientLight(0xffffff, 0.4)
+      scene.add(ambient)
+      const key = new THREE.DirectionalLight(0xfff5e0, 2.5)
+      key.position.set(2, 3, 2)
+      scene.add(key)
+      const fill = new THREE.DirectionalLight(0xc9a96e, 0.6)
+      fill.position.set(-2, 1, 1)
+      scene.add(fill)
+      const rim = new THREE.DirectionalLight(0xffffff, 0.8)
+      rim.position.set(0, -2, -2)
+      scene.add(rim)
+
+      // Load model
+      loader = new GLTFLoader()
+      loader.load(src, (gltf: any) => {
+        model = gltf.scene
+
+        // Centre and scale model to fit
+        const box = new THREE.Box3().setFromObject(model)
+        const centre = box.getCenter(new THREE.Vector3())
+        const size = box.getSize(new THREE.Vector3())
+        const maxDim = Math.max(size.x, size.y, size.z)
+        const scale = 2.2 / maxDim
+        model.scale.setScalar(scale)
+        model.position.sub(centre.multiplyScalar(scale))
+
+        scene.add(model)
+        sceneRef.current = { THREE, renderer, scene, camera, model }
+      }, undefined, (err: any) => console.warn('GLB load error', err))
+    }
+
+    init()
+
+    // Animate loop — smooth lerp toward mouse target
+    const animate = () => {
+      frameRef.current = requestAnimationFrame(animate)
+      if (!sceneRef.current) return
+      const { renderer, scene, camera, model } = sceneRef.current
+      if (!model) return
+
+      // Lerp rotation
+      currentRotRef.current.x += (targetRotRef.current.x - currentRotRef.current.x) * 0.06
+      currentRotRef.current.y += (targetRotRef.current.y - currentRotRef.current.y) * 0.06
+      model.rotation.x = currentRotRef.current.x
+      model.rotation.y = currentRotRef.current.y
+
+      renderer.render(scene, camera)
+    }
+    animate()
+
+    return () => {
+      cancelAnimationFrame(frameRef.current)
+      if (renderer) { renderer.dispose(); el.removeChild(renderer.domElement) }
+    }
+  }, [src])
+
+  // Mouse move handler — updates target rotation
+  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = ((e.clientX - rect.left) / rect.width - 0.5) * 2
+    const y = ((e.clientY - rect.top) / rect.height - 0.5) * 2
+    targetRotRef.current = { x: y * -0.4 - 0.1, y: x * 0.6 }
+  }
+
+  const onMouseLeave = () => {
+    targetRotRef.current = { x: -0.15, y: 0 }
+  }
+
+  return (
+    <div
+      ref={mountRef}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
+      style={{
+        position: 'absolute', inset: 0,
+        opacity: hovered ? 1 : 0,
+        transition: 'opacity 0.5s ease',
+        pointerEvents: hovered ? 'all' : 'none',
+        zIndex: 3,
+      }}
+    />
+  )
+}
+
+// ── FEATURED CARD ─────────────────────────────────────────────────────────────
 function FeaturedCard({ p }: { p: Product }) {
   const imgUrl = getImageUrl(p.heroImage)
   const badge = BADGE_MAP[p._id]
   const videoRef = useRef<HTMLVideoElement>(null)
   const [hovered, setHovered] = useState(false)
+  const has3d = !!p.model3dUrl
 
   useEffect(() => {
     const v = videoRef.current
-    if (!v) return
+    if (!v || has3d) return
     if (hovered) { v.play().catch(() => {}) }
     else { v.pause(); v.currentTime = 0 }
-  }, [hovered])
+  }, [hovered, has3d])
 
   return (
-    <TiltCard className="feat-card-wrap" onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
-      <a href={`/products/${p.category?.slug?.current}/${p.slug?.current}`} className="feat-card">
-        <div className="feat-card-img" style={{position:'relative',overflow:'hidden'}}>
+    <div
+      className={`feat-card-wrap${hovered ? ' feat-card-wrap--active' : ''}`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{ perspective: '900px' }}
+    >
+      <a href={`/products/${p.category?.slug?.current}/${p.slug?.current}`} className="feat-card"
+        style={{
+          transform: hovered && has3d ? 'rotateX(2deg) translateZ(0px)' : 'none',
+          transition: 'transform 0.5s cubic-bezier(.22,1,.36,1)',
+        }}
+      >
+        <div className="feat-card-img" style={{
+          position: 'relative', overflow: 'visible',
+          boxShadow: hovered && has3d ? '0 32px 80px rgba(0,0,0,0.85), 0 0 0 0.5px rgba(201,169,110,0.15)' : 'none',
+          transition: 'box-shadow 0.5s ease',
+        }}>
+          {/* Static hero image — base layer */}
           {imgUrl && (
             <img src={imgUrl} alt={p.productName} style={{
-              position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',
-              opacity:(p.heroVideoUrl && hovered) ? 0 : 1, transition:'opacity 0.4s ease'
+              position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+              opacity: hovered && has3d ? 0.15 : (p.heroVideoUrl && hovered && !has3d) ? 0 : 1,
+              transition: 'opacity 0.5s ease',
             }}/>
           )}
           {!imgUrl && <div className="feat-card-img-placeholder"><span>{p.productName[0]}</span></div>}
-          {p.heroVideoUrl && (
+
+          {/* Video — only when no 3D */}
+          {p.heroVideoUrl && !has3d && (
             <video ref={videoRef} src={p.heroVideoUrl} muted loop playsInline style={{
-              position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',
-              opacity:hovered ? 1 : 0, transition:'opacity 0.4s ease'
+              position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+              opacity: hovered ? 1 : 0, transition: 'opacity 0.4s ease',
             }}/>
           )}
-          {badge && <div className="feat-badge">{badge}</div>}
+
+          {/* 3D model — floats above card on hover */}
+          {has3d && (
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              bottom: hovered ? '-30%' : '0%',
+              transition: 'bottom 0.6s cubic-bezier(.22,1,.36,1)',
+              overflow: 'visible',
+              zIndex: 10,
+              pointerEvents: hovered ? 'all' : 'none',
+            }}>
+              <ModelViewer src={p.model3dUrl!} hovered={hovered} />
+            </div>
+          )}
+
+          {/* Champagne vignette overlay — dims image when 3D active */}
+          {has3d && (
+            <div style={{
+              position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
+              background: 'radial-gradient(ellipse at 50% 80%, rgba(201,169,110,0.04) 0%, rgba(0,0,0,0.6) 100%)',
+              opacity: hovered ? 1 : 0, transition: 'opacity 0.5s ease',
+            }}/>
+          )}
+
+          {badge && <div className="feat-badge" style={{zIndex:20}}>{badge}</div>}
         </div>
         <div className="feat-card-body">
           <div className="feat-card-cat">{p.series || p.subCategory}</div>
           <div className="feat-card-name">{p.productName}</div>
           {p.tagline && <div className="feat-card-tag">{p.tagline}</div>}
           {getSpec(p) && <div className="feat-card-spec">{getSpec(p)}</div>}
-          <div className="feat-card-cta">View Product →</div>
+          <div className="feat-card-cta">
+            {has3d && hovered ? 'Drag to rotate · Click to explore →' : 'View Product →'}
+          </div>
         </div>
       </a>
-    </TiltCard>
+    </div>
   )
 }
 

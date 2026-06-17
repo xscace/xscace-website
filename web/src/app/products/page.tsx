@@ -21,7 +21,8 @@ async function getProductsData() {
         totalPowerW, channelCount, weightKg,
         category->{ name, slug },
         "heroVideoRef": heroVideoFile.asset._ref,
-        "fallbackImageRef": coalesce(lifestyleImages[0].asset._ref, galleryImages[0].asset._ref)
+        "fallbackImageRef": coalesce(lifestyleImages[0].asset._ref, galleryImages[0].asset._ref),
+        model3dUrl
       }
     `),
     client.fetch(`
@@ -47,6 +48,7 @@ async function getProductsData() {
     ...p,
     heroVideoUrl: p.heroVideoRef ? fileUrl(p.heroVideoRef) : null,
     fallbackImageUrl: p.fallbackImageRef ? imgUrl(p.fallbackImageRef) : null,
+    model3dUrl: p.model3dUrl || null,
   }))
 
   const software = softwareApps.map((app: any) => ({
