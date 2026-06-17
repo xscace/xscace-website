@@ -203,6 +203,21 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
 
     const run = async () => {
       try {
+  // Per-product calibrated settings
+  const MODEL_SETTINGS: Record<string, {
+    cam: [number,number,number], rot: [number,number,number], fov: number,
+    exposure: number, ambient: number, key: number, fill: number
+  }> = {
+    'prod-bonsai':    { cam:[-0.12,0.84,3.27], rot:[0.108,-1.032,-1.542], fov:41, exposure:3.35, ambient:0,   key:0.1, fill:0.5 },
+    'prod-cane':      { cam:[-0.08,0.34,3.03], rot:[0.248,-0.942,-1.502], fov:43, exposure:0.6,  ambient:1.1, key:2.4, fill:1.0 },
+    'prod-ghost2':    { cam:[0,0,3],            rot:[0.308,0,0],           fov:51, exposure:0.4,  ambient:0.1, key:2.4, fill:0.8 },
+    'prod-acacia6-pw':{ cam:[0,0.02,3.48],      rot:[-0.002,-0.732,0],    fov:53, exposure:0.9,  ambient:1.3, key:2.1, fill:0.5 },
+    'prod-xylem3':    { cam:[-0.34,-0.59,3],    rot:[-5.882,0.998,0.038], fov:44, exposure:0.3,  ambient:0,   key:0.7, fill:2.5 },
+  }
+  const s = (productId && MODEL_SETTINGS[productId]) ? MODEL_SETTINGS[productId]
+    : { cam:[0,0,0.82] as [number,number,number], rot:[0,0,0] as [number,number,number], fov:28, exposure:0.75, ambient:0.04, key:0.08, fill:0.2 }
+
+
         if (!(window as any).THREE) await inject('https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js')
         if (!(window as any).THREE?.GLTFLoader) {
           await inject('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js')
@@ -227,7 +242,7 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
         renderer.setSize(W, H)
         renderer.toneMapping = THREE.ACESFilmicToneMapping
-        renderer.toneMappingExposure = 0.75
+        renderer.toneMappingExposure = s.exposure
         renderer.setClearColor(0x000000, 1)
         renderer.shadowMap.enabled = true
         renderer.shadowMap.type = THREE.PCFSoftShadowMap
@@ -237,16 +252,18 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
         const scene = new THREE.Scene()
         sceneRef.current = scene
 
-        const camera = new THREE.PerspectiveCamera(28, W / H, 0.01, 100)
-        camera.position.set(0, 0, 0.82)
+        const camera = new THREE.PerspectiveCamera(s.fov, W / H, 0.01, 100)
+        camera.position.set(...s.cam)
         camera.lookAt(0, 0, 0)
         cameraRef.current = camera
 
         // ── Lighting ──
-        scene.add(new THREE.AmbientLight(0xffffff, 0.04))
+        scene.add(new THREE.AmbientLight(0xffffff, s.ambient))
 
-        const fill = new THREE.DirectionalLight(0xfff0dd, 0.08)
-        fill.position.set(-1.5, 1, 1.5); scene.add(fill)
+        const fill = new THREE.DirectionalLight(0xfff0dd, s.key)
+        fill.position.set(2, 3, 2); scene.add(fill)
+        const fillLeft = new THREE.DirectionalLight(0xc9a96e, s.fill)
+        fillLeft.position.set(-2, 1, 1); scene.add(fillLeft)
 
         // Depth-creating underlight (fake AO)
         const under = new THREE.DirectionalLight(0x080808, 0.5)
@@ -337,8 +354,7 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
             const size = box.getSize(new THREE.Vector3())
             model.position.sub(centre)
             model.scale.setScalar(0.46 / Math.max(size.x, size.y, size.z))
-            // X=long, Y=depth, Z=width — fix orientation
-            model.rotation.set(-Math.PI / 2, 0, Math.PI / 2)
+            model.rotation.set(...s.rot)
 
             const group = new THREE.Group()
             group.add(model)

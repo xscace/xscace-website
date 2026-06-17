@@ -100,44 +100,61 @@ function TiltCard({ children, className, onMouseEnter, onMouseLeave }: { childre
   )
 }
 
-// ── 3D MODEL VIEWER (CDN) ────────────────────────────────────────────────────
-const THREE_CDN = 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js'
-const GLTF_CDN  = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js'
+// ── 3D MODEL VIEWER ──────────────────────────────────────────────────────────
+const CDN3 = 'https://cdn.jsdelivr.net/npm/three@0.128.0'
 
-function injectScript(src: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return }
+// Per-product camera + lighting settings (from /test-3d calibration)
+const MODEL_SETTINGS: Record<string, {
+  cam: [number,number,number], rot: [number,number,number], fov: number,
+  exposure: number, ambient: number, key: number, fill: number
+}> = {
+  'prod-bonsai':    { cam:[-0.12,0.84,3.27], rot:[0.108,-1.032,-1.542], fov:41, exposure:3.35, ambient:0,   key:0.1, fill:0.5 },
+  'prod-cane':      { cam:[-0.08,0.34,3.03], rot:[0.248,-0.942,-1.502], fov:43, exposure:0.6,  ambient:1.1, key:2.4, fill:1.0 },
+  'prod-ghost2':    { cam:[0,0,3],            rot:[0.308,0,0],           fov:51, exposure:0.4,  ambient:0.1, key:2.4, fill:0.8 },
+  'prod-acacia6-pw':{ cam:[0,0.02,3.48],      rot:[-0.002,-0.732,0],    fov:53, exposure:0.9,  ambient:1.3, key:2.1, fill:0.5 },
+  'prod-xylem3':    { cam:[-0.34,-0.59,3],    rot:[-5.882,0.998,0.038], fov:44, exposure:0.3,  ambient:0,   key:0.7, fill:2.5 },
+}
+const DEFAULT_SETTINGS = { cam:[0,0,3.5] as [number,number,number], rot:[0,0,0] as [number,number,number], fov:40, exposure:1.4, ambient:0.5, key:3.0, fill:1.0 }
+
+function inject3(src: string): Promise<void> {
+  return new Promise((res, rej) => {
+    if (document.querySelector(`script[src="${src}"]`)) { res(); return }
     const s = document.createElement('script')
     s.src = src; s.async = true
-    s.onload = () => resolve()
-    s.onerror = () => reject(new Error(`Failed: ${src}`))
+    s.onload = () => res()
+    s.onerror = () => rej(new Error(`Failed: ${src}`))
     document.head.appendChild(s)
   })
 }
 
-// Preload Three.js scripts as soon as the products page loads
-if (typeof window !== 'undefined') {
-  setTimeout(() => {
-    injectScript(THREE_CDN).then(() => {
-      const THREE = (window as any).THREE
-      if (THREE && !THREE.GLTFLoader) {
-        injectScript(GLTF_CDN).then(() => {
-          if (!(window as any).THREE?.DRACOLoader) {
-            injectScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/draco_wasm_wrapper.js').catch(() => {})
-            injectScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js').catch(() => {})
-          }
-        })
-      }
-    }).catch(() => {})
-  }, 500)
+// Single shared promise — all ModelViewers wait on the same load, no race
+let threePromise: Promise<void> | null = null
+function ensureThree(): Promise<void> {
+  if (!threePromise) {
+    threePromise = (async () => {
+      await inject3(`${CDN3}/build/three.min.js`)
+      await inject3(`${CDN3}/examples/js/loaders/GLTFLoader.js`)
+      await inject3(`${CDN3}/examples/js/loaders/DRACOLoader.js`)
+      await new Promise(r => setTimeout(r, 80))
+    })()
+  }
+  return threePromise
 }
 
-function ModelViewer({ src, hovered }: { src: string; hovered: boolean }) {
+// Preload as soon as module loads
+if (typeof window !== 'undefined') {
+  setTimeout(() => ensureThree().catch(() => {}), 200)
+}
+
+function ModelViewer({ src, hovered, productId }: { src: string; hovered: boolean; productId?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const frameRef = useRef<number>(0)
-  const targetRotRef = useRef({ x: -0.15, y: 0 })
-  const currentRotRef = useRef({ x: -0.15, y: 0 })
-  const readyRef = useRef(false)
+  const modelRef = useRef<any>(null)
+  const isDragging = useRef(false)
+  const lastMouse = useRef({ x: 0, y: 0 })
+  const dragRot = useRef({ x: 0, y: 0 })
+
+  const settings = (productId && MODEL_SETTINGS[productId]) ? MODEL_SETTINGS[productId] : DEFAULT_SETTINGS
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -146,100 +163,101 @@ function ModelViewer({ src, hovered }: { src: string; hovered: boolean }) {
 
     const init = async () => {
       try {
-        await injectScript(THREE_CDN)
-        const THREE = (window as any).THREE
-        if (!THREE || cancelled) return
-        if (!THREE.GLTFLoader) await injectScript(GLTF_CDN)
-        if (!THREE.DRACOLoader) {
-          await injectScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js')
-        }
+        await ensureThree()
         if (cancelled) return
+        const THREE = (window as any).THREE
+        if (!THREE) return
 
-        // Size canvas from the actual card — walk up to feat-card-wrap and measure
         const card = canvas.closest('.feat-card-wrap') as HTMLElement
         const W = card ? card.offsetWidth : 300
-        const H = Math.round(W * 1.25) // 4:5 ratio matching feat-card-img
+        const H = Math.round(W * 1.25)
 
         const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true })
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-        renderer.setSize(W, H, false) // false = don't set CSS size
+        renderer.setSize(W, H, false)
         renderer.toneMapping = THREE.ACESFilmicToneMapping
-        renderer.toneMappingExposure = 1.4
+        renderer.toneMappingExposure = settings.exposure
 
         const scene = new THREE.Scene()
-        const camera = new THREE.PerspectiveCamera(38, W / H, 0.01, 100)
-        camera.position.set(0, 0, 3.8)
+        const camera = new THREE.PerspectiveCamera(settings.fov, W / H, 0.01, 100)
+        camera.position.set(...settings.cam)
 
-        scene.add(new THREE.AmbientLight(0xffffff, 0.5))
-        const key = new THREE.DirectionalLight(0xfff5e0, 3.0)
+        scene.add(new THREE.AmbientLight(0xffffff, settings.ambient))
+        const key = new THREE.DirectionalLight(0xfff5e0, settings.key)
         key.position.set(2, 3, 2); scene.add(key)
-        const fill = new THREE.DirectionalLight(0xc9a96e, 0.8)
+        const fill = new THREE.DirectionalLight(0xc9a96e, settings.fill)
         fill.position.set(-2, 1, 1); scene.add(fill)
-        const rim = new THREE.DirectionalLight(0xffffff, 1.0)
-        rim.position.set(0, -2, -3); scene.add(rim)
 
         const dracoLoader = new THREE.DRACOLoader()
-        dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/')
+        dracoLoader.setDecoderPath(`${CDN3}/examples/js/libs/draco/`)
         const loader = new THREE.GLTFLoader()
         loader.setDRACOLoader(dracoLoader)
+
         loader.load(src, (gltf: any) => {
           if (cancelled) return
           const model = gltf.scene
           const box = new THREE.Box3().setFromObject(model)
           const centre = box.getCenter(new THREE.Vector3())
           const size = box.getSize(new THREE.Vector3())
-          const scale = 2.0 / Math.max(size.x, size.y, size.z)
-          model.scale.setScalar(scale)
-          model.position.sub(centre.multiplyScalar(scale))
+          model.scale.setScalar(2.0 / Math.max(size.x, size.y, size.z))
+          model.position.sub(centre.multiplyScalar(2.0 / Math.max(size.x, size.y, size.z)))
+          // Apply calibrated base rotation
+          model.rotation.set(...settings.rot)
           scene.add(model)
-          readyRef.current = true
+          modelRef.current = model
+          dragRot.current = { x: settings.rot[0], y: settings.rot[1] }
 
           const animate = () => {
             if (cancelled) return
             frameRef.current = requestAnimationFrame(animate)
-            currentRotRef.current.x += (targetRotRef.current.x - currentRotRef.current.x) * 0.07
-            currentRotRef.current.y += (targetRotRef.current.y - currentRotRef.current.y) * 0.07
-            model.rotation.x = currentRotRef.current.x
-            model.rotation.y = currentRotRef.current.y
             renderer.render(scene, camera)
           }
           animate()
-        },
-        undefined,
-        (err: any) => console.warn('[3D] GLB failed:', src, err))
+        }, undefined, (err: any) => console.warn('[3D]', src, err))
 
       } catch(e) { console.warn('[3D] init error', e) }
     }
 
-    // Small delay so the DOM has painted and card has real dimensions
-    const t = setTimeout(init, 100)
+    const t = setTimeout(init, 80)
     return () => {
-      cancelled = true
-      clearTimeout(t)
+      cancelled = true; clearTimeout(t)
       cancelAnimationFrame(frameRef.current)
     }
-  }, [src])
+  }, [src, productId])
 
-  const onMouseMove = (e: React.MouseEvent) => {
-    const r = e.currentTarget.getBoundingClientRect()
-    const x = ((e.clientX - r.left) / r.width - 0.5) * 2
-    const y = ((e.clientY - r.top) / r.height - 0.5) * 2
-    targetRotRef.current = { x: y * -0.4 - 0.1, y: x * 0.65 }
+  // Mouse drag rotation
+  const onMouseDown = (e: React.MouseEvent) => {
+    isDragging.current = true
+    lastMouse.current = { x: e.clientX, y: e.clientY }
+    e.preventDefault()
   }
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging.current || !modelRef.current) return
+    const dx = e.clientX - lastMouse.current.x
+    const dy = e.clientY - lastMouse.current.y
+    lastMouse.current = { x: e.clientX, y: e.clientY }
+    dragRot.current.y += dx * 0.012
+    dragRot.current.x += dy * 0.012
+    modelRef.current.rotation.x = dragRot.current.x
+    modelRef.current.rotation.y = dragRot.current.y
+  }
+  const onMouseUp = () => { isDragging.current = false }
 
   return (
     <canvas
       ref={canvasRef}
+      onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
-      onMouseLeave={() => { targetRotRef.current = { x: -0.15, y: 0 } }}
+      onMouseUp={onMouseUp}
+      onMouseLeave={onMouseUp}
       style={{
         position: 'absolute', inset: 0,
         width: '100%', height: '100%',
         opacity: hovered ? 1 : 0,
         transition: 'opacity 0.5s ease',
         pointerEvents: hovered ? 'all' : 'none',
-        zIndex: 3,
-        display: 'block',
+        zIndex: 3, display: 'block',
+        cursor: isDragging.current ? 'grabbing' : 'grab',
       }}
     />
   )
@@ -312,7 +330,7 @@ function FeaturedCard({ p }: { p: Product }) {
               background: hovered ? '#000' : 'transparent',
               transition2: 'background 0.3s ease',
             }}>
-              <ModelViewer src={`/api/glb/${p.model3dUrl!.split('/').pop()}`} hovered={hovered} />
+              <ModelViewer src={`/api/glb/${p.model3dUrl!.split('/').pop()}`} hovered={hovered} productId={p._id} />
             </div>
           )}
 
