@@ -102,6 +102,142 @@ function TiltCard({ children, className, onMouseEnter, onMouseLeave }: { childre
 
 // ── FEATURED CARD ─────────────────────────────────────────────────────────────
 // ── 3D MODEL VIEWER ──────────────────────────────────────────────────────────
+// Loads Three.js from CDN (same pattern as product detail page) — no npm install needed
+const THREE_CDN = 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js'
+const GLTF_CDN  = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js'
+
+function injectScript(src: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return }
+    const s = document.createElement('script')
+    s.src = src; s.async = true
+    s.onload = () => resolve()
+    s.onerror = () => reject(new Error(`Failed to load ${src}`))
+    document.head.appendChild(s)
+  })
+}
+
+function ModelViewer({ src, hovered }: { src: string; hovered: boolean }) {
+  const mountRef = useRef<HTMLDivElement>(null)
+  const stateRef = useRef<{ renderer: any; scene: any; camera: any; model: any; frame: number } | null>(null)
+  const targetRotRef = useRef({ x: -0.15, y: 0 })
+  const currentRotRef = useRef({ x: -0.15, y: 0 })
+  const loadedRef = useRef(false)
+
+  useEffect(() => {
+    const el = mountRef.current
+    if (!el || loadedRef.current) return
+    loadedRef.current = true
+
+    let cancelled = false
+
+    const init = async () => {
+      try {
+        await injectScript(THREE_CDN)
+        const THREE = (window as any).THREE
+        if (!THREE) return
+        if (!THREE.GLTFLoader) await injectScript(GLTF_CDN)
+
+        if (cancelled) return
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+        renderer.setSize(el.clientWidth || 300, el.clientHeight || 400)
+        renderer.outputEncoding = THREE.sRGBEncoding
+        renderer.toneMapping = THREE.ACESFilmicToneMapping
+        renderer.toneMappingExposure = 1.2
+        el.appendChild(renderer.domElement)
+
+        const scene = new THREE.Scene()
+        const camera = new THREE.PerspectiveCamera(40, (el.clientWidth || 300) / (el.clientHeight || 400), 0.01, 100)
+        camera.position.set(0, 0, 3.5)
+
+        // 3-point lighting
+        scene.add(new THREE.AmbientLight(0xffffff, 0.4))
+        const key = new THREE.DirectionalLight(0xfff5e0, 2.5)
+        key.position.set(2, 3, 2); scene.add(key)
+        const fill = new THREE.DirectionalLight(0xc9a96e, 0.6)
+        fill.position.set(-2, 1, 1); scene.add(fill)
+        const rim = new THREE.DirectionalLight(0xffffff, 0.8)
+        rim.position.set(0, -2, -2); scene.add(rim)
+
+        const loader = new THREE.GLTFLoader()
+        loader.load(src, (gltf: any) => {
+          if (cancelled) return
+          const model = gltf.scene
+          const box = new THREE.Box3().setFromObject(model)
+          const centre = box.getCenter(new THREE.Vector3())
+          const size = box.getSize(new THREE.Vector3())
+          const scale = 2.2 / Math.max(size.x, size.y, size.z)
+          model.scale.setScalar(scale)
+          model.position.sub(centre.multiplyScalar(scale))
+          scene.add(model)
+          stateRef.current = { renderer, scene, camera, model, frame: 0 }
+        })
+
+        // Animate
+        const animate = () => {
+          const id = requestAnimationFrame(animate)
+          if (!stateRef.current) return
+          stateRef.current.frame = id
+          const { model } = stateRef.current
+          if (!model) return
+          currentRotRef.current.x += (targetRotRef.current.x - currentRotRef.current.x) * 0.06
+          currentRotRef.current.y += (targetRotRef.current.y - currentRotRef.current.y) * 0.06
+          model.rotation.x = currentRotRef.current.x
+          model.rotation.y = currentRotRef.current.y
+          renderer.render(scene, camera)
+        }
+        animate()
+
+      } catch (e) {
+        console.warn('3D init error', e)
+      }
+    }
+
+    init()
+
+    return () => {
+      cancelled = true
+      if (stateRef.current) {
+        cancelAnimationFrame(stateRef.current.frame)
+        stateRef.current.renderer.dispose()
+        if (el.contains(stateRef.current.renderer.domElement)) {
+          el.removeChild(stateRef.current.renderer.domElement)
+        }
+        stateRef.current = null
+      }
+      loadedRef.current = false
+    }
+  }, [src])
+
+  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const r = e.currentTarget.getBoundingClientRect()
+    const x = ((e.clientX - r.left) / r.width - 0.5) * 2
+    const y = ((e.clientY - r.top) / r.height - 0.5) * 2
+    targetRotRef.current = { x: y * -0.4 - 0.1, y: x * 0.6 }
+  }
+
+  const onMouseLeave = () => { targetRotRef.current = { x: -0.15, y: 0 } }
+
+  return (
+    <div
+      ref={mountRef}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
+      style={{
+        position: 'absolute', inset: 0,
+        opacity: hovered ? 1 : 0,
+        transition: 'opacity 0.5s ease',
+        pointerEvents: hovered ? 'all' : 'none',
+        zIndex: 3,
+      }}
+    />
+  )
+}
+
+// ── FEATURED CARD ─────────────────────────────────────────────────────────────
+// ── 3D MODEL VIEWER ──────────────────────────────────────────────────────────
 function ModelViewer({ src, hovered }: { src: string; hovered: boolean }) {
   const mountRef = useRef<HTMLDivElement>(null)
   const sceneRef = useRef<any>(null)
