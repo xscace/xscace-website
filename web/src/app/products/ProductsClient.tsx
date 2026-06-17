@@ -300,59 +300,39 @@ function FeaturedCard({ p }: { p: Product }) {
       className={`feat-card-wrap${hovered ? ' feat-card-wrap--active' : ''}`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      style={{ position: 'relative', overflow: 'visible' }}
     >
-      {/* 3D canvas lives at card-wrap level — overflows image area into card body + sides */}
-      {has3d && (
-        <div style={{
-          position: 'absolute',
-          // At rest: flush with image area top. On hover: bleed 28px past all edges
-          top:    hovered ? '-28px' : '0px',
-          left:   hovered ? '-28px' : '0px',
-          right:  hovered ? '-28px' : '0px',
-          // Bottom bleeds into card body on hover
-          bottom: hovered ? '-60px' : 'calc(100% - var(--feat-img-h, 400px))',
-          transition: 'top .5s cubic-bezier(.22,1,.36,1), left .5s cubic-bezier(.22,1,.36,1), right .5s cubic-bezier(.22,1,.36,1), bottom .5s cubic-bezier(.22,1,.36,1)',
-          zIndex: 8,
-          pointerEvents: hovered ? 'all' : 'none',
-          background: '#000',
-          // Champagne glow on outside edges
-          boxShadow: hovered
-            ? '0 0 0 0.5px rgba(201,169,110,0.2), 0 32px 80px rgba(0,0,0,0.95), 0 0 60px rgba(201,169,110,0.03)'
-            : 'none',
-          borderRadius: 0,
-        }}>
-          <ModelViewer src={`/api/glb/${p.model3dUrl!.split('/').pop()}`} hovered={hovered} productId={p._id} />
-        </div>
-      )}
+      <a href={`/products/${p.category?.slug?.current}/${p.slug?.current}`} className="feat-card">
+        <div className="feat-card-img" style={{ position: 'relative', overflow: 'hidden' }}>
 
-      <a href={`/products/${p.category?.slug?.current}/${p.slug?.current}`} className="feat-card" style={{ position: 'relative', zIndex: 1 }}>
-        <div className="feat-card-img" style={{
-          position: 'relative', overflow: 'hidden',
-          background: hovered && has3d ? '#000' : 'transparent',
-          transition: 'background 0.5s ease',
-        }}>
-          {/* Hero image — fades out when 3D activates */}
+          {/* Hero image — always visible at rest */}
           {imgUrl && (
             <img src={imgUrl} alt={p.productName} style={{
               position: 'absolute', inset: 0,
               width: '100%', height: '100%', objectFit: 'cover',
               opacity: (hovered && has3d) ? 0 : (p.heroVideoUrl && hovered && !has3d) ? 0 : 1,
-              transition: 'opacity 0.6s ease',
+              transition: 'opacity 0.5s ease',
+              zIndex: 1,
             }}/>
           )}
-          {!imgUrl && !has3d && <div className="feat-card-img-placeholder"><span>{p.productName[0]}</span></div>}
+          {!imgUrl && !has3d && <div className="feat-card-img-placeholder" style={{zIndex:1}}><span>{p.productName[0]}</span></div>}
+
+          {/* Video hover — only for non-3D cards */}
           {p.heroVideoUrl && !has3d && (
             <video ref={videoRef} src={p.heroVideoUrl} muted loop playsInline style={{
-              position: 'absolute', inset: 0,
-              width: '100%', height: '100%', objectFit: 'cover',
-              opacity: hovered ? 1 : 0, transition: 'opacity 0.4s ease',
+              position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+              opacity: hovered ? 1 : 0, transition: 'opacity 0.4s ease', zIndex: 2,
             }}/>
           )}
+
+          {/* 3D canvas — invisible and pointer-events:none until hovered */}
+          {has3d && (
+            <ModelViewer src={`/api/glb/${p.model3dUrl!.split('/').pop()}`} hovered={hovered} productId={p._id} />
+          )}
+
           {badge && <div className="feat-badge" style={{position:'absolute',top:14,left:14,zIndex:20}}>{badge}</div>}
         </div>
 
-        <div className="feat-card-body" style={{ position: 'relative', zIndex: 1 }}>
+        <div className="feat-card-body">
           <div className="feat-card-cat">{p.series || p.subCategory}</div>
           <div className="feat-card-name">{p.productName}</div>
           {p.tagline && <div className="feat-card-tag">{p.tagline}</div>}
