@@ -371,28 +371,51 @@ function SoftwareSection({ software }: { software: SoftwareApp[] }) {
           return (
             <a key={app._id} href={href} className="sw-card sw-card--img">
               {/* Hero image fills card top */}
-              <div className="sw-card-img">
-                {app.heroImageUrl
-                  ? <img src={app.heroImageUrl} alt={app.name} />
-                  : (
-                    <div className="sw-card-img-placeholder">
-                      <svg viewBox="0 0 48 48" fill="none" width="48" height="48">
-                        {isMobile ? (
-                          <>
-                            <rect x="14" y="4" width="20" height="40" rx="3" stroke="#c9a96e" strokeWidth="1.2"/>
-                            <circle cx="24" cy="39" r="2" stroke="#c9a96e" strokeWidth="0.8"/>
-                          </>
-                        ) : (
-                          <>
-                            <rect x="4" y="8" width="40" height="28" rx="2" stroke="#c9a96e" strokeWidth="1.2"/>
-                            <line x1="14" y1="36" x2="34" y2="36" stroke="#c9a96e" strokeWidth="1.2"/>
-                            <rect x="18" y="36" width="12" height="5" stroke="#c9a96e" strokeWidth="1.2"/>
-                          </>
-                        )}
-                      </svg>
+              <div className="sw-card-img" style={{background:'#000',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                {app.heroImageUrl ? (
+                  isMobile ? (
+                    /* Phone frame mockup for mobile apps */
+                    <div style={{position:'relative',height:'188px',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                      <div style={{
+                        position:'relative',width:'82px',height:'168px',
+                        border:'1.5px solid #2a2a2a',borderRadius:'12px',
+                        background:'#0a0a0a',overflow:'hidden',
+                        boxShadow:'0 0 0 1px #111, 0 8px 32px rgba(0,0,0,0.8)',
+                      }}>
+                        <div style={{position:'absolute',top:0,left:'50%',transform:'translateX(-50%)',width:'24px',height:'3px',background:'#1a1a1a',borderRadius:'0 0 3px 3px'}}/>
+                        <img src={app.heroImageUrl} alt={app.name} style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'top'}}/>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Laptop frame mockup for desktop apps */
+                    <div style={{position:'relative',width:'92%',display:'flex',flexDirection:'column',alignItems:'center'}}>
+                      <div style={{
+                        width:'100%',background:'#0a0a0a',
+                        border:'1.5px solid #2a2a2a',borderRadius:'5px 5px 0 0',
+                        overflow:'hidden',
+                        boxShadow:'0 0 0 1px #111',
+                      }}>
+                        <div style={{height:'8px',background:'#0d0d0d',borderBottom:'1px solid #1a1a1a',display:'flex',alignItems:'center',paddingLeft:'6px',gap:'3px'}}>
+                          <div style={{width:'4px',height:'4px',borderRadius:'50%',background:'#1e1e1e'}}/>
+                          <div style={{width:'4px',height:'4px',borderRadius:'50%',background:'#1e1e1e'}}/>
+                          <div style={{width:'4px',height:'4px',borderRadius:'50%',background:'#1e1e1e'}}/>
+                        </div>
+                        <img src={app.heroImageUrl} alt={app.name} style={{width:'100%',height:'130px',objectFit:'cover',objectPosition:'top',display:'block'}}/>
+                      </div>
+                      <div style={{width:'110%',height:'6px',background:'#111',borderRadius:'0 0 4px 4px'}}/>
                     </div>
                   )
-                }
+                ) : (
+                  <div className="sw-card-img-placeholder">
+                    <svg viewBox="0 0 48 48" fill="none" width="48" height="48">
+                      {isMobile ? (
+                        <><rect x="14" y="4" width="20" height="40" rx="3" stroke="#c9a96e" strokeWidth="1.2"/><circle cx="24" cy="39" r="2" stroke="#c9a96e" strokeWidth="0.8"/></>
+                      ) : (
+                        <><rect x="4" y="8" width="40" height="28" rx="2" stroke="#c9a96e" strokeWidth="1.2"/><line x1="14" y1="36" x2="34" y2="36" stroke="#c9a96e" strokeWidth="1.2"/><rect x="18" y="36" width="12" height="5" stroke="#c9a96e" strokeWidth="1.2"/></>
+                      )}
+                    </svg>
+                  </div>
+                )}
                 <div className="sw-card-img-overlay" />
               </div>
               {/* Card text */}
@@ -416,28 +439,47 @@ function SoftwareSection({ software }: { software: SoftwareApp[] }) {
         {/* Configurator — static card, external link */}
         <a href="https://configurator.xscace.com" target="_blank" rel="noopener noreferrer" className="sw-card sw-card--img">
           <div className="sw-card-img sw-card-img--conf">
-            <svg viewBox="0 0 320 200" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:'100%',height:'100%',display:'block'}}>
-              <rect width="320" height="200" fill="#090909"/>
-              {/* Wiring diagram representing the configurator */}
-              <line x1="40" y1="100" x2="100" y2="100" stroke="#c9a96e" strokeWidth="0.8" opacity="0.4"/>
-              <line x1="100" y1="100" x2="100" y2="55" stroke="#c9a96e" strokeWidth="0.8" opacity="0.35"/>
-              <line x1="100" y1="55" x2="210" y2="55" stroke="#c9a96e" strokeWidth="0.8" opacity="0.35"/>
-              <line x1="100" y1="100" x2="210" y2="100" stroke="#c9a96e" strokeWidth="0.8" opacity="0.4"/>
-              <line x1="100" y1="100" x2="100" y2="145" stroke="#c9a96e" strokeWidth="0.8" opacity="0.35"/>
-              <line x1="100" y1="145" x2="210" y2="145" stroke="#c9a96e" strokeWidth="0.8" opacity="0.35"/>
-              <line x1="210" y1="55" x2="280" y2="55" stroke="#c9a96e" strokeWidth="0.8" opacity="0.3"/>
-              <line x1="210" y1="100" x2="280" y2="78" stroke="#c9a96e" strokeWidth="0.8" opacity="0.3"/>
-              <line x1="210" y1="100" x2="280" y2="122" stroke="#c9a96e" strokeWidth="0.8" opacity="0.3"/>
-              <line x1="210" y1="145" x2="280" y2="145" stroke="#c9a96e" strokeWidth="0.8" opacity="0.3"/>
-              {([[40,100],[100,55],[100,100],[100,145],[210,55],[210,100],[210,145],[280,55],[280,78],[280,122],[280,145]] as [number,number][]).map(([x,y],i) => (
-                <circle key={i} cx={x} cy={y} r="4" fill="#090909" stroke="#c9a96e" strokeWidth={i===0?1:0.7} opacity={i===0?0.9:0.5}/>
+            {/* Configurator UI mockup — matches home page style */}
+            <svg viewBox="0 0 360 200" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:'100%',height:'100%',display:'block'}}>
+              <rect width="360" height="200" fill="#050505"/>
+              {/* Top bar */}
+              <rect width="360" height="22" fill="#080808"/>
+              <circle cx="12" cy="11" r="3.5" fill="#1a1a1a"/>
+              <circle cx="24" cy="11" r="3.5" fill="#1a1a1a"/>
+              <circle cx="36" cy="11" r="3.5" fill="#1a1a1a"/>
+              <text x="155" y="15" fill="#333" fontSize="7" fontFamily="monospace" textAnchor="middle">configurator.xscace.com</text>
+              {/* Left panel - chat */}
+              <rect x="0" y="22" width="160" height="178" fill="#060606"/>
+              <rect x="0" y="22" width="160" height="178" fill="none" stroke="#111" strokeWidth="0.5"/>
+              {/* User message bubble */}
+              <rect x="10" y="32" width="120" height="22" rx="2" fill="#0f0f0f"/>
+              <text x="18" y="44" fill="#888" fontSize="6" fontFamily="monospace">I need speakers for my</text>
+              <text x="18" y="52" fill="#888" fontSize="6" fontFamily="monospace">living room, 5m × 7m</text>
+              {/* AI response */}
+              <rect x="10" y="60" width="140" height="40" rx="2" fill="#0c0c0a"/>
+              <rect x="10" y="60" width="2" height="40" fill="#c9a96e" opacity="0.4"/>
+              <text x="18" y="72" fill="#c9a96e" fontSize="5.5" fontFamily="monospace" opacity="0.8">XSCACE AI</text>
+              <text x="18" y="82" fill="#777" fontSize="5.5" fontFamily="monospace">For that room I'd suggest</text>
+              <text x="18" y="90" fill="#777" fontSize="5.5" fontFamily="monospace">2× Cane + Xylem 3 DSP</text>
+              <text x="18" y="98" fill="#777" fontSize="5.5" fontFamily="monospace">amplifier + Juniper sub.</text>
+              {/* Input */}
+              <rect x="10" y="168" width="128" height="18" rx="1" fill="#0a0a0a" stroke="#1a1a1a" strokeWidth="0.5"/>
+              <text x="16" y="180" fill="#333" fontSize="6" fontFamily="monospace">Ask about your space...</text>
+              <text x="128" y="180" fill="#c9a96e" fontSize="8" fontFamily="monospace">↑</text>
+              {/* Right panel - recommendations */}
+              <rect x="160" y="22" width="200" height="178" fill="#050505"/>
+              <text x="172" y="36" fill="#c9a96e" fontSize="6" fontFamily="monospace" opacity="0.6">RECOMMENDED SETUP</text>
+              {/* Product cards */}
+              {[['Cane','Slim Array','×2',40],['Xylem 3','DSP Amplifier','×1',85],['Juniper','Subwoofer','×1',130]].map(([name,type,qty,y],i) => (
+                <g key={i}>
+                  <rect x="168" y={y as number} width="180" height="34" rx="1" fill="#080808" stroke="#141414" strokeWidth="0.5"/>
+                  <rect x="168" y={y as number} width="3" height="34" fill="#c9a96e" opacity="0.25"/>
+                  <text x="178" y={(y as number)+13} fill="#eeebe5" fontSize="7.5" fontFamily="serif">{name as string}</text>
+                  <text x="178" y={(y as number)+23} fill="#555" fontSize="5.5" fontFamily="monospace">{type as string}</text>
+                  <text x="336" y={(y as number)+21} fill="#c9a96e" fontSize="6" fontFamily="monospace" opacity="0.7">{qty as string}</text>
+                </g>
               ))}
-              <text x="26" y="90" fill="#c9a96e" fontSize="6.5" fontFamily="monospace" opacity="0.6">SOURCE</text>
-              <text x="88" y="47" fill="#c9a96e" fontSize="5.5" fontFamily="monospace" opacity="0.45">AMP</text>
-              <text x="198" y="47" fill="#c9a96e" fontSize="5.5" fontFamily="monospace" opacity="0.45">SPEAKER</text>
-              <text x="198" y="92" fill="#c9a96e" fontSize="5.5" fontFamily="monospace" opacity="0.45">SPEAKER</text>
-              <text x="198" y="137" fill="#c9a96e" fontSize="5.5" fontFamily="monospace" opacity="0.45">SPEAKER</text>
-              <text x="126" y="97" fill="#c9a96e" fontSize="7" fontFamily="monospace" opacity="0.25">AI CONFIGURED</text>
+              <text x="168" y="182" fill="#c9a96e" fontSize="6" fontFamily="monospace" opacity="0.5">Budget: ₹4.2L – ₹5.8L · View Full BOQ →</text>
             </svg>
             <div className="sw-card-img-overlay" />
           </div>
