@@ -1634,7 +1634,7 @@ a.p-card, a.p-card:hover {
 .sw-card--img:hover .sw-card-img img { transform: scale(1.03); }
 .sw-card-img {
   position: relative;
-  aspect-ratio: 16/9;
+  height: 200px;
   overflow: hidden;
   background: #0b0b09;
   flex-shrink: 0;
@@ -1700,7 +1700,7 @@ a.p-card, a.p-card:hover {
 .sw-card--img:hover .sw-card-img img { transform: scale(1.03); }
 .sw-card-img {
   position: relative;
-  aspect-ratio: 16/9;
+  height: 200px;
   overflow: hidden;
   background: #0c0c0a;
   flex-shrink: 0;
@@ -1722,8 +1722,9 @@ a.p-card, a.p-card:hover {
 }
 .sw-card-img--conf { background: #090909; }
 .sw-card-body {
-  padding: 18px 24px 24px;
-  display: flex; flex-direction: column; gap: 7px;
+  padding: 16px 18px 14px;
+  display: flex; flex-direction: column; gap: 5px;
+  flex: 1;
 }
 .sw-card-tag {
   font-size: 12px;
@@ -1757,7 +1758,7 @@ a.p-card, a.p-card:hover {
 }
 .sw-card-name {
   font-family: 'Cormorant', serif; font-weight: 300;
-  font-size: 22px; color: #eeebe5; line-height: 1.05;
+  font-size: 24px; color: #eeebe5; line-height: 1.05;
 }
 .sw-card-desc { font-size: 12px; color: rgba(238,235,229,0.38); line-height: 1.6; }
 .sw-card-ctas { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }

@@ -19,7 +19,9 @@ async function getProductsData() {
         tagline, slug, heroImage, proprietaryTechBadges,
         powerRmsW, sensitivityDb, freqLowHz, freqHighHz, impedanceOhms,
         totalPowerW, channelCount, weightKg,
-        category->{ name, slug }
+        category->{ name, slug },
+        "heroVideoRef": heroVideoFile.asset._ref,
+        "fallbackImageRef": coalesce(lifestyleImages[0].asset._ref, galleryImages[0].asset._ref)
       }
     `),
     client.fetch(`
@@ -34,12 +36,25 @@ async function getProductsData() {
     `),
   ])
 
+  function fileUrl(ref: string) {
+    if (!ref) return ''
+    const clean = ref.replace('file-', '')
+    const last = clean.lastIndexOf('-')
+    return `https://cdn.sanity.io/files/7r0kq57d/production/${clean.slice(0, last)}.${clean.slice(last + 1)}`
+  }
+
+  const products2 = products.map((p: any) => ({
+    ...p,
+    heroVideoUrl: p.heroVideoRef ? fileUrl(p.heroVideoRef) : null,
+    fallbackImageUrl: p.fallbackImageRef ? imgUrl(p.fallbackImageRef) : null,
+  }))
+
   const software = softwareApps.map((app: any) => ({
     ...app,
     heroImageUrl: app.heroImageRef ? imgUrl(app.heroImageRef) : '',
   }))
 
-  return { products, categories, software }
+  return { products: products2, categories, software }
 }
 
 export default async function ProductsPage() {

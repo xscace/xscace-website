@@ -23,6 +23,8 @@ interface Product {
   channelCount?: number
   weightKg?: number
   category: { name: string; slug: { current: string } }
+  heroVideoUrl?: string | null
+  fallbackImageUrl?: string | null
 }
 
 interface Category {
@@ -77,7 +79,7 @@ function getSpec(p: Product): string {
 }
 
 // ── 3D TILT ───────────────────────────────────────────────────────────────────
-function TiltCard({ children, className }: { children: React.ReactNode; className?: string }) {
+function TiltCard({ children, className, onMouseEnter, onMouseLeave }: { children: React.ReactNode; className?: string; onMouseEnter?: () => void; onMouseLeave?: () => void }) {
   const ref = useRef<HTMLDivElement>(null)
   const onMove = (e: React.MouseEvent) => {
     const el = ref.current!
@@ -88,7 +90,9 @@ function TiltCard({ children, className }: { children: React.ReactNode; classNam
   }
   const onLeave = () => { if (ref.current) ref.current.style.transform = 'perspective(900px) rotateY(0) rotateX(0) translateZ(0)' }
   return (
-    <div ref={ref} className={className} onMouseMove={onMove} onMouseLeave={onLeave}
+    <div ref={ref} className={className} onMouseMove={onMove}
+      onMouseLeave={(e) => { onLeave(); onMouseLeave?.() }}
+      onMouseEnter={() => onMouseEnter?.()}
       style={{ transition: 'transform .15s ease', willChange: 'transform' }}>
       {children}
     </div>
@@ -99,14 +103,33 @@ function TiltCard({ children, className }: { children: React.ReactNode; classNam
 function FeaturedCard({ p }: { p: Product }) {
   const imgUrl = getImageUrl(p.heroImage)
   const badge = BADGE_MAP[p._id]
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [hovered, setHovered] = useState(false)
+
+  useEffect(() => {
+    const v = videoRef.current
+    if (!v) return
+    if (hovered) { v.play().catch(() => {}) }
+    else { v.pause(); v.currentTime = 0 }
+  }, [hovered])
+
   return (
-    <TiltCard className="feat-card-wrap">
+    <TiltCard className="feat-card-wrap" onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
       <a href={`/products/${p.category?.slug?.current}/${p.slug?.current}`} className="feat-card">
-        <div className="feat-card-img">
-          {imgUrl
-            ? <img src={imgUrl} alt={p.productName}/>
-            : <div className="feat-card-img-placeholder"><span>{p.productName[0]}</span></div>
-          }
+        <div className="feat-card-img" style={{position:'relative',overflow:'hidden'}}>
+          {imgUrl && (
+            <img src={imgUrl} alt={p.productName} style={{
+              position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',
+              opacity:(p.heroVideoUrl && hovered) ? 0 : 1, transition:'opacity 0.4s ease'
+            }}/>
+          )}
+          {!imgUrl && <div className="feat-card-img-placeholder"><span>{p.productName[0]}</span></div>}
+          {p.heroVideoUrl && (
+            <video ref={videoRef} src={p.heroVideoUrl} muted loop playsInline style={{
+              position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',
+              opacity:hovered ? 1 : 0, transition:'opacity 0.4s ease'
+            }}/>
+          )}
           {badge && <div className="feat-badge">{badge}</div>}
         </div>
         <div className="feat-card-body">
@@ -237,14 +260,46 @@ function SoftwareSection({ software }: { software: SoftwareApp[] }) {
 function ProductCard({ p, delay }: { p: Product; delay: number }) {
   const imgUrl = getImageUrl(p.heroImage)
   const badge = BADGE_MAP[p._id]
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [hovered, setHovered] = useState(false)
+
+  useEffect(() => {
+    const v = videoRef.current
+    if (!v) return
+    if (hovered) { v.play().catch(() => {}) }
+    else { v.pause(); v.currentTime = 0 }
+  }, [hovered])
+
+  // Show fallback image on hover if no video
+  const showFallback = hovered && !p.heroVideoUrl && !!p.fallbackImageUrl
+
   return (
-    <TiltCard className="pc-wrap">
+    <TiltCard className="pc-wrap" onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
       <a href={`/products/${p.category?.slug?.current}/${p.slug?.current}`} className="pc">
-        <div className="pc-img">
+        <div className="pc-img" style={{position:'relative',overflow:'hidden'}}>
+          {/* Hero image — fades out on hover if video available */}
           {imgUrl
-            ? <img src={imgUrl} alt={p.productName}/>
+            ? <img src={imgUrl} alt={p.productName} style={{
+                position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',
+                opacity:(p.heroVideoUrl && hovered) || showFallback ? 0 : 1,
+                transition:'opacity 0.35s ease'
+              }}/>
             : <div className="pc-placeholder"><div className="pc-ph-badge">Image pending</div></div>
           }
+          {/* Fallback lifestyle/gallery image — fades in on hover when no video */}
+          {p.fallbackImageUrl && !p.heroVideoUrl && (
+            <img src={p.fallbackImageUrl} alt={p.productName} style={{
+              position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',
+              opacity:showFallback ? 1 : 0, transition:'opacity 0.35s ease'
+            }}/>
+          )}
+          {/* Hero video — plays on hover */}
+          {p.heroVideoUrl && (
+            <video ref={videoRef} src={p.heroVideoUrl} muted loop playsInline style={{
+              position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',
+              opacity:hovered ? 1 : 0, transition:'opacity 0.35s ease'
+            }}/>
+          )}
           {badge && <div className="pc-badge">{badge}</div>}
         </div>
         <div className="pc-body">
