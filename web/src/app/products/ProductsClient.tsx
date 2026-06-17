@@ -312,7 +312,7 @@ function FeaturedCard({ p }: { p: Product }) {
               background: hovered ? '#000' : 'transparent',
               transition2: 'background 0.3s ease',
             }}>
-              <ModelViewer src={p.model3dUrl!} hovered={hovered} />
+              <ModelViewer src={`/api/glb/${p.model3dUrl!.split('/').pop()}`} hovered={hovered} />
             </div>
           )}
 
