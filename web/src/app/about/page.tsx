@@ -64,10 +64,7 @@ function AboutHero() {
             <span className="hv-label-dot hv-dot-bad"/>Before
           </div>
           <div className="hv-img-slot hv-before-img">
-            <div className="hv-img-placeholder">
-              <div className="hv-img-label">Standard Install</div>
-              <div className="hv-img-sub">Image from Sanity</div>
-            </div>
+            <img src="/before-speaker.jpg" alt="Standard speaker installation — bulky, visually dominant" style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
           </div>
           <div className="hv-card-caption">
             <div className="hv-caption-main">Standard speaker</div>
@@ -79,10 +76,7 @@ function AboutHero() {
             <span className="hv-label-dot hv-dot-good"/>After
           </div>
           <div className="hv-img-slot hv-after-img">
-            <div className="hv-img-placeholder">
-              <div className="hv-img-label">XSCACE Install</div>
-              <div className="hv-img-sub">Image from Sanity</div>
-            </div>
+            <img src="/after-speaker.jpg" alt="XSCACE speaker installed — 23mm, invisible, room intact" style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
           </div>
           <div className="hv-card-caption">
             <div className="hv-caption-main">XSCACE installed</div>
