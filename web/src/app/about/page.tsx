@@ -43,7 +43,6 @@ function WaveDivider() {
 
 // ── ABOUT HERO — before/after with expanding slideshow ────────────────────
 const LOCATION_IMAGES = [
-  '/after-speaker.jpg',
   '/location-1.jpeg',
   '/location-2.jpeg',
   '/location-3.jpeg',
