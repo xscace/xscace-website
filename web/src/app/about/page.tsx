@@ -43,14 +43,21 @@ function WaveDivider() {
 
 // ── ABOUT HERO — before/after with expanding slideshow ────────────────────
 const LOCATION_IMAGES = [
-  '/after-speaker.jpg',
   '/location-1.jpeg',
   '/location-2.jpeg',
   '/location-3.jpeg',
   '/location-4.jpeg',
+  '/after-speaker.jpg',
 ]
 
 function AboutHero() {
+  // Inject pulse keyframe once
+  if (typeof document !== 'undefined' && !document.getElementById('hv-pulse-style')) {
+    const s = document.createElement('style')
+    s.id = 'hv-pulse-style'
+    s.textContent = '@keyframes hv-pulse { 0%,100%{opacity:.4;transform:scale(1)} 50%{opacity:1;transform:scale(1.4)} }'
+    document.head.appendChild(s)
+  }
   const [expanded, setExpanded] = useState(false)
   const [slideIndex, setSlideIndex] = useState(0)
   const [prevIndex, setPrevIndex] = useState<number|null>(null)
@@ -240,6 +247,27 @@ function AboutHero() {
             <div className="hv-caption-sub">
               {expanded ? 'Hover to browse · tap dot to jump' : '23mm · Invisible · Room intact'}
             </div>
+            {!expanded && (
+              <div style={{
+                marginTop: 6,
+                fontFamily: 'DM Mono, monospace',
+                fontSize: 8,
+                letterSpacing: '.14em',
+                textTransform: 'uppercase',
+                color: 'rgba(201,169,110,0.45)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+              }}>
+                <span style={{
+                  display:'inline-block', width:5, height:5, borderRadius:'50%',
+                  background:'rgba(201,169,110,0.5)',
+                  boxShadow:'0 0 6px rgba(201,169,110,0.6)',
+                  animation:'hv-pulse 1.8s ease-in-out infinite',
+                }}/>
+                Hover to explore
+              </div>
+            )}
           </div>
         </div>
 
