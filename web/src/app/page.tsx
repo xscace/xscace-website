@@ -2,17 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-// Hero videos from Sanity CDN — these are the heroVideoFile refs for each product
-// Format: https://cdn.sanity.io/files/7r0kq57d/production/{hash}.mp4
+// Real CDN URLs from Sanity — bonsai, cane, quadcane have hero videos
 const HERO_VIDEOS = [
-  'https://cdn.sanity.io/files/7r0kq57d/production/bonsai-hero.mp4',
-  'https://cdn.sanity.io/files/7r0kq57d/production/cane-hero.mp4',
-  'https://cdn.sanity.io/files/7r0kq57d/production/quadcane-hero.mp4',
-  'https://cdn.sanity.io/files/7r0kq57d/production/acacia-hero.mp4',
-  'https://cdn.sanity.io/files/7r0kq57d/production/xylem-hero.mp4',
+  'https://cdn.sanity.io/files/7r0kq57d/production/9321462fead3edd96aea64e147d713d274fc4568.mp4',
+  'https://cdn.sanity.io/files/7r0kq57d/production/c9587a4d945e0f8982ef1eea9ff96a979406d70c.mp4',
+  'https://cdn.sanity.io/files/7r0kq57d/production/d9519eb2abae08958f4f195848a348a3be3b5221.mp4',
 ]
 
-// Featured products with their hero video URLs from Sanity
 const FEATURED = [
   {
     href: '/products/slim-array-series/bonsai-mini-slim-array-speaker',
@@ -20,7 +16,8 @@ const FEATURED = [
     cat: 'Slim Array',
     name: 'Bonsai',
     spec: '40W · 86 dB · 300Hz–18KHz · 8Ω',
-    videoRef: 'prod-bonsai', // used to fetch from Sanity
+    videoUrl: 'https://cdn.sanity.io/files/7r0kq57d/production/9321462fead3edd96aea64e147d713d274fc4568.mp4',
+    imageUrl: 'https://cdn.sanity.io/images/7r0kq57d/production/89581883d4b073a233ffeac08b3c62c213adf3a6-525x492.png?w=800&auto=format',
   },
   {
     href: '/products/slim-array-series/cane-slim-array-speaker',
@@ -28,7 +25,8 @@ const FEATURED = [
     cat: 'Slim Array',
     name: 'Cane',
     spec: '50W · 92 dB · 150Hz–20KHz · 8Ω',
-    videoRef: 'prod-cane',
+    videoUrl: 'https://cdn.sanity.io/files/7r0kq57d/production/c9587a4d945e0f8982ef1eea9ff96a979406d70c.mp4',
+    imageUrl: 'https://cdn.sanity.io/images/7r0kq57d/production/f143deb1faa4ec05c289b9481fbe22b806f5366c-3840x2160.png?w=800&auto=format',
   },
   {
     href: '/products/in-ceiling-series/ghost-2-0-slim-in-ceiling-speaker',
@@ -36,7 +34,8 @@ const FEATURED = [
     cat: 'In-Ceiling',
     name: 'Ghost 2.0',
     spec: '80W · 92 dB · 20Hz–20KHz · 4Ω',
-    videoRef: 'prod-ghost2',
+    videoUrl: null,
+    imageUrl: 'https://cdn.sanity.io/images/7r0kq57d/production/9139826855763d4eaaf092f3092587396989a9c2-1080x1350.png?w=800&auto=format',
   },
   {
     href: '/products/slim-array-series/quadcane-slim-array-speaker',
@@ -44,105 +43,67 @@ const FEATURED = [
     cat: 'Slim Array',
     name: 'QuadCane',
     spec: '100W · 104 dB · 150Hz–20KHz · 8Ω',
-    videoRef: 'prod-quadcane',
+    videoUrl: 'https://cdn.sanity.io/files/7r0kq57d/production/d9519eb2abae08958f4f195848a348a3be3b5221.mp4',
+    imageUrl: 'https://cdn.sanity.io/images/7r0kq57d/production/54e4d047eb5078a4aa6dd11592a43a60c6101b50-412x418.png?w=800&auto=format',
   },
 ]
 
+// ── HERO BG VIDEO ─────────────────────────────────────────────────────────────
 function HeroBgVideo() {
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const [currentIdx, setCurrentIdx] = useState(() => Math.floor(Math.random() * HERO_VIDEOS.length))
-  const [opacity, setOpacity] = useState(1)
+  const [idx, setIdx] = useState(() => Math.floor(Math.random() * HERO_VIDEOS.length))
+  const [visible, setVisible] = useState(true)
 
   useEffect(() => {
-    const video = videoRef.current
-    if (!video) return
+    const randomDuration = () => 5000 + Math.random() * 5000
+    let t1: ReturnType<typeof setTimeout>
+    let t2: ReturnType<typeof setTimeout>
 
-    // Random duration between 4–9 seconds before switching
-    const randomDuration = () => 4000 + Math.random() * 5000
-
-    let timer: ReturnType<typeof setTimeout>
-
-    const scheduleNext = () => {
-      timer = setTimeout(() => {
-        // Fade out
-        setOpacity(0)
-        setTimeout(() => {
-          setCurrentIdx(prev => {
+    const cycle = () => {
+      t1 = setTimeout(() => {
+        setVisible(false)
+        t2 = setTimeout(() => {
+          setIdx(prev => {
             let next = Math.floor(Math.random() * HERO_VIDEOS.length)
-            // Avoid same video twice
-            while (next === prev && HERO_VIDEOS.length > 1) {
-              next = Math.floor(Math.random() * HERO_VIDEOS.length)
-            }
+            while (next === prev && HERO_VIDEOS.length > 1) next = Math.floor(Math.random() * HERO_VIDEOS.length)
             return next
           })
-          setOpacity(1)
-          scheduleNext()
-        }, 800)
+          setVisible(true)
+          cycle()
+        }, 900)
       }, randomDuration())
     }
-
-    scheduleNext()
-    return () => clearTimeout(timer)
+    cycle()
+    return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [])
 
   return (
     <video
-      ref={videoRef}
-      key={currentIdx}
-      src={HERO_VIDEOS[currentIdx]}
-      autoPlay
-      muted
-      loop
-      playsInline
+      key={idx}
+      src={HERO_VIDEOS[idx]}
+      autoPlay muted loop playsInline
       style={{
-        position: 'absolute',
-        inset: 0,
-        width: '100%',
-        height: '100%',
+        position: 'absolute', inset: 0,
+        width: '100%', height: '100%',
         objectFit: 'cover',
-        opacity,
-        transition: 'opacity 0.8s ease',
+        opacity: visible ? 1 : 0,
+        transition: 'opacity 0.9s ease',
         zIndex: 1,
       }}
     />
   )
 }
 
+// ── FEATURED CARD ─────────────────────────────────────────────────────────────
 function FeaturedCard({ p }: { p: typeof FEATURED[0] }) {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [hovered, setHovered] = useState(false)
 
   useEffect(() => {
-    // Fetch the hero video URL for this product from Sanity
-    fetch(
-      `https://7r0kq57d.api.sanity.io/v2021-06-07/data/query/production?query=*[_id=="${p.videoRef}"][0]{"videoRef":heroVideoFile.asset._ref}`
-    )
-      .then(r => r.json())
-      .then(data => {
-        const ref = data?.result?.videoRef
-        if (ref) {
-          // Convert file ref to CDN URL: file-{hash}-{ext} → {hash}.{ext}
-          const clean = ref.replace(/^file-/, '')
-          const lastDash = clean.lastIndexOf('-')
-          const hash = clean.slice(0, lastDash)
-          const ext = clean.slice(lastDash + 1)
-          setVideoUrl(`https://cdn.sanity.io/files/7r0kq57d/production/${hash}.${ext}`)
-        }
-      })
-      .catch(() => {})
-  }, [p.videoRef])
-
-  useEffect(() => {
-    const video = videoRef.current
-    if (!video || !videoUrl) return
-    if (hovered) {
-      video.play().catch(() => {})
-    } else {
-      video.pause()
-      video.currentTime = 0
-    }
-  }, [hovered, videoUrl])
+    const v = videoRef.current
+    if (!v) return
+    if (hovered) { v.play().catch(() => {}) }
+    else { v.pause(); v.currentTime = 0 }
+  }, [hovered])
 
   return (
     <a
@@ -152,27 +113,34 @@ function FeaturedCard({ p }: { p: typeof FEATURED[0] }) {
       onMouseLeave={() => setHovered(false)}
     >
       <div className="prod-img" style={{ position: 'relative', overflow: 'hidden', background: '#000' }}>
-        {videoUrl ? (
+        {/* Static image — always present, shows when video not hovered */}
+        {p.imageUrl && (
+          <img
+            src={p.imageUrl}
+            alt={p.name}
+            style={{
+              position: 'absolute', inset: 0,
+              width: '100%', height: '100%',
+              objectFit: 'cover',
+              opacity: (p.videoUrl && hovered) ? 0 : 1,
+              transition: 'opacity 0.4s ease',
+            }}
+          />
+        )}
+        {/* Video — fades in on hover */}
+        {p.videoUrl && (
           <video
             ref={videoRef}
-            src={videoUrl}
-            muted
-            loop
-            playsInline
+            src={p.videoUrl}
+            muted loop playsInline
             style={{
-              position: 'absolute',
-              inset: 0,
-              width: '100%',
-              height: '100%',
+              position: 'absolute', inset: 0,
+              width: '100%', height: '100%',
               objectFit: 'cover',
               opacity: hovered ? 1 : 0,
               transition: 'opacity 0.4s ease',
             }}
           />
-        ) : (
-          <div className="cm">
-            <div className="cm-badge">Image / Video</div>
-          </div>
         )}
         <div className="p-badge">{p.badge}</div>
       </div>
@@ -188,6 +156,7 @@ function FeaturedCard({ p }: { p: typeof FEATURED[0] }) {
   )
 }
 
+// ── PAGE ──────────────────────────────────────────────────────────────────────
 export default function HomePage() {
 
   useEffect(() => {
@@ -205,14 +174,12 @@ export default function HomePage() {
   return (
     <>
 <section className="hero">
-  <div className="hero-bg" style={{ position: 'absolute', inset: 0, background: '#000', zIndex: 0 }}>
+  <div className="hero-bg">
     <HeroBgVideo />
-    {/* Dark overlay so text remains legible */}
-    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 2 }} />
+    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.52)', zIndex: 2 }} />
   </div>
-  <div className="hero-grid" style={{ zIndex: 3 }}></div>
-
-  <div className="hero-content" style={{ position: 'relative', zIndex: 4 }}>
+  <div className="hero-grid"></div>
+  <div className="hero-content">
     <div className="h-ey">6 Patents</div>
     <div className="h-title">Size<br /><em>Defying</em><br />Sound</div>
     <div className="h-sub">Architectural speakers and amplifiers engineered for spaces where being discreet and in one with the design is equally as important as performance.</div>
@@ -229,7 +196,7 @@ export default function HomePage() {
   <a href="/products?cat=in-wall-series" className="cat-item"><div className="cat-n">In-Wall</div><div className="cat-c">07 products</div></a>
   <a href="/products?cat=outdoor-series" className="cat-item"><div className="cat-n">Outdoor</div><div className="cat-c">03 products</div></a>
   <a href="/products?cat=subwoofer-series" className="cat-item"><div className="cat-n">Subwoofer</div><div className="cat-c">08 SKUs</div></a>
-  <a href="/products?cat=amplifier-series" className="cat-item" style={{borderRight: "none"}}><div className="cat-n">Amplifiers &amp; Streamers</div><div className="cat-c">09 products</div></a>
+  <a href="/products?cat=amplifier-series" className="cat-item" style={{borderRight:'none'}}><div className="cat-n">Amplifiers &amp; Streamers</div><div className="cat-c">09 products</div></a>
 </div>
 
 <section className="sec reveal">
@@ -242,8 +209,6 @@ export default function HomePage() {
   </div>
 </section>
 
-<canvas className="wave-divider" id="wd1" height="28" aria-hidden="true" style={{display: "block", width: "100%", height: "28px"}}></canvas>
-
 <section className="sec bg2 reveal">
   <div className="sec-ey">Proprietary Technology</div>
   <div className="sec-h-wrap"><div className="sec-h">The Science Behind the Sound</div><div className="sec-draw-line"></div></div>
@@ -251,14 +216,14 @@ export default function HomePage() {
     <div className="tech-card">
       <div className="t-bar"></div>
       <svg className="t-icon" viewBox="0 0 80 95" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M36 16 L36 42 C36 56 28 66 12 74" stroke="#c9a96e" strokeWidth="1.3" strokeLinecap="round" fill="none"/>
-  <path d="M38 12 L38 44 C38 56 34 64 24 70" stroke="#c9a96e" strokeWidth="1.3" strokeLinecap="round" fill="none"/>
-  <path d="M40 10 L40 60 C40 66 40 70 40 74" stroke="#c9a96e" strokeWidth="1.3" strokeLinecap="round" fill="none"/>
-  <path d="M42 12 L42 44 C42 56 46 64 56 70" stroke="#c9a96e" strokeWidth="1.3" strokeLinecap="round" fill="none"/>
-  <path d="M44 16 L44 42 C44 56 52 66 68 74" stroke="#c9a96e" strokeWidth="1.3" strokeLinecap="round" fill="none"/>
-  <circle cx="40" cy="82" r="3.5" fill="#c9a96e" opacity="0.9"/>
-  <circle cx="40" cy="82" r="6.5" fill="none" stroke="#c9a96e" strokeWidth="0.6" opacity="0.3"/>
-</svg>
+        <path d="M36 16 L36 42 C36 56 28 66 12 74" stroke="#c9a96e" strokeWidth="1.3" strokeLinecap="round" fill="none"/>
+        <path d="M38 12 L38 44 C38 56 34 64 24 70" stroke="#c9a96e" strokeWidth="1.3" strokeLinecap="round" fill="none"/>
+        <path d="M40 10 L40 60 C40 66 40 70 40 74" stroke="#c9a96e" strokeWidth="1.3" strokeLinecap="round" fill="none"/>
+        <path d="M42 12 L42 44 C42 56 46 64 56 70" stroke="#c9a96e" strokeWidth="1.3" strokeLinecap="round" fill="none"/>
+        <path d="M44 16 L44 42 C44 56 52 66 68 74" stroke="#c9a96e" strokeWidth="1.3" strokeLinecap="round" fill="none"/>
+        <circle cx="40" cy="82" r="3.5" fill="#c9a96e" opacity="0.9"/>
+        <circle cx="40" cy="82" r="6.5" fill="none" stroke="#c9a96e" strokeWidth="0.6" opacity="0.3"/>
+      </svg>
       <div className="t-name">Nano Resonance</div>
       <div className="t-desc">Ultra-compact motor structures paired with denser woofer cones lower the natural resonant frequency — allowing even our smallest speakers to deliver deep lows, crisp highs, and everything in between.</div>
       <a href="/technology#nano-resonance" className="t-lnk">Learn more →</a>
@@ -266,15 +231,15 @@ export default function HomePage() {
     <div className="tech-card">
       <div className="t-bar"></div>
       <svg className="t-icon" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <line x1="20" y1="46" x2="20" y2="30" stroke="#c9a96e" strokeWidth="2" strokeLinecap="round"/>
-  <line x1="26" y1="52" x2="26" y2="24" stroke="#c9a96e" strokeWidth="2" strokeLinecap="round"/>
-  <line x1="32" y1="58" x2="32" y2="18" stroke="#c9a96e" strokeWidth="2" strokeLinecap="round"/>
-  <line x1="37" y1="62" x2="37" y2="14" stroke="#c9a96e" strokeWidth="2" strokeLinecap="round"/>
-  <line x1="43" y1="62" x2="43" y2="14" stroke="#c9a96e" strokeWidth="2" strokeLinecap="round"/>
-  <line x1="48" y1="58" x2="48" y2="18" stroke="#c9a96e" strokeWidth="2" strokeLinecap="round"/>
-  <line x1="54" y1="52" x2="54" y2="24" stroke="#c9a96e" strokeWidth="2" strokeLinecap="round"/>
-  <line x1="60" y1="46" x2="60" y2="30" stroke="#c9a96e" strokeWidth="2" strokeLinecap="round"/>
-</svg>
+        <line x1="20" y1="46" x2="20" y2="30" stroke="#c9a96e" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="26" y1="52" x2="26" y2="24" stroke="#c9a96e" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="32" y1="58" x2="32" y2="18" stroke="#c9a96e" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="37" y1="62" x2="37" y2="14" stroke="#c9a96e" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="43" y1="62" x2="43" y2="14" stroke="#c9a96e" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="48" y1="58" x2="48" y2="18" stroke="#c9a96e" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="54" y1="52" x2="54" y2="24" stroke="#c9a96e" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="60" y1="46" x2="60" y2="30" stroke="#c9a96e" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
       <div className="t-name">PrecisionXover Array</div>
       <div className="t-desc">Miniaturised crossover architecture engineered for ultra-slim form factors. High-tolerance components and a compact multilayer PCB deliver seamless frequency division and time alignment with surgical precision.</div>
       <a href="/technology#precision-xover" className="t-lnk">Learn more →</a>
@@ -282,15 +247,15 @@ export default function HomePage() {
     <div className="tech-card">
       <div className="t-bar"></div>
       <svg className="t-icon" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <line x1="40" y1="40" x2="40" y2="24" stroke="#c9a96e" strokeWidth="1.6" strokeLinecap="round" opacity="0.9"/>
-  <line x1="40" y1="40" x2="40" y2="56" stroke="#c9a96e" strokeWidth="1.6" strokeLinecap="round" opacity="0.9"/>
-  <line x1="40" y1="40" x2="24" y2="40" stroke="#c9a96e" strokeWidth="1.6" strokeLinecap="round" opacity="0.9"/>
-  <line x1="40" y1="40" x2="56" y2="40" stroke="#c9a96e" strokeWidth="1.6" strokeLinecap="round" opacity="0.9"/>
-  <line x1="40.0" y1="24.0" x2="40.0" y2="8.0" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
-  <line x1="56.0" y1="40.0" x2="72.0" y2="40.0" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
-  <line x1="40.0" y1="56.0" x2="40.0" y2="72.0" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
-  <line x1="24.0" y1="40.0" x2="8.0" y2="40.0" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
-</svg>
+        <line x1="40" y1="40" x2="40" y2="24" stroke="#c9a96e" strokeWidth="1.6" strokeLinecap="round" opacity="0.9"/>
+        <line x1="40" y1="40" x2="40" y2="56" stroke="#c9a96e" strokeWidth="1.6" strokeLinecap="round" opacity="0.9"/>
+        <line x1="40" y1="40" x2="24" y2="40" stroke="#c9a96e" strokeWidth="1.6" strokeLinecap="round" opacity="0.9"/>
+        <line x1="40" y1="40" x2="56" y2="40" stroke="#c9a96e" strokeWidth="1.6" strokeLinecap="round" opacity="0.9"/>
+        <line x1="40" y1="24" x2="40" y2="8" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
+        <line x1="56" y1="40" x2="72" y2="40" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
+        <line x1="40" y1="56" x2="40" y2="72" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
+        <line x1="24" y1="40" x2="8" y2="40" stroke="#c9a96e" strokeWidth="1.0" strokeLinecap="round" opacity="0.75"/>
+      </svg>
       <div className="t-name">PowerDense Dynamics</div>
       <div className="t-desc">High-gauss neodymium magnets, ultra-lightweight voice coils, and reinforced motor structures deliver remarkable SPL, clarity, and transient response — all within a minimal form factor.</div>
       <a href="/technology#powerdense" className="t-lnk">Learn more →</a>
@@ -298,11 +263,11 @@ export default function HomePage() {
     <div className="tech-card">
       <div className="t-bar"></div>
       <svg className="t-icon" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M30 40 L62 14 L46 44 Z" stroke="#c9a96e" strokeWidth="1.4" strokeLinejoin="round" fill="rgba(201,169,110,0.05)"/>
-  <path d="M46 44 L62 14 L52 50 Z" stroke="#c9a96e" strokeWidth="1.4" strokeLinejoin="round" fill="rgba(201,169,110,0.08)"/>
-  <line x1="10" y1="52" x2="28" y2="42" stroke="#c9a96e" strokeWidth="1.3" strokeLinecap="round" opacity="0.75"/>
-  <line x1="12" y1="60" x2="32" y2="48" stroke="#c9a96e" strokeWidth="1.1" strokeLinecap="round" opacity="0.6"/>
-</svg>
+        <path d="M30 40 L62 14 L46 44 Z" stroke="#c9a96e" strokeWidth="1.4" strokeLinejoin="round" fill="rgba(201,169,110,0.05)"/>
+        <path d="M46 44 L62 14 L52 50 Z" stroke="#c9a96e" strokeWidth="1.4" strokeLinejoin="round" fill="rgba(201,169,110,0.08)"/>
+        <line x1="10" y1="52" x2="28" y2="42" stroke="#c9a96e" strokeWidth="1.3" strokeLinecap="round" opacity="0.75"/>
+        <line x1="12" y1="60" x2="32" y2="48" stroke="#c9a96e" strokeWidth="1.1" strokeLinecap="round" opacity="0.6"/>
+      </svg>
       <div className="t-name">AeroFrame Chassis</div>
       <div className="t-desc">Precision-engineered aluminium structures and thermally conductive composites transform the speaker body into an active thermal management system — maintaining performance under sustained high power.</div>
       <a href="/technology#aeroframe" className="t-lnk">Learn more →</a>
@@ -310,18 +275,18 @@ export default function HomePage() {
     <div className="tech-card">
       <div className="t-bar"></div>
       <svg className="t-icon" viewBox="0 0 80 70" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M44 18 L24 18 Q16 18 16 26 L16 44 Q16 52 24 52 L44 52" stroke="#c9a96e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-  <path d="M42 26 L28 26 Q24 26 24 30 L24 40 Q24 44 28 44 L42 44" stroke="#c9a96e" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none" opacity="0.55"/>
-  <line x1="44" y1="18" x2="54" y2="18" stroke="#c9a96e" strokeWidth="1.6" strokeLinecap="round"/>
-  <circle cx="62" cy="10" r="2.2" fill="#c9a96e" opacity="0.9"/>
-  <line x1="44" y1="52" x2="54" y2="52" stroke="#c9a96e" strokeWidth="1.6" strokeLinecap="round"/>
-  <circle cx="62" cy="60" r="2.2" fill="#c9a96e" opacity="0.9"/>
-</svg>
+        <path d="M44 18 L24 18 Q16 18 16 26 L16 44 Q16 52 24 52 L44 52" stroke="#c9a96e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+        <path d="M42 26 L28 26 Q24 26 24 30 L24 40 Q24 44 28 44 L42 44" stroke="#c9a96e" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none" opacity="0.55"/>
+        <line x1="44" y1="18" x2="54" y2="18" stroke="#c9a96e" strokeWidth="1.6" strokeLinecap="round"/>
+        <circle cx="62" cy="10" r="2.2" fill="#c9a96e" opacity="0.9"/>
+        <line x1="44" y1="52" x2="54" y2="52" stroke="#c9a96e" strokeWidth="1.6" strokeLinecap="round"/>
+        <circle cx="62" cy="60" r="2.2" fill="#c9a96e" opacity="0.9"/>
+      </svg>
       <div className="t-name">XS-Flow</div>
       <div className="t-desc">Ultra-low turbulence port geometry developed through computational fluid dynamics. Eliminates port noise at high SPL without sacrificing bass extension or dynamic range.</div>
       <a href="/technology#xs-flow" className="t-lnk">Learn more →</a>
     </div>
-    <div className="tech-card" style={{borderRight: "none"}}>
+    <div className="tech-card" style={{borderRight:'none'}}>
       <div className="t-bar"></div>
       <svg className="t-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M4 18 Q6 10 10 14 Q14 18 18 10 Q22 2 26 10 Q30 18 32 14 Q34 10 36 18" stroke="#c9a96e" strokeWidth="1" strokeLinecap="round"/>
@@ -348,13 +313,11 @@ export default function HomePage() {
   </div>
 </section>
 
-<canvas className="wave-divider" id="wd2" height="28" aria-hidden="true" style={{display: "block", width: "100%", height: "28px"}}></canvas>
-
 <section className="setup-teaser reveal">
   <div className="setup-inner">
     <div className="setup-left">
       <div className="sec-ey">System Builder</div>
-      <div className="sec-h-wrap"><div className="sec-h" style={{marginBottom: "20px"}}>Find Your<br />Perfect System</div><div className="sec-draw-line"></div></div>
+      <div className="sec-h-wrap"><div className="sec-h" style={{marginBottom:'20px'}}>Find Your<br />Perfect System</div><div className="sec-draw-line"></div></div>
       <div className="setup-points">
         <div className="setup-point"><span className="sp-dot"></span><span>Tell it your room size and application</span></div>
         <div className="setup-point"><span className="sp-dot"></span><span>Get a matched XSCACE system instantly</span></div>
@@ -419,8 +382,6 @@ export default function HomePage() {
   </div>
 </section>
 
-<canvas className="wave-divider" id="wd3" height="28" aria-hidden="true" style={{display: "block", width: "100%", height: "28px"}}></canvas>
-
 <section className="sec bg2 reveal">
   <div className="sec-hdr">
     <div><div className="sec-ey">Latest</div><div className="sec-h-wrap"><div className="sec-h">News &amp; Announcements</div><div className="sec-draw-line"></div></div></div>
@@ -454,8 +415,6 @@ export default function HomePage() {
   </div>
 </section>
 
-<canvas className="wave-divider" id="wd4" height="28" aria-hidden="true" style={{display: "block", width: "100%", height: "28px"}}></canvas>
-
 <section className="findus-sec reveal">
   <div className="findus-sec-inner">
     <div>
@@ -477,8 +436,8 @@ export default function HomePage() {
   <div className="contact-inner">
     <div>
       <div className="sec-ey">Get in Touch</div>
-      <div className="sec-h" style={{marginBottom: "18px"}}>Let's Talk<br />About Your Project</div>
-      <p style={{fontSize: "12px", color: "#666660", lineHeight: "1.8", fontWeight: "300", maxWidth: "320px"}}>Whether you are specifying a home cinema, a commercial installation, or enquiring about distribution — we would love to hear from you.</p>
+      <div className="sec-h" style={{marginBottom:'18px'}}>Let's Talk<br />About Your Project</div>
+      <p style={{fontSize:'12px',color:'#666660',lineHeight:'1.8',fontWeight:'300',maxWidth:'320px'}}>Whether you are specifying a home cinema, a commercial installation, or enquiring about distribution — we would love to hear from you.</p>
       <div className="contact-detail">
         <div className="cd-row"><span className="cd-lbl">Email</span><span className="cd-val">support@xscace.com</span></div>
         <div className="cd-row"><span className="cd-lbl">WhatsApp</span><span className="cd-val">+1 587 885 3303</span></div>
