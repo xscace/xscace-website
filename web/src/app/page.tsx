@@ -2,13 +2,38 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-// Real CDN URLs from Sanity — bonsai, cane, quadcane have hero videos
+// ── ALL HERO BG VIDEOS ────────────────────────────────────────────────────────
+// Bonsai + Cane + QuadCane — hero videos + all product lifestyle/demo videos
+// To add/change: update video files in Sanity, then update this list
 const HERO_VIDEOS = [
   'https://cdn.sanity.io/files/7r0kq57d/production/9321462fead3edd96aea64e147d713d274fc4568.mp4',
+  'https://cdn.sanity.io/files/7r0kq57d/production/70bf09e2368c3984b6ee2922464725ab9441d943.mp4',
+  'https://cdn.sanity.io/files/7r0kq57d/production/628a00af0a0cc0bbf39d7d730d641355a98de406.mp4',
+  'https://cdn.sanity.io/files/7r0kq57d/production/2899cad532c1b67f191e6e933196cd113fca0a7d.mp4',
+  'https://cdn.sanity.io/files/7r0kq57d/production/f33c4f6bb9ed5c553f88047f302b5920f0fdaa1f-mp4',
   'https://cdn.sanity.io/files/7r0kq57d/production/c9587a4d945e0f8982ef1eea9ff96a979406d70c.mp4',
+  'https://cdn.sanity.io/files/7r0kq57d/production/d3c7a30e3214e23ae3a4503566c082a71e0facc0.mp4',
+  'https://cdn.sanity.io/files/7r0kq57d/production/1d57152b421a1555993648df55815475660ef2d6.mp4',
+  'https://cdn.sanity.io/files/7r0kq57d/production/c3090986b9beb1db9e1bda89f9426c11ff1c894b.mp4',
   'https://cdn.sanity.io/files/7r0kq57d/production/d9519eb2abae08958f4f195848a348a3be3b5221.mp4',
+  'https://cdn.sanity.io/files/7r0kq57d/production/42f443cbc7cf157ba4ad2a09b237f20c53dcb0f0.mp4',
+  'https://cdn.sanity.io/files/7r0kq57d/production/1924210781dcd0b471b550ea9f6dc04d0a05dc11.mp4',
+  'https://cdn.sanity.io/files/7r0kq57d/production/63225b7dd7a4abe2ab712f4f455ab077e28742bf.mp4',
 ]
 
+// Shuffle array on load so every session starts at a different point
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
+const SHUFFLED = shuffle(HERO_VIDEOS)
+
+// ── FEATURED PRODUCTS ─────────────────────────────────────────────────────────
 const FEATURED = [
   {
     href: '/products/slim-array-series/bonsai-mini-slim-array-speaker',
@@ -48,48 +73,59 @@ const FEATURED = [
   },
 ]
 
-// ── HERO BG VIDEO ─────────────────────────────────────────────────────────────
+// ── HERO BG VIDEO COMPONENT ───────────────────────────────────────────────────
+// Two video elements cross-fade so there's never a black flash between clips.
+// Each clip plays for a random 5–12s portion, then fades to the next.
 function HeroBgVideo() {
-  const [idx, setIdx] = useState(() => Math.floor(Math.random() * HERO_VIDEOS.length))
-  const [visible, setVisible] = useState(true)
+  const [playlist] = useState(() => shuffle(HERO_VIDEOS))
+  const [cursor, setCursor] = useState(0)       // which URL is "current"
+  const [phase, setPhase] = useState<'a'|'b'>('a') // which element is showing
+  const aRef = useRef<HTMLVideoElement>(null)
+  const bRef = useRef<HTMLVideoElement>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout>>()
 
+  // Random clip duration 5–13 seconds
+  const randomMs = () => 5000 + Math.random() * 8000
+
+  // On mount: start A playing
   useEffect(() => {
-    const randomDuration = () => 5000 + Math.random() * 5000
-    let t1: ReturnType<typeof setTimeout>
-    let t2: ReturnType<typeof setTimeout>
-
-    const cycle = () => {
-      t1 = setTimeout(() => {
-        setVisible(false)
-        t2 = setTimeout(() => {
-          setIdx(prev => {
-            let next = Math.floor(Math.random() * HERO_VIDEOS.length)
-            while (next === prev && HERO_VIDEOS.length > 1) next = Math.floor(Math.random() * HERO_VIDEOS.length)
-            return next
-          })
-          setVisible(true)
-          cycle()
-        }, 900)
-      }, randomDuration())
-    }
-    cycle()
-    return () => { clearTimeout(t1); clearTimeout(t2) }
+    const a = aRef.current
+    if (!a) return
+    a.src = playlist[0]
+    a.play().catch(() => {})
+    scheduleNext(0, 'a')
+    return () => clearTimeout(timerRef.current)
   }, [])
 
+  function scheduleNext(idx: number, currentPhase: 'a'|'b') {
+    timerRef.current = setTimeout(() => {
+      const nextIdx = (idx + 1) % playlist.length
+      const nextPhase = currentPhase === 'a' ? 'b' : 'a'
+      const nextRef = nextPhase === 'a' ? aRef : bRef
+      const v = nextRef.current
+      if (!v) return
+      // Preload next clip
+      v.src = playlist[nextIdx]
+      v.play().catch(() => {})
+      // Swap which phase is visible (CSS transition handles the cross-fade)
+      setPhase(nextPhase)
+      setCursor(nextIdx)
+      scheduleNext(nextIdx, nextPhase)
+    }, randomMs())
+  }
+
+  const shared: React.CSSProperties = {
+    position: 'absolute', inset: 0,
+    width: '100%', height: '100%',
+    objectFit: 'cover',
+    transition: 'opacity 1.2s ease',
+  }
+
   return (
-    <video
-      key={idx}
-      src={HERO_VIDEOS[idx]}
-      autoPlay muted loop playsInline
-      style={{
-        position: 'absolute', inset: 0,
-        width: '100%', height: '100%',
-        objectFit: 'cover',
-        opacity: visible ? 1 : 0,
-        transition: 'opacity 0.9s ease',
-        zIndex: 1,
-      }}
-    />
+    <>
+      <video ref={aRef} muted loop playsInline style={{ ...shared, opacity: phase === 'a' ? 1 : 0, zIndex: 1 }} />
+      <video ref={bRef} muted loop playsInline style={{ ...shared, opacity: phase === 'b' ? 1 : 0, zIndex: 1 }} />
+    </>
   )
 }
 
@@ -113,21 +149,18 @@ function FeaturedCard({ p }: { p: typeof FEATURED[0] }) {
       onMouseLeave={() => setHovered(false)}
     >
       <div className="prod-img" style={{ position: 'relative', overflow: 'hidden', background: '#000' }}>
-        {/* Static image — always present, shows when video not hovered */}
         {p.imageUrl && (
           <img
             src={p.imageUrl}
             alt={p.name}
             style={{
               position: 'absolute', inset: 0,
-              width: '100%', height: '100%',
-              objectFit: 'cover',
+              width: '100%', height: '100%', objectFit: 'cover',
               opacity: (p.videoUrl && hovered) ? 0 : 1,
               transition: 'opacity 0.4s ease',
             }}
           />
         )}
-        {/* Video — fades in on hover */}
         {p.videoUrl && (
           <video
             ref={videoRef}
@@ -135,8 +168,7 @@ function FeaturedCard({ p }: { p: typeof FEATURED[0] }) {
             muted loop playsInline
             style={{
               position: 'absolute', inset: 0,
-              width: '100%', height: '100%',
-              objectFit: 'cover',
+              width: '100%', height: '100%', objectFit: 'cover',
               opacity: hovered ? 1 : 0,
               transition: 'opacity 0.4s ease',
             }}
@@ -176,7 +208,10 @@ export default function HomePage() {
 <section className="hero">
   <div className="hero-bg">
     <HeroBgVideo />
-    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.52)', zIndex: 2 }} />
+    {/* Static dark overlay — ensures text legibility */}
+    <div className="hero-overlay" />
+    {/* Bottom gradient — video merges into black section below */}
+    <div className="hero-bottom-fade" />
   </div>
   <div className="hero-grid"></div>
   <div className="hero-content">
@@ -185,18 +220,18 @@ export default function HomePage() {
     <div className="h-sub">Architectural speakers and amplifiers engineered for spaces where being discreet and in one with the design is equally as important as performance.</div>
     <div className="h-btns">
       <a href="/products" className="btn-prim">Explore Products</a>
-      <a href="https://configurator.xscace.com" className="btn-ghost">Build Your System</a>
+      <a href="https://configurator.xscace.com" className="btn-ghost btn-ghost--dark">Build Your System</a>
     </div>
   </div>
 </section>
 
 <div className="cat-strip reveal">
-  <a href="/products?cat=slim-array-series" className="cat-item"><div className="cat-n">Slim Array</div><div className="cat-c">04 products</div></a>
-  <a href="/products?cat=in-ceiling-series" className="cat-item"><div className="cat-n">In-Ceiling</div><div className="cat-c">04 products</div></a>
-  <a href="/products?cat=in-wall-series" className="cat-item"><div className="cat-n">In-Wall</div><div className="cat-c">07 products</div></a>
-  <a href="/products?cat=outdoor-series" className="cat-item"><div className="cat-n">Outdoor</div><div className="cat-c">03 products</div></a>
-  <a href="/products?cat=subwoofer-series" className="cat-item"><div className="cat-n">Subwoofer</div><div className="cat-c">08 SKUs</div></a>
-  <a href="/products?cat=amplifier-series" className="cat-item" style={{borderRight:'none'}}><div className="cat-n">Amplifiers &amp; Streamers</div><div className="cat-c">09 products</div></a>
+  <a href="/products?cat=slim-array-series" className="cat-item"><div className="cat-n cat-n--champ">Slim Array</div><div className="cat-c">04 products</div></a>
+  <a href="/products?cat=in-ceiling-series" className="cat-item"><div className="cat-n cat-n--champ">In-Ceiling</div><div className="cat-c">04 products</div></a>
+  <a href="/products?cat=in-wall-series" className="cat-item"><div className="cat-n cat-n--champ">In-Wall</div><div className="cat-c">07 products</div></a>
+  <a href="/products?cat=outdoor-series" className="cat-item"><div className="cat-n cat-n--champ">Outdoor</div><div className="cat-c">03 products</div></a>
+  <a href="/products?cat=subwoofer-series" className="cat-item"><div className="cat-n cat-n--champ">Subwoofer</div><div className="cat-c">08 SKUs</div></a>
+  <a href="/products?cat=amplifier-series" className="cat-item" style={{borderRight:'none'}}><div className="cat-n cat-n--champ">Amplifiers &amp; Streamers</div><div className="cat-c">09 products</div></a>
 </div>
 
 <section className="sec reveal">
@@ -208,6 +243,8 @@ export default function HomePage() {
     {FEATURED.map(p => <FeaturedCard key={p.name} p={p} />)}
   </div>
 </section>
+
+<canvas className="wave-divider" id="wd1" height="28" aria-hidden="true" style={{display:'block',width:'100%',height:'28px'}}></canvas>
 
 <section className="sec bg2 reveal">
   <div className="sec-ey">Proprietary Technology</div>
@@ -313,6 +350,8 @@ export default function HomePage() {
   </div>
 </section>
 
+<canvas className="wave-divider" id="wd2" height="28" aria-hidden="true" style={{display:'block',width:'100%',height:'28px'}}></canvas>
+
 <section className="setup-teaser reveal">
   <div className="setup-inner">
     <div className="setup-left">
@@ -382,6 +421,8 @@ export default function HomePage() {
   </div>
 </section>
 
+<canvas className="wave-divider" id="wd3" height="28" aria-hidden="true" style={{display:'block',width:'100%',height:'28px'}}></canvas>
+
 <section className="sec bg2 reveal">
   <div className="sec-hdr">
     <div><div className="sec-ey">Latest</div><div className="sec-h-wrap"><div className="sec-h">News &amp; Announcements</div><div className="sec-draw-line"></div></div></div>
@@ -414,6 +455,8 @@ export default function HomePage() {
     </div>
   </div>
 </section>
+
+<canvas className="wave-divider" id="wd4" height="28" aria-hidden="true" style={{display:'block',width:'100%',height:'28px'}}></canvas>
 
 <section className="findus-sec reveal">
   <div className="findus-sec-inner">
