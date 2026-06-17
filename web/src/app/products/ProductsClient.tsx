@@ -112,7 +112,7 @@ const MODEL_SETTINGS: Record<string, {
   'prod-cane':      { cam:[-0.08,0.34,3.03], rot:[0.248,-0.942,-1.502], fov:43, exposure:0.6,  ambient:1.1, key:2.4, fill:1.0 },
   'prod-ghost2':    { cam:[0,0,3],            rot:[0.308,0,0],           fov:51, exposure:0.4,  ambient:0.1, key:2.4, fill:0.8 },
   'prod-acacia6-pw':{ cam:[0,0.02,3.48],      rot:[-0.002,-0.732,0],    fov:53, exposure:0.9,  ambient:1.3, key:2.1, fill:0.5 },
-  'prod-xylem3':    { cam:[-0.34,-0.59,3],    rot:[-5.882,0.998,0.038], fov:44, exposure:0.3,  ambient:0,   key:0.7, fill:2.5 },
+  'prod-xylem3':    { cam:[-0.11,-0.64,3],    rot:[-5.322,0.320,0.000], fov:52, exposure:0.4,  ambient:0.2, key:0.6, fill:1.6 },
   'prod-quadcane':  { cam:[0,0,3.5],              rot:[0,0,0],               fov:40, exposure:1.4,  ambient:0.5, key:3.0, fill:1.0 },
 }
 const DEFAULT_SETTINGS = { cam:[0,0,3.5] as [number,number,number], rot:[0,0,0] as [number,number,number], fov:40, exposure:1.4, ambient:0.5, key:3.0, fill:1.0 }
@@ -298,20 +298,36 @@ function FeaturedCard({ p }: { p: Product }) {
       className={`feat-card-wrap${hovered ? ' feat-card-wrap--active' : ''}`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      style={{ position: 'relative', overflow: 'visible' }}
     >
-      <a href={`/products/${p.category?.slug?.current}/${p.slug?.current}`} className="feat-card">
-        {/* Image area — becomes pure black void when 3D is active */}
-        <div className="feat-card-img" style={{
-          position: 'relative',
-          overflow: 'hidden',
+      {/* 3D canvas lives at card-wrap level — overflows image area into card body + sides */}
+      {has3d && (
+        <div style={{
+          position: 'absolute',
+          // At rest: flush with image area top. On hover: bleed 28px past all edges
+          top:    hovered ? '-28px' : '0px',
+          left:   hovered ? '-28px' : '0px',
+          right:  hovered ? '-28px' : '0px',
+          // Bottom bleeds into card body on hover
+          bottom: hovered ? '-60px' : 'calc(100% - var(--feat-img-h, 400px))',
+          transition: 'top .5s cubic-bezier(.22,1,.36,1), left .5s cubic-bezier(.22,1,.36,1), right .5s cubic-bezier(.22,1,.36,1), bottom .5s cubic-bezier(.22,1,.36,1)',
+          zIndex: 8,
+          pointerEvents: hovered ? 'all' : 'none',
           background: '#000',
-          // Champagne glow emanates from outside card edges on hover
-          boxShadow: hovered && has3d
-            ? '0 0 0 1px rgba(201,169,110,0.18), 0 24px 80px rgba(0,0,0,0.9), 0 0 40px rgba(201,169,110,0.04)'
+          // Champagne glow on outside edges
+          boxShadow: hovered
+            ? '0 0 0 0.5px rgba(201,169,110,0.2), 0 32px 80px rgba(0,0,0,0.95), 0 0 60px rgba(201,169,110,0.03)'
             : 'none',
-          transition: 'box-shadow 0.5s ease',
+          borderRadius: 0,
         }}>
+          <ModelViewer src={`/api/glb/${p.model3dUrl!.split('/').pop()}`} hovered={hovered} productId={p._id} />
+        </div>
+      )}
 
+      <a href={`/products/${p.category?.slug?.current}/${p.slug?.current}`} className="feat-card" style={{ position: 'relative', zIndex: 1 }}>
+        <div className="feat-card-img" style={{
+          position: 'relative', overflow: 'hidden', background: '#000',
+        }}>
           {/* Hero image — fades out when 3D activates */}
           {imgUrl && (
             <img src={imgUrl} alt={p.productName} style={{
@@ -319,30 +335,20 @@ function FeaturedCard({ p }: { p: Product }) {
               width: '100%', height: '100%', objectFit: 'cover',
               opacity: (hovered && has3d) ? 0 : (p.heroVideoUrl && hovered && !has3d) ? 0 : 1,
               transition: 'opacity 0.6s ease',
-              zIndex: 1,
             }}/>
           )}
-          {!imgUrl && !has3d && <div className="feat-card-img-placeholder" style={{zIndex:1}}><span>{p.productName[0]}</span></div>}
-
-          {/* Video — only when no 3D */}
+          {!imgUrl && !has3d && <div className="feat-card-img-placeholder"><span>{p.productName[0]}</span></div>}
           {p.heroVideoUrl && !has3d && (
             <video ref={videoRef} src={p.heroVideoUrl} muted loop playsInline style={{
               position: 'absolute', inset: 0,
               width: '100%', height: '100%', objectFit: 'cover',
               opacity: hovered ? 1 : 0, transition: 'opacity 0.4s ease',
-              zIndex: 2,
             }}/>
           )}
-
-          {/* 3D canvas — fills card, pointer following rotation */}
-          {has3d && (
-            <ModelViewer src={`/api/glb/${p.model3dUrl!.split('/').pop()}`} hovered={hovered} productId={p._id} />
-          )}
-
-          {badge && <div className="feat-badge" style={{zIndex:20,position:'absolute',top:14,left:14}}>{badge}</div>}
+          {badge && <div className="feat-badge" style={{position:'absolute',top:14,left:14,zIndex:20}}>{badge}</div>}
         </div>
 
-        <div className="feat-card-body">
+        <div className="feat-card-body" style={{ position: 'relative', zIndex: 1 }}>
           <div className="feat-card-cat">{p.series || p.subCategory}</div>
           <div className="feat-card-name">{p.productName}</div>
           {p.tagline && <div className="feat-card-tag">{p.tagline}</div>}

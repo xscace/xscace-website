@@ -6,6 +6,7 @@ const MODELS = [
   { name: 'Cane', file: 'cane-slim-array-speaker.glb' },
   { name: 'Ghost 2.0', file: 'ghost-2-0-slim-in-ceiling-speaker.glb' },
   { name: 'Acacia 6 Powered', file: 'acacia-6-powered-subwoofer.glb' },
+  { name: 'QuadCane', file: 'quadcane-slim-array-speaker.glb' },
   { name: 'Xylem 3', file: 'xylem-3-dsp-amplifier.glb' },
 ]
 
