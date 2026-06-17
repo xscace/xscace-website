@@ -208,6 +208,8 @@ export default function HomePage() {
 <section className="hero">
   <div className="hero-bg">
     <HeroBgVideo />
+    {/* Top gradient — nav stays readable over video */}
+    <div className="hero-top-fade" />
     {/* Static dark overlay — ensures text legibility */}
     <div className="hero-overlay" />
     {/* Bottom gradient — video merges into black section below */}

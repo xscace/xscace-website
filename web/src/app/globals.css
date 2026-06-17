@@ -50,6 +50,7 @@ body{background:#000;color:#d8d4cc;font-family:'DM Sans',sans-serif;font-size:13
 .hero-content{position:relative;z-index:4;padding:180px 0 108px;max-width:560px;}
 .hero-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.48);z-index:2;pointer-events:none;}
 .hero-bottom-fade{position:absolute;bottom:0;left:0;right:0;height:40%;background:linear-gradient(to bottom,transparent,rgba(0,0,0,0.9) 80%,#000 100%);z-index:2;pointer-events:none;}
+.hero-top-fade{position:absolute;top:0;left:0;right:0;height:160px;background:linear-gradient(to top,transparent,rgba(0,0,0,0.75) 60%,rgba(0,0,0,0.92) 100%);z-index:2;pointer-events:none;}
 .h-ey{font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;opacity:0;animation:fu .9s ease forwards .3s;}
 .h-title{font-family:'Cormorant',serif;font-weight:300;font-size:96px;line-height:.9;color:#eeebe5;letter-spacing:-.01em;margin-bottom:30px;opacity:0;animation:fu .9s ease forwards .5s;}
 .h-title em{font-style:italic;color:#c9a96e;}
