@@ -1563,7 +1563,7 @@ a.p-card, a.p-card:hover {
   position: relative; overflow: hidden; height: 100%;
 }
 .feat-card-img {
-  aspect-ratio: 4/5; background: #0c0c0c;
+  aspect-ratio: 4/5; background: #000;
   border-bottom: 1px solid #000;
   display: flex; align-items: center; justify-content: center;
   overflow: hidden; position: relative;
@@ -1622,7 +1622,7 @@ a.p-card, a.p-card:hover {
 }
 /* Image-based software cards */
 .sw-card--img {
-  background: #090909;
+  background: #000;
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -1630,13 +1630,13 @@ a.p-card, a.p-card:hover {
   overflow: hidden;
   transition: background .2s;
 }
-.sw-card--img:hover { background: #0c0c0a; }
+.sw-card--img:hover { background: #000; }
 .sw-card--img:hover .sw-card-img img { transform: scale(1.03); }
 .sw-card-img {
   position: relative;
   height: 200px;
   overflow: hidden;
-  background: #0b0b09;
+  background: #000;
   flex-shrink: 0;
 }
 .sw-card-img img {
@@ -1653,7 +1653,7 @@ a.p-card, a.p-card:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #0c0c0a;
+  background: #000;
 }
 .sw-card-img-overlay {
   position: absolute;
@@ -1681,13 +1681,13 @@ a.p-card, a.p-card:hover {
 /* Shared between old and new cards */
 .sw-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, 1fr) !important;
   gap: 1px;
-  background: #111;
+  background: #000;
 }
 /* Image-based software cards */
 .sw-card--img {
-  background: #090909;
+  background: #000;
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -1696,13 +1696,13 @@ a.p-card, a.p-card:hover {
   transition: background .2s;
   cursor: pointer;
 }
-.sw-card--img:hover { background: #0d0d0b; }
+.sw-card--img:hover { background: #000; }
 .sw-card--img:hover .sw-card-img img { transform: scale(1.03); }
 .sw-card-img {
   position: relative;
   height: 200px;
   overflow: hidden;
-  background: #0c0c0a;
+  background: #000;
   flex-shrink: 0;
 }
 .sw-card-img img {
@@ -1720,7 +1720,7 @@ a.p-card, a.p-card:hover {
   background: linear-gradient(to bottom, transparent 50%, rgba(9,9,9,0.65) 100%);
   pointer-events: none;
 }
-.sw-card-img--conf { background: #090909; }
+.sw-card-img--conf { background: #000; }
 .sw-card-body {
   padding: 16px 18px 14px;
   display: flex; flex-direction: column; gap: 5px;
@@ -1733,7 +1733,7 @@ a.p-card, a.p-card:hover {
 }
 /* Shared between old icon-cards and new image-cards */
 .sw-card {
-  background: #0a0a09; padding: 32px 28px;
+  background: #000; padding: 32px 28px;
   display: flex; flex-direction: column; gap: 10px;
   transition: background .2s;
 }
@@ -1770,14 +1770,14 @@ a.p-card, a.p-card:hover {
 .sw-cta-btn:hover { opacity: .7; }
 .sw-cta-ghost { color: rgba(238,235,229,0.45); }
 @media (max-width: 860px) {
-  .sw-grid { grid-template-columns: 1fr; }
+  .sw-grid { grid-template-columns: repeat(3, 1fr); }
 }
 .pc {
   display: flex; flex-direction: column;
   text-decoration: none; color: inherit; height: 100%;
 }
 .pc-img {
-  height: 200px; background: #0c0c0c; border-bottom: 1px solid #000;
+  height: 200px; background: #000; border-bottom: 1px solid #000;
   display: flex; align-items: center; justify-content: center;
   overflow: hidden; position: relative;
 }
@@ -1814,10 +1814,10 @@ a.p-card, a.p-card:hover {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1px;
-  background: #111;
+  background: #000;
 }
 .pc-wrap {
-  background: #090909;
+  background: #000;
   display: flex;
   flex-direction: column;
   opacity: 0;
@@ -1838,7 +1838,7 @@ a.p-card, a.p-card:hover {
   .sidenav-link::before { display: none; }
   .products-pg-hero, .feat-section, .sw-section, .catalogue-section { padding: 40px 24px; }
   .feat-grid { grid-template-columns: repeat(2, 1fr); }
-  .sw-grid { grid-template-columns: 1fr; }
+  .sw-grid { grid-template-columns: repeat(3, 1fr); }
   .catalogue-grid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 600px) {
@@ -4018,7 +4018,7 @@ a.p-card, a.p-card:hover {
 /* ═══════════════════════════════════════════════════════════════════
    SOFTWARE INDEX PAGE
 ═══════════════════════════════════════════════════════════════════ */
-.sw-page { background: #090909; min-height: 100vh; }
+.sw-page { background: #000; min-height: 100vh; }
 
 .sw-hero { padding: 160px 80px 80px; max-width: 900px; }
 .sw-hero-inner {}
@@ -4028,8 +4028,8 @@ a.p-card, a.p-card:hover {
 .sw-divider { height: 1px; background: rgba(201,169,110,0.12); margin: 0 80px; }
 
 .sw-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 1px; background: rgba(201,169,110,0.08); margin: 1px 0; }
-.sw-card { display: flex; flex-direction: column; background: #090909; text-decoration: none; transition: background 0.2s; cursor: pointer; }
-.sw-card:hover { background: #0d0d0b; }
+.sw-card { display: flex; flex-direction: column; background: #000; text-decoration: none; transition: background 0.2s; cursor: pointer; }
+.sw-card:hover { background: #000; }
 
 .sw-card-hero { position: relative; height: 320px; background: #0e0e0c; background-size: cover; background-position: center; display: flex; flex-direction: column; justify-content: space-between; padding: 28px; overflow: hidden; }
 .sw-card-hero-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(9,9,9,0.3), rgba(9,9,9,0.7)); }
@@ -4060,8 +4060,8 @@ a.p-card, a.p-card:hover {
 .sw-strip { padding: 64px 80px; border-top: 1.5px solid rgba(201,169,110,0.15); }
 .sw-strip-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: .25em; color: #c9a96e; text-transform: uppercase; margin-bottom: 32px; }
 .sw-strip-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1px; background: rgba(201,169,110,0.08); }
-.sw-strip-card { background: #090909; padding: 32px; display: flex; gap: 20px; text-decoration: none; transition: background .2s; }
-.sw-strip-card:hover { background: #0d0d0b; }
+.sw-strip-card { background: #000; padding: 32px; display: flex; gap: 20px; text-decoration: none; transition: background .2s; }
+.sw-strip-card:hover { background: #000; }
 .sw-strip-icon { width: 40px; height: 40px; color: #c9a96e; flex-shrink: 0; }
 .sw-strip-icon svg { width: 100%; height: 100%; }
 .sw-strip-body {}
@@ -4073,7 +4073,7 @@ a.p-card, a.p-card:hover {
 @media (max-width: 860px) {
   .sw-hero { padding: 120px 24px 48px; }
   .sw-divider { margin: 0 24px; }
-  .sw-grid { grid-template-columns: 1fr; }
+  .sw-grid { grid-template-columns: repeat(3, 1fr); }
   .sdp-hero-content { padding: 48px 24px; padding-top: 120px; }
   .sdp-about, .sdp-features, .sdp-screenshots, .sdp-compat, .sdp-bottom { padding: 48px 24px; }
   .sdp-rule { margin: 0 24px; }
@@ -4104,7 +4104,7 @@ a.p-card, a.p-card:hover {
   text-decoration: none;
   padding: 40px;
   border: .5px solid rgba(201,169,110,0.12);
-  background: #0b0b09;
+  background: #000;
   max-width: 860px;
   transition: border-color .2s, background .2s;
 }
@@ -4170,7 +4170,7 @@ a.p-card, a.p-card:hover {
 /* ═══════════════════════════════════════════════════════════════════════
    SOFTWARE DETAIL PAGE v2 — Split hero, matched screenshots, store CTAs
 ═══════════════════════════════════════════════════════════════════════ */
-.sdp2 { background: #090909; min-height: 100vh; }
+.sdp2 { background: #000; min-height: 100vh; }
 
 /* ── HERO ────────────────────────────────────────────────────────── */
 .sdp2-hero {
@@ -4187,7 +4187,7 @@ a.p-card, a.p-card:hover {
   flex-direction: column;
   justify-content: center;
   padding: 80px 64px 80px 80px;
-  background: #090909;
+  background: #000;
 }
 .sdp2-eyebrow {
   font-family: 'DM Mono', monospace;
@@ -4297,7 +4297,7 @@ a.p-card, a.p-card:hover {
 
 /* Right visual column */
 .sdp2-hero-right {
-  background: #0b0b09;
+  background: #000;
   border-left: .5px solid rgba(201,169,110,0.08);
   display: flex;
   align-items: center;
@@ -4362,7 +4362,7 @@ a.p-card, a.p-card:hover {
   transform: translateX(-50%);
   width: 54px;
   height: 8px;
-  background: #090909;
+  background: #000;
   border-radius: 4px;
   z-index: 2;
 }
@@ -4471,7 +4471,7 @@ a.p-card, a.p-card:hover {
   justify-content: center;
   padding: 80px;
   gap: 14px;
-  background: #090909;
+  background: #000;
 }
 .sdp2-feat-n {
   font-family: 'DM Mono', monospace;
@@ -4499,7 +4499,7 @@ a.p-card, a.p-card:hover {
   max-width: 420px;
 }
 .sdp2-feat-visual {
-  background: #0b0b09;
+  background: #000;
   border-left: .5px solid rgba(201,169,110,0.07);
   display: flex;
   align-items: center;

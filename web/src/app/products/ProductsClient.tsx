@@ -46,7 +46,7 @@ interface SoftwareApp {
   playStoreUrl?: string
 }
 
-const FEATURED_IDS = ['prod-bonsai', 'prod-cane', 'prod-ghost2', 'prod-quadcane', 'prod-acacia6-pw', 'prod-acacia10-pw']
+const FEATURED_IDS = ['prod-bonsai', 'prod-cane', 'prod-quadcane', 'prod-ghost2', 'prod-acacia6-pw', 'prod-xylem3']
 
 const BADGE_MAP: Record<string, string> = {
   'prod-bonsai':"World's Smallest",'prod-cane':'23mm Thin','prod-quadcane':'21mm Thin',
@@ -438,7 +438,11 @@ export default function ProductsClient({
           </div>
         </div>
 
+        <canvas className="wave-divider" id="pd-wd1" height="28" aria-hidden="true" style={{display:'block',width:'100%',height:'28px'}}></canvas>
+
         <SoftwareSection software={software} />
+
+        <canvas className="wave-divider" id="pd-wd2" height="28" aria-hidden="true" style={{display:'block',width:'100%',height:'28px'}}></canvas>
 
         <div className="catalogue-section products-section" id="catalogue">
           <div className="products-sec-header">
