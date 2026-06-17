@@ -272,21 +272,21 @@ function FeaturedCard({ p }: { p: Product }) {
           position: 'relative',
           overflow: 'visible',
           background: '#000',
-          // Champagne hairline border glows on hover when 3D active
-          outline: hovered && has3d ? '0.5px solid rgba(201,169,110,0.3)' : '0.5px solid transparent',
+          outline: hovered && has3d ? '0.5px solid rgba(201,169,110,0.3)' : 'none',
           transition: 'outline 0.5s ease',
         }}>
 
-          {/* Hero image — fades to black when 3D activates */}
+          {/* Hero image — always visible at rest, fades out when 3D hovers */}
           {imgUrl && (
             <img src={imgUrl} alt={p.productName} style={{
               position: 'absolute', inset: 0,
               width: '100%', height: '100%', objectFit: 'cover',
-              opacity: hovered && has3d ? 0 : (p.heroVideoUrl && hovered && !has3d) ? 0 : 1,
+              opacity: (hovered && has3d) ? 0 : (p.heroVideoUrl && hovered && !has3d) ? 0 : 1,
               transition: 'opacity 0.6s ease',
+              zIndex: 1,
             }}/>
           )}
-          {!imgUrl && !has3d && <div className="feat-card-img-placeholder"><span>{p.productName[0]}</span></div>}
+          {!imgUrl && !has3d && <div className="feat-card-img-placeholder" style={{zIndex:1}}><span>{p.productName[0]}</span></div>}
 
           {/* Video — only when no 3D */}
           {p.heroVideoUrl && !has3d && (
@@ -294,24 +294,25 @@ function FeaturedCard({ p }: { p: Product }) {
               position: 'absolute', inset: 0,
               width: '100%', height: '100%', objectFit: 'cover',
               opacity: hovered ? 1 : 0, transition: 'opacity 0.4s ease',
+              zIndex: 2,
             }}/>
           )}
 
-          {/* 3D canvas — overflows card on all sides when hovered */}
+          {/* 3D — hidden until hover, then expands beyond card bounds */}
           {has3d && (
             <div style={{
               position: 'absolute',
-              // Expand 20px beyond card on all sides when hovered, sit flush otherwise
-              top: hovered ? '-20px' : '0px',
-              left: hovered ? '-20px' : '0px',
-              right: hovered ? '-20px' : '0px',
-              bottom: hovered ? '-20px' : '0px',
-              transition: 'top 0.5s cubic-bezier(.22,1,.36,1), left 0.5s cubic-bezier(.22,1,.36,1), right 0.5s cubic-bezier(.22,1,.36,1), bottom 0.5s cubic-bezier(.22,1,.36,1)',
-              zIndex: 10,
+              top: hovered ? '-24px' : '0px',
+              left: hovered ? '-24px' : '0px',
+              right: hovered ? '-24px' : '0px',
+              bottom: hovered ? '-24px' : '0px',
+              transition: 'top 0.55s cubic-bezier(.22,1,.36,1), left 0.55s cubic-bezier(.22,1,.36,1), right 0.55s cubic-bezier(.22,1,.36,1), bottom 0.55s cubic-bezier(.22,1,.36,1)',
+              zIndex: 5,
               pointerEvents: hovered ? 'all' : 'none',
-              background: '#000',
+              background: hovered ? '#000' : 'transparent',
+              transition2: 'background 0.3s ease',
             }}>
-              <ModelViewer src={p.model3dUrl!} hovered={hovered} />
+              <ModelViewer src={p.model3dUrl!.replace('/models/', '/api/models/')} hovered={hovered} />
             </div>
           )}
 
