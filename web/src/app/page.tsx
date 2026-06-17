@@ -188,6 +188,92 @@ function FeaturedCard({ p }: { p: typeof FEATURED[0] }) {
   )
 }
 
+
+// ── CONTACT FORM ──────────────────────────────────────────────────────────────
+function ContactForm() {
+  const [status, setStatus] = useState<'idle'|'sending'|'sent'|'error'>('idle')
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', type: '', message: '' })
+
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>) =>
+    setForm(f => ({ ...f, [k]: e.target.value }))
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setStatus('sending')
+    try {
+      const res = await fetch('https://formspree.io/f/maqzzywo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          name: `${form.firstName} ${form.lastName}`,
+          email: form.email,
+          type: form.type,
+          message: form.message,
+        }),
+      })
+      if (res.ok) { setStatus('sent') }
+      else { setStatus('error') }
+    } catch { setStatus('error') }
+  }
+
+  return (
+    <section className="contact-sec reveal">
+      <div className="contact-inner">
+        <div>
+          <div className="sec-ey">Get in Touch</div>
+          <div className="sec-h" style={{marginBottom:'18px'}}>Let's Talk<br />About Your Project</div>
+          <p style={{fontSize:'12px',color:'#666660',lineHeight:'1.8',fontWeight:'300',maxWidth:'320px'}}>Whether you are specifying a home cinema, a commercial installation, or enquiring about distribution — we would love to hear from you.</p>
+          <div className="contact-detail">
+            <div className="cd-row"><span className="cd-lbl">Email</span><span className="cd-val">support@xscace.com</span></div>
+            <div className="cd-row"><span className="cd-lbl">WhatsApp</span><span className="cd-val">+1 587 885 3303</span></div>
+            <div className="cd-row"><span className="cd-lbl">Address</span><span className="cd-val">3080 Young &amp; Lawrence, Toronto, ON, Canada</span></div>
+          </div>
+        </div>
+        {status === 'sent' ? (
+          <div className="findus-sent">
+            <div className="findus-sent-icon">✦</div>
+            <div className="findus-sent-title">Message Sent</div>
+            <div className="findus-sent-sub">We typically respond within one business day.</div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <div className="form-row">
+              <div className="form-group"><label className="form-label">First Name</label><input className="form-input" type="text" placeholder="First name" value={form.firstName} onChange={set('firstName')} required /></div>
+              <div className="form-group"><label className="form-label">Last Name</label><input className="form-input" type="text" placeholder="Last name" value={form.lastName} onChange={set('lastName')} required /></div>
+            </div>
+            <div className="form-row full">
+              <div className="form-group"><label className="form-label">Email</label><input className="form-input" type="email" placeholder="your@email.com" value={form.email} onChange={set('email')} required /></div>
+            </div>
+            <div className="form-row full">
+              <div className="form-group"><label className="form-label">Enquiry Type</label>
+                <div className="form-select-wrap">
+                  <select className="form-input" value={form.type} onChange={set('type')} required>
+                    <option value="" disabled>Select enquiry type</option>
+                    <option>Residential Project</option>
+                    <option>Commercial Project</option>
+                    <option>Distribution Enquiry</option>
+                    <option>Technical Support</option>
+                    <option>Press &amp; Media</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="form-row full">
+              <div className="form-group"><label className="form-label">Message</label><textarea className="form-input" placeholder="Tell us about your project or enquiry..." value={form.message} onChange={set('message')} required></textarea></div>
+            </div>
+            {status === 'error' && <div className="findus-error">Something went wrong — please try again or email us directly.</div>}
+            <button type="submit" className="form-submit" disabled={status === 'sending'}>
+              {status === 'sending' ? 'Sending…' : 'Send Message'}
+            </button>
+            <div className="contact-note">We typically respond within one business day.</div>
+          </form>
+        )}
+      </div>
+    </section>
+  )
+}
+
 // ── PAGE ──────────────────────────────────────────────────────────────────────
 export default function HomePage() {
 
@@ -507,49 +593,7 @@ export default function HomePage() {
   </div>
 </section>
 
-<section className="contact-sec reveal">
-  <div className="contact-inner">
-    <div>
-      <div className="sec-ey">Get in Touch</div>
-      <div className="sec-h" style={{marginBottom:'18px'}}>Let's Talk<br />About Your Project</div>
-      <p style={{fontSize:'12px',color:'#666660',lineHeight:'1.8',fontWeight:'300',maxWidth:'320px'}}>Whether you are specifying a home cinema, a commercial installation, or enquiring about distribution — we would love to hear from you.</p>
-      <div className="contact-detail">
-        <div className="cd-row"><span className="cd-lbl">Email</span><span className="cd-val">support@xscace.com</span></div>
-        <div className="cd-row"><span className="cd-lbl">WhatsApp</span><span className="cd-val">+1 587 885 3303</span></div>
-        <div className="cd-row"><span className="cd-lbl">Address</span><span className="cd-val">3080 Young &amp; Lawrence, Toronto, ON, Canada</span></div>
-      </div>
-    </div>
-    <form onSubmit={(e) => e.preventDefault()}>
-      <div className="form-row">
-        <div className="form-group"><label className="form-label">First Name</label><input className="form-input" type="text" placeholder="First name" /></div>
-        <div className="form-group"><label className="form-label">Last Name</label><input className="form-input" type="text" placeholder="Last name" /></div>
-      </div>
-      <div className="form-row full">
-        <div className="form-group"><label className="form-label">Email</label><input className="form-input" type="email" placeholder="your@email.com" /></div>
-      </div>
-      <div className="form-row full">
-        <div className="form-group"><label className="form-label">Enquiry Type</label>
-          <div className="form-select-wrap">
-            <select className="form-input" defaultValue="">
-              <option value="" disabled>Select enquiry type</option>
-              <option>Residential Project</option>
-              <option>Commercial Project</option>
-              <option>Distribution Enquiry</option>
-              <option>Technical Support</option>
-              <option>Press &amp; Media</option>
-              <option>Other</option>
-            </select>
-          </div>
-        </div>
-      </div>
-      <div className="form-row full">
-        <div className="form-group"><label className="form-label">Message</label><textarea className="form-input" placeholder="Tell us about your project or enquiry..."></textarea></div>
-      </div>
-      <button type="submit" className="form-submit">Send Message</button>
-      <div className="contact-note">We typically respond within one business day.</div>
-    </form>
-  </div>
-</section>
+<ContactForm />
     </>
   )
 }
