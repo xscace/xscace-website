@@ -417,19 +417,7 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
               }))
             })
 
-            // Mirror reflection
-            const refl = group.clone(true)
-            refl.scale.y *= -1
-            refl.position.y = -0.52
-            refl.traverse((child: any) => {
-              if (child.isMesh && child.material) {
-                child.material = child.material.clone()
-                child.material.transparent = true
-                child.material.opacity = 0.07
-                child.material.depthWrite = false
-              }
-            })
-            scene.add(refl)
+            // reflection removed
 
             setLoaded(true)
           }, undefined, (e: any) => console.error('GLB:', e))

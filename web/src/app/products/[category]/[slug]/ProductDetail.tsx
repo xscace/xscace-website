@@ -1086,7 +1086,10 @@ function AccessoriesSection({ accessories, productName, getImageUrl, inWallProdu
               style={{textDecoration:'none',color:'inherit'}}>
               <div className="acc-img-side">
                 {imgUrl
-                  ? <img src={imgUrl} alt={acc.productName} className="acc-img"/>
+                  ? <img src={imgUrl} alt={acc.productName} className="acc-img" style={{
+                      maxWidth: '100%', maxHeight: '440px',
+                      objectFit: 'contain', display: 'block',
+                    }}/>
                   : <div className="acc-img-placeholder"/>
                 }
               </div>
@@ -2227,11 +2230,26 @@ export default function ProductDetail({ product }: { product: Product }) {
         <section className="pdp-sw-strip">
           <div className="pdp-sw-label">Mobile App</div>
           <a href="/software/xscace-controller" className="pdp-sw-card">
-            <div className="pdp-sw-card-icon pdp-sw-card-icon--mobile">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                <rect x="5" y="2" width="14" height="20" rx="3"/>
-                <circle cx="12" cy="17" r="1" fill="currentColor"/>
-              </svg>
+            <div className="pdp-sw-card-icon pdp-sw-card-icon--mobile" style={{
+              position:'relative', width:120, minWidth:120, height:96,
+              display:'flex', alignItems:'center', justifyContent:'center',
+              overflow:'visible',
+            }}>
+              {/* Back-left */}
+              <div style={{position:'absolute',left:0,top:8,width:44,height:80,border:'1px solid #222',borderRadius:'8px',background:'#080808',overflow:'hidden',opacity:0.55,transform:'translateX(-4px)',zIndex:1}}>
+                <div style={{position:'absolute',top:0,left:'50%',transform:'translateX(-50%)',width:'14px',height:'2px',background:'#1a1a1a',borderRadius:'0 0 2px 2px'}}/>
+                <img src="https://cdn.sanity.io/images/7r0kq57d/production/81c82048f3755163cc091f6640619112d9138e7c-368x800.png?w=300&auto=format&q=85" alt="" style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'top'}}/>
+              </div>
+              {/* Back-right */}
+              <div style={{position:'absolute',right:0,top:8,width:44,height:80,border:'1px solid #222',borderRadius:'8px',background:'#080808',overflow:'hidden',opacity:0.55,transform:'translateX(4px)',zIndex:1}}>
+                <div style={{position:'absolute',top:0,left:'50%',transform:'translateX(-50%)',width:'14px',height:'2px',background:'#1a1a1a',borderRadius:'0 0 2px 2px'}}/>
+                <img src="https://cdn.sanity.io/images/7r0kq57d/production/82649b5de87330a015e6221c047fba3664b1f712-368x800.png?w=300&auto=format&q=85" alt="" style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'top'}}/>
+              </div>
+              {/* Front-center */}
+              <div style={{position:'relative',width:52,height:96,border:'1px solid #2a2a2a',borderRadius:'9px',background:'#0a0a0a',overflow:'hidden',boxShadow:'0 8px 24px rgba(0,0,0,0.9)',zIndex:2}}>
+                <div style={{position:'absolute',top:0,left:'50%',transform:'translateX(-50%)',width:'16px',height:'2px',background:'#1a1a1a',borderRadius:'0 0 2px 2px'}}/>
+                <img src="https://cdn.sanity.io/images/7r0kq57d/production/ce08e3322ddd8d7a9a82aa678da646819d08f759-368x800.png?w=300&auto=format&q=85" alt="XSCACE Controller" style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'top'}}/>
+              </div>
             </div>
             <div className="pdp-sw-card-body">
               <div className="pdp-sw-card-platform">iOS & Android</div>
