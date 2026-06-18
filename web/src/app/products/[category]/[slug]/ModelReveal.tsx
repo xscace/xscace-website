@@ -355,17 +355,16 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
             const size = box.getSize(new THREE.Vector3())
             model.position.sub(centre)
             model.scale.setScalar(2.0 / Math.max(size.x, size.y, size.z))
-            // base rotation handled via group refs below
-
             const group = new THREE.Group()
             group.add(model)
             scene.add(group)
             groupRef.current = group
-            // Initialise mouse-follow refs to base rotation so pointer-follow starts from s.rot
-            targetYRef.current  = s.rot[1]
+            // Apply base rotation to group and init lerp refs so mouse-follow starts from s.rot
+            group.rotation.set(s.rot[0], s.rot[1], s.rot[2])
             targetXRef.current  = s.rot[0]
-            currentYRef.current = s.rot[1]
+            targetYRef.current  = s.rot[1]
             currentXRef.current = s.rot[0]
+            currentYRef.current = s.rot[1]
 
             // Apply anodised aluminium material
             model.traverse((child: any) => {
