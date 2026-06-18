@@ -61,7 +61,7 @@ async function getProduct(slug: string) {
         (^.productName == "Cane" && productName == "Cane In-Ceiling / In-Wall") ||
         (^.productName == "Bonsai" && productName == "Bonsai In-Ceiling / In-Wall") ||
         (^.productName == "QuadCane" && productName == "QuadCane In-Ceiling / In-Wall")
-      )][0]{ _id, productName, "slug": slug.current, "catSlug": category->slug.current, heroImage, heightMm, widthMm, depthMm },
+      )][0]{ _id, productName, "slug": slug.current, "catSlug": category->slug.current, heroImage, lifestyleImages, heightMm, widthMm, depthMm },
       accessories[]->{ _id, name, category, shortDescription, description, skuCode,
         heroImage, lifestyleImage,
         specs[]{ label, value }

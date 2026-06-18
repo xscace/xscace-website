@@ -1078,18 +1078,18 @@ function AccessoriesSection({ accessories, productName, getImageUrl, inWallProdu
 
         // In-wall product — special card linking to its product page
         if (acc._isInWall) {
-          const imgUrl = getImageUrl(acc.heroImage, 1200)
+          const heroUrl      = getImageUrl(acc.heroImage, 1200)
+          const lifestyleUrl = acc.lifestyleImages?.[0]
+            ? getImageUrl(acc.lifestyleImages[0], 1200)
+            : null
           return (
             <a key="inwall"
               href={`/products/${acc.catSlug || 'in-ceiling-series'}/${acc.slug}`}
               className={`acc-card acc-card-link${isEven ? '' : ' acc-card-flip'}`}
               style={{textDecoration:'none',color:'inherit'}}>
               <div className="acc-img-side">
-                {imgUrl
-                  ? <img src={imgUrl} alt={acc.productName} className="acc-img" style={{
-                      maxWidth: '100%', maxHeight: '440px',
-                      objectFit: 'contain', display: 'block',
-                    }}/>
+                {heroUrl
+                  ? <RevealSlider heroUrl={heroUrl} lifestyleUrl={lifestyleUrl} alt={acc.productName} />
                   : <div className="acc-img-placeholder"/>
                 }
               </div>
