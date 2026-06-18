@@ -2,13 +2,48 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 
 const MODELS = [
-  { name: 'Bonsai', file: 'bonsai-mini-slim-array-speaker.glb' },
-  { name: 'Cane', file: 'cane-slim-array-speaker.glb' },
-  { name: 'Ghost 2.0', file: 'ghost-2-0-slim-in-ceiling-speaker.glb' },
-  { name: 'Acacia 6 Powered', file: 'acacia-6-powered-subwoofer.glb' },
-  { name: 'QuadCane', file: 'quadcane-slim-array-speaker.glb' },
-  { name: 'Xylem 3', file: 'xylem-3-dsp-amplifier.glb' },
+  { id: 'prod-bonsai',     name: 'Bonsai',          file: 'bonsai-mini-slim-array-speaker.glb' },
+  { id: 'prod-cane',       name: 'Cane',             file: 'cane-slim-array-speaker.glb' },
+  { id: 'prod-ghost2',     name: 'Ghost 2.0',        file: 'ghost-2-0-slim-in-ceiling-speaker.glb' },
+  { id: 'prod-acacia6-pw', name: 'Acacia 6 Powered', file: 'acacia-6-powered-subwoofer.glb' },
+  { id: 'prod-quadcane',   name: 'QuadCane',         file: 'quadcane-slim-array-speaker.glb' },
+  { id: 'prod-xylem3',     name: 'Xylem 3',          file: 'xylem-3-dsp-amplifier.glb' },
 ]
+
+// Current baked settings — pre-loaded so you can see the exact production view
+const CURRENT: Record<string, any> = {
+  'prod-bonsai':    { cam:[0.18,0.84,3],      rot:[0.018,-0.582,-1.572], fov:49, exposure:1.0,  ambient:0,   key:0.0, fill:0.2 },
+  'prod-cane':      { cam:[-0.08,0.34,3.03],  rot:[0.248,-0.942,-1.502], fov:43, exposure:0.6,  ambient:1.1, key:2.4, fill:1.0 },
+  'prod-ghost2':    { cam:[-0.01,0,3],         rot:[0.318,-0.012,0],      fov:69, exposure:0.9,  ambient:0,   key:0.8, fill:0   },
+  'prod-acacia6-pw':{ cam:[0,0,3],             rot:[0,-0.702,0],          fov:78, exposure:0.15, ambient:0,   key:5.0, fill:0.8 },
+  'prod-quadcane':  { cam:[0.18,-0.14,2.43],   rot:[2.308,1.588,-0.702],  fov:45, exposure:1.05, ambient:0,   key:0,   fill:0.7 },
+  'prod-xylem3':    { cam:[-0.01,-0.67,3],     rot:[-2.512,0,0],          fov:78, exposure:0.6,  ambient:0,   key:0,   fill:1.6 },
+}
+
+function buildHDR(THREE: any) {
+  const hdrSize = 128
+  const hdrData = new Float32Array(hdrSize * hdrSize * 4)
+  for (let y = 0; y < hdrSize; y++) {
+    for (let x = 0; x < hdrSize; x++) {
+      const nx = x / hdrSize, ny = y / hdrSize
+      const az = nx * Math.PI * 2
+      const el = (ny - 0.5) * Math.PI
+      const dKey  = Math.max(0, Math.cos(az - Math.PI * 1.3) * Math.cos(el - 0.5))
+      const dFill = Math.max(0, Math.cos(az - 0.2) * Math.cos(el - 0.1))
+      const dFloor = Math.max(0, -Math.sin(el)) * 0.3
+      const dCeil  = Math.max(0,  Math.sin(el)) * 0.15
+      const i = (y * hdrSize + x) * 4
+      hdrData[i]   = dKey * 0.9 + dFill * 0.15 + dFloor * 0.08 + 0.01
+      hdrData[i+1] = dKey * 0.7 + dFill * 0.18 + dFloor * 0.06 + 0.01
+      hdrData[i+2] = dKey * 0.45 + dFill * 0.25 + dCeil  * 0.06 + 0.01
+      hdrData[i+3] = 1
+    }
+  }
+  const tex = new THREE.DataTexture(hdrData, hdrSize, hdrSize, THREE.RGBAFormat, THREE.FloatType)
+  tex.mapping = THREE.EquirectangularReflectionMapping
+  tex.needsUpdate = true
+  return tex
+}
 
 const CDN = 'https://cdn.jsdelivr.net/npm/three@0.128.0'
 
@@ -56,7 +91,7 @@ function Slider({ label, value, min, max, step, onChange }: {
   )
 }
 
-function ModelTest({ name, file }: { name: string; file: string }) {
+function ModelTest({ id, name, file }: { id: string; name: string; file: string }) {
   const mountRef = useRef<HTMLDivElement>(null)
   const [status, setStatus] = useState('loading...')
   const [info, setInfo] = useState('')
@@ -69,7 +104,13 @@ function ModelTest({ name, file }: { name: string; file: string }) {
   const lastMouse = useRef({ x: 0, y: 0 })
   const modelRot = useRef({ x: 0, y: 0 })
 
-  const [cfg, setCfg] = useState({ ...DEFAULT })
+  const def = CURRENT[id] || { cam:[0,0,3], rot:[0,0,0], fov:40, exposure:1.4, ambient:0.5, key:3, fill:1 }
+  const [cfg, setCfg] = useState({ ...DEFAULT,
+    camX: def.cam[0], camY: def.cam[1], camZ: def.cam[2],
+    rotX: def.rot[0], rotY: def.rot[1], rotZ: def.rot[2],
+    fov: def.fov, exposure: def.exposure,
+    lightAmbient: def.ambient, lightKey: def.key, lightFill: def.fill,
+  })
   const cfgRef = useRef(cfg)
   cfgRef.current = cfg
 
@@ -111,17 +152,21 @@ function ModelTest({ name, file }: { name: string; file: string }) {
         await ensureThree()
         if (cancelled) return
         const THREE = (window as any).THREE
-        const W = el.clientWidth || 360, H = el.clientHeight || 450
+        const W = el.offsetWidth, H = el.offsetHeight
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
         renderer.setSize(W, H)
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
         renderer.toneMapping = THREE.ACESFilmicToneMapping
         renderer.toneMappingExposure = cfg.exposure
+        renderer.setClearColor(0x000000, 1)
+        renderer.shadowMap.enabled = true
+        renderer.outputEncoding = THREE.LinearEncoding
         el.appendChild(renderer.domElement)
         rendererRef.current = renderer
 
         const scene = new THREE.Scene()
         sceneRef.current = scene
+        scene.environment = buildHDR(THREE)
         const camera = new THREE.PerspectiveCamera(cfg.fov, W / H, 0.01, 100)
         camera.position.set(cfg.camX, cfg.camY, cfg.camZ)
         cameraRef.current = camera
@@ -131,8 +176,6 @@ function ModelTest({ name, file }: { name: string; file: string }) {
         key.position.set(2, 3, 2); scene.add(key)
         const fill = new THREE.DirectionalLight(0xc9a96e, cfg.lightFill)
         fill.position.set(-2, 0, 1); scene.add(fill)
-        scene.add(new THREE.AxesHelper(0.5))
-
         const dracoLoader = new THREE.DRACOLoader()
         dracoLoader.setDecoderPath(`${CDN}/examples/js/libs/draco/`)
         const loader = new THREE.GLTFLoader()
@@ -220,13 +263,13 @@ function ModelTest({ name, file }: { name: string; file: string }) {
       </div>
       {info && <div style={{ padding: '4px 16px', background: '#0a0a0a', fontFamily: 'monospace', fontSize: 10, color: '#555' }}>{info}</div>}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr' }}>
-        {/* Canvas — exact card media size: 360×450 (4:5 ratio) */}
+      <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', minHeight: 660 }}>
+        {/* Canvas — same layout as product detail page (mr-outer 3fr col) */}
         <div
           ref={mountRef}
           onMouseDown={onMouseDown} onMouseMove={onMouseMove}
           onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
-          style={{ width: 360, height: 450, background: '#050505', cursor: isDragging.current ? 'grabbing' : 'grab', flexShrink: 0 }}
+          style={{ background: '#000', cursor: isDragging.current ? 'grabbing' : 'grab' }}
         />
 
         {/* Controls */}
@@ -257,7 +300,7 @@ export default function Test3DPage() {
   return (
     <div style={{ background: '#000', minHeight: '100vh', padding: '80px 32px 40px' }}>
       <div style={{ fontFamily: 'monospace', fontSize: 11, color: '#444', marginBottom: 32 }}>
-        /test-3d — drag canvas to rotate · adjust sliders · click "Copy Config" to get values
+        /test-3d — same layout &amp; HDR as product detail page · pre-loaded with current settings · drag to rotate
       </div>
       {MODELS.map(m => <ModelTest key={m.file} {...m} />)}
     </div>

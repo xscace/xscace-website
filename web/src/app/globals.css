@@ -2523,8 +2523,8 @@ a.p-card, a.p-card:hover {
 }
 
 /* Left */
-.mr-left { position: relative; overflow: hidden; background: #000; }
-.mr-canvas-mount { width: 100%; height: 100%; min-height: 600px; }
+.mr-left { position: relative; overflow: hidden; background: #000; height: 660px; }
+.mr-canvas-mount { width: 100%; height: 100%; }
 
 .mr-loading {
   position: absolute; inset: 0;
@@ -2616,7 +2616,8 @@ a.p-card, a.p-card:hover {
 
 @media (max-width: 900px) {
   .mr-outer { grid-template-columns: 1fr; }
-  .mr-canvas-mount { min-height: 380px; }
+  .mr-left { height: 380px; }
+  .mr-canvas-mount { min-height: unset; }
   .mr-right { padding: 28px 24px; border-left: none; border-top: 1px solid rgba(201,169,110,0.08); }
   .mr-ct { font-size: 17px; }
 }
@@ -3285,7 +3286,7 @@ a.p-card, a.p-card:hover {
 
 /* Image side */
 .acc-img-side {
-  position: relative; background: #080808;
+  position: relative; background: #000;
   display: flex; align-items: center; justify-content: center;
 }
 
@@ -3306,7 +3307,7 @@ a.p-card, a.p-card:hover {
 }
 .acc-reveal-img {
   height: 100%; object-fit: contain;
-  display: block; background: #080808;
+  display: block; background: #000;
   pointer-events: none;
 }
 .acc-reveal-handle {
