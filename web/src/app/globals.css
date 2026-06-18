@@ -4731,7 +4731,7 @@ a.p-card, a.p-card:hover {
 }
 
 /* Spacer — same width as connector, keeps labels/names aligned */
-.ci-spacer { min-width: 24px; max-width: 72px; flex: 1; flex-shrink: 0; }
+.ci-spacer { width: 48px; flex-shrink: 0; }
 
 .ci-img-link { display: block; width: 96px; text-decoration: none; }
 .ci-img-link:hover .ci-img { border-color: rgba(201,169,110,0.35); }
@@ -4764,8 +4764,8 @@ a.p-card, a.p-card:hover {
 }
 .ci-connector {
   display: flex; align-items: center;
-  flex: 1; min-width: 24px; max-width: 72px;
-  padding: 0 2px; flex-shrink: 0;
+  width: 48px; flex-shrink: 0;
+  padding: 0 4px;
 }
 .ci-conn-line { flex: 1; height: 0.5px; background: rgba(201,169,110,0.35); }
 .ci-conn-arrow {
@@ -4794,8 +4794,8 @@ a.p-card, a.p-card:hover {
   .ci-img-avr { width: 68px; }
   .ci-role { font-size: 7px; }
   .ci-name { font-size: 12px; }
-  .ci-connector { min-width: 10px; max-width: 24px; }
-  .ci-spacer { min-width: 10px; max-width: 24px; }
+  .ci-connector { width: 28px; }
+  .ci-spacer { width: 28px; }
   .ci-conn-arrow { border-top-width: 3px; border-bottom-width: 3px; border-left-width: 5px; }
   .ci-meta { font-size: 12px; }
 }
