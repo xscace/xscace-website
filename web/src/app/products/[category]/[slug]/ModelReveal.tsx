@@ -209,7 +209,7 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
     exposure: number, ambient: number, key: number, fill: number
   }> = {
         'prod-bonsai':    { cam:[0.18,2.00,3],      rot:[0.158,-0.582,-1.572], fov:60, exposure:1.0,  ambient:0,   key:0.0, fill:0.2 },
-    'prod-cane':      { cam:[-0.08,0.34,3.03], rot:[0.248,-0.942,-1.502], fov:43, exposure:0.6,  ambient:1.1, key:2.4, fill:1.0 },
+    'prod-cane':      { cam:[-0.08,0.56,3.03], rot:[0.138,-0.792,-1.502], fov:49, exposure:0.25, ambient:0,   key:2.0, fill:0.7 },
     'prod-ghost2':    { cam:[-0.01,0,3],          rot:[0.318,-0.012,0.000],  fov:69, exposure:0.9,  ambient:0,   key:0.8, fill:0   },
     'prod-acacia6-pw':{ cam:[0,0,3],              rot:[0.000,-0.702,0.000],  fov:78, exposure:0.15, ambient:0,   key:5.0, fill:0.8 },
     'prod-xylem3':    { cam:[-0.01,-0.67,3],      rot:[-2.512,0.000,0.000],  fov:78, exposure:0.6,  ambient:0,   key:0.0, fill:1.6 },

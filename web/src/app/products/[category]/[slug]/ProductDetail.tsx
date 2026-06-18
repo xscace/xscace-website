@@ -1407,10 +1407,17 @@ function VideoGallery({ images, videos, productName, getImageUrl }: {
               <div className={`vg-embed-wrap${rightFading ? ' vg-fading' : ''}`}>
                 {vs.type === 'file' ? (
                   <video key={`right-${idx}`} className="vg-video-el"
-                    src={vs.src} autoPlay muted loop playsInline/>
+                    src={vs.src} autoPlay muted loop playsInline
+                    onLoadedMetadata={(e) => {
+                      // Offset right video by 30% of duration to avoid sync with left
+                      const v = e.currentTarget
+                      if (v.duration && videos.length <= 1) {
+                        v.currentTime = Math.min(v.duration * 0.3, 30)
+                      }
+                    }}/>
                 ) : (
                   <iframe key={`right-${idx}`}
-                    src={`https://www.youtube-nocookie.com/embed/${vs.src}?autoplay=1&mute=1&loop=1&playlist=${vs.src}&controls=0&modestbranding=1&playsinline=1&rel=0&disablekb=1&iv_load_policy=3&start=8`}
+                    src={`https://www.youtube-nocookie.com/embed/${vs.src}?autoplay=1&mute=1&loop=1&playlist=${vs.src}&controls=0&modestbranding=1&playsinline=1&rel=0&disablekb=1&iv_load_policy=3&start=30`}
                     className="vg-iframe" allow="autoplay; encrypted-media" allowFullScreen/>
                 )}
               </div>
@@ -1581,7 +1588,7 @@ export default function ProductDetail({ product }: { product: Product }) {
         : product.mountingMethods.split(/[,\n]+/).map((s: string) => s.trim()).filter(Boolean))
     : []
   const hasMount = mountingMethodsList.length > 0
-  const galleryAll = [...(product.galleryImages || []), ...(product.lifestyleImages || [])]
+  const galleryAll = [...(product.lifestyleImages || []), ...(product.galleryImages || [])]
   const itemsInBoxList = product.itemsInBox
     ? (Array.isArray(product.itemsInBox)
         ? product.itemsInBox
