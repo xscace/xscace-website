@@ -70,7 +70,7 @@ async function getProduct(slug: string) {
         _key, label, description,
         products[]{
           _key, quantity, role,
-          product->{ _id, productName, "slug": slug.current, series, sensitivityDb, powerRmsW, powerPeakW, impedanceOhms, heroImage, "catSlug": category->slug.current }
+          product->{ _id, productName, "slug": slug.current, series, sensitivityDb, powerRmsW, powerPeakW, impedanceOhms, heroImage, "galleryImage": galleryImages[0], "catSlug": category->slug.current }
         }
       },
     }

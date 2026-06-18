@@ -2046,14 +2046,14 @@ export default function ProductDetail({ product }: { product: Product }) {
                     {item.type === 'product' ? (() => {
                       const p = item.sp.product
                       if (!p) return null
-                      const img = getImageUrl(p.heroImage, 300)
+                      const img = getImageUrl(p.galleryImage || p.heroImage, 300)
                       return (
                         <a href={`/products/${p.catSlug || ''}/${p.slug || ''}`}
                           className="ci-product" style={{textDecoration:'none'}}>
                           <div className="ci-role">{item.sp.role}</div>
                           <div className="ci-img">
                             {img
-                              ? <img src={img} alt={p.productName} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+                              ? <img src={img} alt={p.productName} style={{width:'100%',height:'100%',objectFit:'contain',display:'block',padding:'8px'}}/>
                               : <div className="ci-img-empty"/>
                             }
                           </div>
