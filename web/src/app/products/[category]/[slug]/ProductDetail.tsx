@@ -1083,10 +1083,8 @@ function AccessoriesSection({ accessories, productName, getImageUrl, inWallProdu
             ? getImageUrl(acc.lifestyleImages[0], 1200)
             : null
           return (
-            <a key="inwall"
-              href={`/products/${acc.catSlug || 'in-ceiling-series'}/${acc.slug}`}
-              className={`acc-card acc-card-link${isEven ? '' : ' acc-card-flip'}`}
-              style={{textDecoration:'none',color:'inherit'}}>
+            <div key="inwall"
+              className={`acc-card${isEven ? '' : ' acc-card-flip'}`}>
               <div className="acc-img-side">
                 {heroUrl
                   ? <RevealSlider heroUrl={heroUrl} lifestyleUrl={lifestyleUrl} alt={acc.productName} />
@@ -1111,9 +1109,9 @@ function AccessoriesSection({ accessories, productName, getImageUrl, inWallProdu
                     ))}
                   </div>
                 )}
-                <span className="acc-enquire">View {acc.productName} →</span>
+                <a href={`/products/${acc.catSlug || 'in-ceiling-series'}/${acc.slug}`} className="acc-enquire">View {acc.productName} →</a>
               </div>
-            </a>
+            </div>
           )
         }
 
