@@ -1,255 +1,316 @@
 import { createClient } from '@sanity/client'
-import Link from 'next/link'
+import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 
-export const metadata: Metadata = {
-  title: 'Software — XSCACE',
-  description: 'XSCACE software apps: XSCACE Controller for iOS & Android, and XSCACE Network Controller for Mac & Windows DSP configuration.',
-}
-
-const client = createClient({
-  projectId: '7r0kq57d',
-  dataset: 'production',
-  apiVersion: '2024-01-01',
-  useCdn: true,
+const sanity = createClient({
+  projectId: '7r0kq57d', dataset: 'production',
+  apiVersion: '2024-01-01', useCdn: true,
 })
 
-function sanityImgUrl(ref: string, w = 800) {
+const P = '7r0kq57d', D = 'production'
+
+function fileUrl(ref: string | null | undefined): string {
+  if (!ref) return ''
+  // Sanity file asset ref: file-{hash}-{ext}
+  const clean = ref.replace('file-', '')
+  const lastDash = clean.lastIndexOf('-')
+  const hash = clean.slice(0, lastDash)
+  const ext  = clean.slice(lastDash + 1)
+  return `https://cdn.sanity.io/files/${P}/${D}/${hash}.${ext}`
+}
+
+function img(ref: string, w = 1200) {
   if (!ref) return ''
   const b = ref.replace(/^image-/, '').split('-')
   const ext = b.pop()!, dims = b.pop()!, hash = b.join('-')
-  return `https://cdn.sanity.io/images/7r0kq57d/production/${hash}-${dims}.${ext}?w=${w}&auto=format&q=85`
+  return `https://cdn.sanity.io/images/${P}/${D}/${hash}-${dims}.${ext}?w=${w}&auto=format&q=90`
 }
 
-export default async function SoftwarePage() {
-  const apps = await client.fetch(`*[_type=="software"] | order(name asc) {
+export async function generateStaticParams() {
+  const apps = await sanity.fetch(`*[_type=="software"]{slug}`)
+  return apps.map((a: any) => ({ slug: a.slug?.current }))
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  const a = await sanity.fetch(`*[_type=="software"&&slug.current==$slug][0]{seoTitle,seoDescription,name}`, { slug })
+  if (!a) return { title: 'Software — XSCACE' }
+  return { title: a.seoTitle || `${a.name} — XSCACE`, description: a.seoDescription || '' }
+}
+
+// Crisp icon SVGs
+const ICONS: Record<string, string> = {
+  wifi:    `<path d="M12 20h.01M8.5 16.5a5 5 0 017 0M5 13a9 9 0 0114 0M1.5 9.5a13.5 13.5 0 0121 0"/>`,
+  volume:  `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/>`,
+  eq:      `<line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>`,
+  stream:  `<path d="M2.5 17a24.12 24.12 0 010-10M5.5 14a18 18 0 010-4"/><circle cx="12" cy="12" r="2"/><path d="M18.5 10a18 18 0 010 4M21.5 7a24.12 24.12 0 010 10"/>`,
+  channel: `<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>`,
+  preset:  `<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>`,
+  timer:   `<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><line x1="9" y1="2" x2="15" y2="2"/>`,
+  graph:   `<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>`,
+  desktop: `<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>`,
+  group:   `<circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><path d="M16 3.13a4 4 0 010 7.75"/><path d="M21 21v-2a4 4 0 00-3-3.87"/>`,
+}
+function svgIcon(name: string) {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]||ICONS.wifi}</svg>`
+}
+
+// Map screenshot captions to feature indices for mobile app
+// Features: 0=Setup, 1=Volume, 2=Device Grouping, 3=X-Sense AI, 4=AirPlay, 5=EQ, 6=Device Grouping(appended)
+const MOBILE_FEATURE_SHOTS: Record<number, string[]> = {
+  0: ['Device Discovery', 'Device List'],
+  1: ['Device List'],
+  2: ['Group Devices'],
+  3: ['X-Sense Auto EQ'],
+  4: ['Device List'],
+  5: ['Parametric EQ', 'Tonal EQ'],
+  6: ['Group Devices'],
+}
+
+// Map screenshot captions to feature indices for desktop app
+const DESKTOP_FEATURE_SHOTS: Record<number, string[]> = {
+  0: ['EQ Peaking, HS, LS Filters', 'Gain, Delay, Crossover Filters'],
+  1: ['Preset List'],
+  2: ['Auto Delay'],
+  3: ['Gain, Delay, Crossover Filters'],
+  4: ['Frequency Overview'],
+  5: ['Dashboard Overview'],
+  6: ['X-Sense Auto EQ'],
+}
+
+export default async function SoftwareDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const app = await sanity.fetch(`*[_type=="software"&&slug.current==$slug][0]{
     _id, name, slug, tagline, shortDescription, platform, status, version,
-    heroImage, deviceMockup, features[0..2]
-  }`)
+    appStoreUrl, playStoreUrl, downloadUrlMac, downloadUrlWindows,
+    "macFileRef": macFile.asset._ref,
+    "windowsFileRef": windowsFile.asset._ref,
+    heroImage, screenshots[]{caption,"ref":image.asset._ref}, features,
+    "compatibleProducts":compatibleProducts[]->{productName,slug,category->{slug}}
+  }`, { slug })
 
-  const platformLabel = (p: string) => {
-    const map: Record<string, string> = {
-      'ios': 'iOS',
-      'android': 'Android',
-      'ios-android': 'iOS & Android',
-      'mac': 'macOS',
-      'windows': 'Windows',
-      'mac-windows': 'macOS & Windows',
-    }
-    return map[p] || p
+  if (!app) notFound()
+
+  const isMobile  = app.platform?.includes('ios') || app.platform?.includes('android')
+  // Resolve download URLs: uploaded file takes priority over external URL
+  const macUrl     = app.macFileRef     ? fileUrl(app.macFileRef)     : (app.downloadUrlMac     || '')
+  const windowsUrl = app.windowsFileRef ? fileUrl(app.windowsFileRef) : (app.downloadUrlWindows || '')
+  const isDesktop = app.platform?.includes('mac') || app.platform?.includes('windows')
+  const isSoon    = app.status === 'coming-soon'
+
+  // Index screenshots by caption for easy lookup
+  const shotByCaption: Record<string, string> = {}
+  for (const s of (app.screenshots || [])) {
+    if (s.caption && s.ref) shotByCaption[s.caption] = s.ref
   }
 
-  const platformIcon = (p: string) => {
-    if (p === 'ios-android') return (
-      <span className="sw-platforms">
-        <span className="sw-pill">iOS</span>
-        <span className="sw-pill">Android</span>
-      </span>
-    )
-    if (p === 'mac-windows') return (
-      <span className="sw-platforms">
-        <span className="sw-pill">macOS</span>
-        <span className="sw-pill">Windows</span>
-      </span>
-    )
-    return <span className="sw-platforms"><span className="sw-pill">{platformLabel(p)}</span></span>
-  }
+  // Hero screenshots: pick 2 best for mobile, 1 wide for desktop
+  const heroShots = isMobile
+    ? ['Device List', 'X-Sense Auto EQ']
+        .map(c => shotByCaption[c]).filter(Boolean).slice(0, 2)
+    : ['Dashboard Overview', 'Device Discovery List']
+        .map(c => shotByCaption[c]).filter(Boolean).slice(0, 1)
+
+  // Feature-to-screenshot mapping
+  const featureShots = isMobile ? MOBILE_FEATURE_SHOTS : DESKTOP_FEATURE_SHOTS
 
   return (
-    <div className="sw-page">
-      {/* Hero */}
-      <section className="sw-hero">
-        <div className="sw-hero-inner">
-          <div className="sw-eyebrow">Software</div>
-          <h1 className="sw-title">Control your sound.</h1>
-          <p className="sw-subtitle">
-            XSCACE software bridges the gap between your amplifier&apos;s capability and your space&apos;s potential.
-            Stream, configure, calibrate — all from your device.
-          </p>
+    <div className="sdp2">
+
+      {/* ══════════════════════════════════════════════════════
+          HERO — split: text left, phone/laptop mockups right
+      ══════════════════════════════════════════════════════ */}
+      <section className="sdp2-hero">
+        {/* Left: text + CTAs */}
+        <div className="sdp2-hero-left">
+          <div className="sdp2-eyebrow">
+            {isMobile ? 'iOS & Android' : 'macOS & Windows'}
+            {app.version && <span className="sdp2-ver">v{app.version}</span>}
+          </div>
+          <h1 className="sdp2-title">{app.name}</h1>
+          <p className="sdp2-tagline">{app.tagline}</p>
+          <p className="sdp2-desc">{app.shortDescription}</p>
+
+          {!isSoon ? (
+            <div className="sdp2-ctas">
+              {app.appStoreUrl && (
+                <a href={app.appStoreUrl} target="_blank" rel="noopener noreferrer" className="sdp2-store-btn">
+                  {/* Apple logo */}
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="sdp2-store-logo">
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                  </svg>
+                  <span>
+                    <span className="sdp2-store-sub">Download on the</span>
+                    <span className="sdp2-store-name">App Store</span>
+                  </span>
+                </a>
+              )}
+              {app.playStoreUrl && (
+                <a href={app.playStoreUrl} target="_blank" rel="noopener noreferrer" className="sdp2-store-btn">
+                  {/* Google Play logo */}
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="sdp2-store-logo">
+                    <path d="M3.18 23.76c.35.2.74.24 1.12.12L14.31 12 3.3.12C2.92 0 2.53.04 2.18.24c-.7.4-1.18 1.16-1.18 2v19.52c0 .84.48 1.6 1.18 2zm4.37-11.9l2.27-2.27 7.63 4.41-9.9-2.14zM19.44 10c-.55-.32-9.82-5.67-9.82-5.67L5.87 8.07 18.5 12l.94-.54zM5.87 15.93l3.75 3.74s9.27-5.36 9.82-5.68l-.94-.54-12.63 2.48z"/>
+                  </svg>
+                  <span>
+                    <span className="sdp2-store-sub">Get it on</span>
+                    <span className="sdp2-store-name">Google Play</span>
+                  </span>
+                </a>
+              )}
+              {(macUrl || isDesktop) && (
+                <a href={macUrl || '#'} className={`sdp2-store-btn${!macUrl ? ' sdp2-store-btn--pending' : ''}`} download={!!macUrl || undefined}>
+                  {/* Apple logo */}
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="sdp2-store-logo">
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                  </svg>
+                  <span>
+                    <span className="sdp2-store-sub">Download for</span>
+                    <span className="sdp2-store-name">macOS</span>
+                  </span>
+                </a>
+              )}
+              {(windowsUrl || isDesktop) && (
+                <a href={windowsUrl || '#'} className={`sdp2-store-btn sdp2-store-btn--ghost${!windowsUrl ? ' sdp2-store-btn--pending' : ''}`} download={!!windowsUrl || undefined}>
+                  {/* Windows logo */}
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="sdp2-store-logo">
+                    <path d="M3 3h8v8H3zm10 0h8v8h-8zm-10 10h8v8H3zm10 0h8v8h-8z"/>
+                  </svg>
+                  <span>
+                    <span className="sdp2-store-sub">Download for</span>
+                    <span className="sdp2-store-name">Windows</span>
+                  </span>
+                </a>
+              )}
+            </div>
+          ) : (
+            <div className="sdp2-soon">Coming Soon</div>
+          )}
+        </div>
+
+        {/* Right: phone or laptop mockups */}
+        <div className="sdp2-hero-right">
+          {isMobile && heroShots.length > 0 && (
+            <div className="sdp2-phones">
+              {heroShots.map((ref, i) => (
+                <div key={i} className={`sdp2-phone ${i === 1 ? 'sdp2-phone--back' : 'sdp2-phone--front'}`}>
+                  <div className="sdp2-phone-frame">
+                    <div className="sdp2-phone-notch" />
+                    <img src={img(ref, 600)} alt="App screenshot" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {isDesktop && heroShots.length > 0 && (
+            <div className="sdp2-laptop">
+              <div className="sdp2-laptop-screen">
+                <img src={img(heroShots[0], 1200)} alt="App screenshot" />
+              </div>
+              <div className="sdp2-laptop-base">
+                <div className="sdp2-laptop-notch" />
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
-      <div className="sw-divider" />
+      {/* ══════════════════════════════════════════════════════
+          FEATURES — full bleed alternating, screenshot matched
+      ══════════════════════════════════════════════════════ */}
+      {app.features && app.features.length > 0 && (
+        <section className="sdp2-features">
+          <div className="sdp2-features-eyebrow">Features</div>
+          {app.features.map((f: any, i: number) => {
+            // Find best matching screenshot
+            const captionMatches = featureShots[i] || []
+            let shotRef = ''
+            for (const cap of captionMatches) {
+              if (shotByCaption[cap]) { shotRef = shotByCaption[cap]; break }
+            }
+            const shotUrl = shotRef ? img(shotRef, 900) : ''
+            const isEven = i % 2 === 0
 
-      {/* App cards */}
-      <section className="sw-grid">
-        {apps.map((app: any) => {
-          const heroRef = app.heroImage?.asset?._ref
-          const heroUrl = heroRef ? sanityImgUrl(heroRef, 1600) : ''
-          const isMobile = app.platform?.includes('ios') || app.platform?.includes('android')
-
-          return (
-            <Link href={`/software/${app.slug?.current}`} key={app._id} className="sw-card">
-              {/* Card hero — custom per app */}
-              <div className="sw-card-hero" style={{background:'#000'}}>
-                <div className="sw-card-hero-overlay" />
-                <div className="sw-card-hero-top">
-                  {platformIcon(app.platform)}
-                  {app.status === 'coming-soon' && <span className="sw-badge-soon">Coming Soon</span>}
+            return (
+              <div key={i} className={`sdp2-feat ${isEven ? 'sdp2-feat--a' : 'sdp2-feat--b'}`}>
+                {/* Text */}
+                <div className="sdp2-feat-text">
+                  <div className="sdp2-feat-n">0{i + 1}</div>
+                  <div className="sdp2-feat-icon" dangerouslySetInnerHTML={{ __html: svgIcon(f.icon) }} />
+                  <h3 className="sdp2-feat-title">{f.title}</h3>
+                  <p className="sdp2-feat-desc">{f.description}</p>
                 </div>
-
-                {/* XSCACE Controller — 3-phone stack */}
-                {app._id === 'software-xscace-controller' && (
-                  <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
-                    {/* Back-left — Discovery */}
-                    <div style={{position:'absolute',left:'14%',top:'16px',width:'80px',height:'164px',border:'1.5px solid #222',borderRadius:'12px',background:'#080808',overflow:'hidden',boxShadow:'0 0 0 1px #111, 0 8px 24px rgba(0,0,0,0.9)',opacity:0.6,transform:'translateX(-10px)',zIndex:1}}>
-                      <div style={{position:'absolute',top:0,left:'50%',transform:'translateX(-50%)',width:'22px',height:'2.5px',background:'#1a1a1a',borderRadius:'0 0 3px 3px'}}/>
-                      <img src="https://cdn.sanity.io/images/7r0kq57d/production/81c82048f3755163cc091f6640619112d9138e7c-368x800.png?w=400&auto=format&q=85" alt="Discovery" style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'top'}}/>
-                    </div>
-                    {/* Back-right — EQ */}
-                    <div style={{position:'absolute',right:'14%',top:'16px',width:'80px',height:'164px',border:'1.5px solid #222',borderRadius:'12px',background:'#080808',overflow:'hidden',boxShadow:'0 0 0 1px #111, 0 8px 24px rgba(0,0,0,0.9)',opacity:0.6,transform:'translateX(10px)',zIndex:1}}>
-                      <div style={{position:'absolute',top:0,left:'50%',transform:'translateX(-50%)',width:'22px',height:'2.5px',background:'#1a1a1a',borderRadius:'0 0 3px 3px'}}/>
-                      <img src="https://cdn.sanity.io/images/7r0kq57d/production/82649b5de87330a015e6221c047fba3664b1f712-368x800.png?w=400&auto=format&q=85" alt="EQ" style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'top'}}/>
-                    </div>
-                    {/* Front-center — Device List */}
-                    <div style={{position:'relative',width:'92px',height:'188px',border:'1.5px solid #2a2a2a',borderRadius:'14px',background:'#0a0a0a',overflow:'hidden',boxShadow:'0 0 0 1px #181818, 0 16px 48px rgba(0,0,0,0.95)',zIndex:2}}>
-                      <div style={{position:'absolute',top:0,left:'50%',transform:'translateX(-50%)',width:'26px',height:'3px',background:'#1a1a1a',borderRadius:'0 0 3px 3px'}}/>
-                      <img src="https://cdn.sanity.io/images/7r0kq57d/production/ce08e3322ddd8d7a9a82aa678da646819d08f759-368x800.png?w=400&auto=format&q=85" alt="XSCACE Controller" style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'top'}}/>
-                    </div>
-                  </div>
-                )}
-
-                {/* Network Controller — laptop mockup */}
-                {app._id === 'software-network-controller' && (
-                  <div style={{position:'absolute',inset:0,display:'flex',alignItems:'flex-end',justifyContent:'center',paddingBottom:'12px'}}>
-                    <div style={{width:'88%',display:'flex',flexDirection:'column',alignItems:'center'}}>
-                      <div style={{width:'100%',background:'#080808',border:'1.5px solid #222',borderRadius:'6px 6px 0 0',overflow:'hidden',boxShadow:'0 0 0 1px #111'}}>
-                        <div style={{height:'10px',background:'#0d0d0d',borderBottom:'1px solid #1a1a1a',display:'flex',alignItems:'center',paddingLeft:'8px',gap:'4px'}}>
-                          <div style={{width:'5px',height:'5px',borderRadius:'50%',background:'#1e1e1e'}}/>
-                          <div style={{width:'5px',height:'5px',borderRadius:'50%',background:'#1e1e1e'}}/>
-                          <div style={{width:'5px',height:'5px',borderRadius:'50%',background:'#1e1e1e'}}/>
-                        </div>
-                        <img src="https://cdn.sanity.io/images/7r0kq57d/production/886620094c00c68ad5e10fb34b4c2071a7dccfa1-2922x1912.png?w=800&auto=format&q=85" alt="Network Controller" style={{width:'100%',height:'148px',objectFit:'cover',objectPosition:'top',display:'block'}}/>
+                {/* Screenshot */}
+                <div className="sdp2-feat-visual">
+                  {shotUrl ? (
+                    isMobile ? (
+                      <div className="sdp2-phone-frame sdp2-phone-frame--feat">
+                        <div className="sdp2-phone-notch" />
+                        <img src={shotUrl} alt={f.title} />
                       </div>
-                      <div style={{width:'108%',height:'7px',background:'#111',borderRadius:'0 0 5px 5px'}}/>
+                    ) : (
+                      <div className="sdp2-win-frame">
+                        <div className="sdp2-win-bar">
+                          <span/><span/><span/>
+                        </div>
+                        <img src={shotUrl} alt={f.title} />
+                      </div>
+                    )
+                  ) : (
+                    <div className="sdp2-feat-placeholder">
+                      <div className="sdp2-feat-placeholder-icon" dangerouslySetInnerHTML={{ __html: svgIcon(f.icon) }} />
                     </div>
-                  </div>
-                )}
-
-                {/* Configurator — UI mockup SVG */}
-                {app._id === 'software-system-builder' && (
-                  <div style={{position:'absolute',inset:0,overflow:'hidden'}}>
-                    <svg viewBox="0 0 400 220" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:'100%',height:'100%',display:'block'}}>
-                      <rect width="400" height="220" fill="#050505"/>
-                      <rect width="400" height="24" fill="#080808"/>
-                      <circle cx="13" cy="12" r="4" fill="#1a1a1a"/><circle cx="26" cy="12" r="4" fill="#1a1a1a"/><circle cx="39" cy="12" r="4" fill="#1a1a1a"/>
-                      <text x="200" y="16" fill="#2a2a2a" fontSize="7" fontFamily="monospace" textAnchor="middle">configurator.xscace.com</text>
-                      <rect x="0" y="24" width="170" height="196" fill="#060606"/>
-                      <rect x="0" y="24" width="170" height="196" fill="none" stroke="#0f0f0f" strokeWidth="0.5"/>
-                      <rect x="10" y="34" width="130" height="24" rx="2" fill="#0f0f0f"/>
-                      <text x="18" y="46" fill="#666" fontSize="6" fontFamily="monospace">I need speakers for my</text>
-                      <text x="18" y="55" fill="#666" fontSize="6" fontFamily="monospace">living room, 5m × 7m</text>
-                      <rect x="10" y="64" width="150" height="44" rx="2" fill="#0a0a0a"/>
-                      <rect x="10" y="64" width="2.5" height="44" fill="#c9a96e" opacity="0.4"/>
-                      <text x="19" y="76" fill="#c9a96e" fontSize="5.5" fontFamily="monospace" opacity="0.8">XSCACE AI</text>
-                      <text x="19" y="86" fill="#666" fontSize="5.5" fontFamily="monospace">For that room I'd suggest</text>
-                      <text x="19" y="95" fill="#666" fontSize="5.5" fontFamily="monospace">2× Cane + Xylem 3 DSP</text>
-                      <text x="19" y="104" fill="#666" fontSize="5.5" fontFamily="monospace">amplifier + Juniper sub.</text>
-                      <rect x="10" y="190" width="142" height="20" rx="1" fill="#0a0a0a" stroke="#1a1a1a" strokeWidth="0.5"/>
-                      <text x="18" y="203" fill="#2a2a2a" fontSize="6" fontFamily="monospace">Ask about your space...</text>
-                      <text x="140" y="203" fill="#c9a96e" fontSize="9" fontFamily="monospace">↑</text>
-                      <rect x="170" y="24" width="230" height="196" fill="#050505"/>
-                      <text x="182" y="38" fill="#c9a96e" fontSize="6" fontFamily="monospace" opacity="0.5">RECOMMENDED SETUP</text>
-                      {[['Cane','Slim Array · ×2',44],['Xylem 3','DSP Amplifier · ×1',90],['Juniper','Subwoofer · ×1',136]].map(([n,t,y]: any) => (
-                        <g key={n}>
-                          <rect x="178" y={y} width="210" height="36" rx="1" fill="#080808" stroke="#111" strokeWidth="0.5"/>
-                          <rect x="178" y={y} width="2.5" height="36" fill="#c9a96e" opacity="0.2"/>
-                          <text x="188" y={y+14} fill="#ddd9d3" fontSize="8" fontFamily="serif">{n}</text>
-                          <text x="188" y={y+25} fill="#444" fontSize="5.5" fontFamily="monospace">{t}</text>
-                        </g>
-                      ))}
-                      <text x="178" y="200" fill="#c9a96e" fontSize="5.5" fontFamily="monospace" opacity="0.4">Budget: ₹4.2L – ₹5.8L · View BOQ →</text>
-                    </svg>
-                  </div>
-                )}
-              </div>
-
-              {/* Card content */}
-              <div className="sw-card-body">
-                <div className="sw-card-name">{app.name}</div>
-                <div className="sw-card-tagline">{app.tagline}</div>
-                <p className="sw-card-desc">{app.shortDescription}</p>
-                {app.features && app.features.length > 0 && (
-                  <ul className="sw-card-features">
-                    {app.features.map((f: any, i: number) => (
-                      <li key={i} className="sw-card-feature">
-                        <span className="sw-feature-dot" />
-                        {f.title}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <div className="sw-card-cta">
-                  <span className="sw-card-learn">Learn more →</span>
-                  {app.version && <span className="sw-card-ver">v{app.version}</span>}
+                  )}
                 </div>
               </div>
-            </Link>
-          )
-        })}
-        {/* Configurator — static card, not in Sanity */}
-        <Link href="https://configurator.xscace.com" target="_blank" className="sw-card">
-          <div className="sw-card-hero" style={{background:'#000'}}>
-            <div className="sw-card-hero-overlay" />
-            <div className="sw-card-hero-top">
-              <span className="sw-platforms">
-                <span className="sw-pill">Web</span>
-              </span>
-            </div>
-            <div style={{position:'absolute',inset:0,overflow:'hidden'}}>
-              <svg viewBox="0 0 400 220" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:'100%',height:'100%',display:'block'}}>
-                <rect width="400" height="220" fill="#050505"/>
-                <rect width="400" height="24" fill="#080808"/>
-                <circle cx="13" cy="12" r="4" fill="#1a1a1a"/><circle cx="26" cy="12" r="4" fill="#1a1a1a"/><circle cx="39" cy="12" r="4" fill="#1a1a1a"/>
-                <text x="200" y="16" fill="#2a2a2a" fontSize="7" fontFamily="monospace" textAnchor="middle">configurator.xscace.com</text>
-                <rect x="0" y="24" width="170" height="196" fill="#060606"/>
-                <rect x="0" y="24" width="170" height="196" fill="none" stroke="#0f0f0f" strokeWidth="0.5"/>
-                <rect x="10" y="34" width="130" height="24" rx="2" fill="#0f0f0f"/>
-                <text x="18" y="46" fill="#666" fontSize="6" fontFamily="monospace">I need speakers for my</text>
-                <text x="18" y="55" fill="#666" fontSize="6" fontFamily="monospace">living room, 5m × 7m</text>
-                <rect x="10" y="64" width="150" height="44" rx="2" fill="#0a0a0a"/>
-                <rect x="10" y="64" width="2.5" height="44" fill="#c9a96e" opacity="0.4"/>
-                <text x="19" y="76" fill="#c9a96e" fontSize="5.5" fontFamily="monospace" opacity="0.8">XSCACE AI</text>
-                <text x="19" y="86" fill="#666" fontSize="5.5" fontFamily="monospace">For that room I'd suggest</text>
-                <text x="19" y="95" fill="#666" fontSize="5.5" fontFamily="monospace">2× Cane + Xylem 3 DSP</text>
-                <text x="19" y="104" fill="#666" fontSize="5.5" fontFamily="monospace">amplifier + Juniper sub.</text>
-                <rect x="10" y="190" width="142" height="20" rx="1" fill="#0a0a0a" stroke="#1a1a1a" strokeWidth="0.5"/>
-                <text x="18" y="203" fill="#2a2a2a" fontSize="6" fontFamily="monospace">Ask about your space...</text>
-                <text x="140" y="203" fill="#c9a96e" fontSize="9" fontFamily="monospace">↑</text>
-                <rect x="170" y="24" width="230" height="196" fill="#050505"/>
-                <text x="182" y="38" fill="#c9a96e" fontSize="6" fontFamily="monospace" opacity="0.5">RECOMMENDED SETUP</text>
-                <rect x="178" y="44" width="210" height="36" rx="1" fill="#080808" stroke="#111" strokeWidth="0.5"/>
-                <rect x="178" y="44" width="2.5" height="36" fill="#c9a96e" opacity="0.2"/>
-                <text x="188" y="58" fill="#ddd9d3" fontSize="8" fontFamily="serif">Cane</text>
-                <text x="188" y="69" fill="#444" fontSize="5.5" fontFamily="monospace">Slim Array · ×2</text>
-                <rect x="178" y="90" width="210" height="36" rx="1" fill="#080808" stroke="#111" strokeWidth="0.5"/>
-                <rect x="178" y="90" width="2.5" height="36" fill="#c9a96e" opacity="0.2"/>
-                <text x="188" y="104" fill="#ddd9d3" fontSize="8" fontFamily="serif">Xylem 3</text>
-                <text x="188" y="115" fill="#444" fontSize="5.5" fontFamily="monospace">DSP Amplifier · ×1</text>
-                <rect x="178" y="136" width="210" height="36" rx="1" fill="#080808" stroke="#111" strokeWidth="0.5"/>
-                <rect x="178" y="136" width="2.5" height="36" fill="#c9a96e" opacity="0.2"/>
-                <text x="188" y="150" fill="#ddd9d3" fontSize="8" fontFamily="serif">Juniper</text>
-                <text x="188" y="161" fill="#444" fontSize="5.5" fontFamily="monospace">Subwoofer · ×1</text>
-                <text x="178" y="200" fill="#c9a96e" fontSize="5.5" fontFamily="monospace" opacity="0.4">Budget: ₹4.2L – ₹5.8L · View BOQ →</text>
-              </svg>
-            </div>
+            )
+          })}
+        </section>
+      )}
+
+      {/* ══════════════════════════════════════════════════════
+          WORKS WITH
+      ══════════════════════════════════════════════════════ */}
+      {app.compatibleProducts && app.compatibleProducts.length > 0 && (
+        <section className="sdp2-compat">
+          <div className="sdp2-compat-label">Works with</div>
+          <div className="sdp2-compat-chips">
+            {app.compatibleProducts.map((p: any, i: number) => (
+              <a key={i} href={`/products/${p.category?.slug?.current}/${p.slug?.current}`} className="sdp2-chip">
+                {p.productName}
+              </a>
+            ))}
           </div>
-          <div className="sw-card-body">
-            <div className="sw-card-name">XSCACE System Builder</div>
-            <div className="sw-card-tagline">AI-powered system configurator</div>
-            <p className="sw-card-desc">Describe your space and listening goals. The AI recommends the right products, quantities, and wiring — with a full bill of quantities.</p>
-            <ul className="sw-card-features">
-              <li className="sw-card-feature"><span className="sw-feature-dot"/>Room-aware product recommendations</li>
-              <li className="sw-card-feature"><span className="sw-feature-dot"/>Wiring diagram generation</li>
-              <li className="sw-card-feature"><span className="sw-feature-dot"/>Exportable bill of quantities</li>
-            </ul>
-            <div className="sw-card-cta">
-              <span className="sw-card-learn">Open Configurator →</span>
-              <span className="sw-card-ver">Web App</span>
-            </div>
+        </section>
+      )}
+
+      {/* ══════════════════════════════════════════════════════
+          BOTTOM CTA
+      ══════════════════════════════════════════════════════ */}
+      {!isSoon && (
+        <section className="sdp2-bottom">
+          <div className="sdp2-bottom-name">{app.name}</div>
+          <div className="sdp2-bottom-platform">{isMobile ? 'iOS & Android' : 'macOS & Windows'} · Free</div>
+          <div className="sdp2-bottom-btns">
+            {app.appStoreUrl    && <a href={app.appStoreUrl}    target="_blank" rel="noopener noreferrer" className="sdp2-store-btn">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="sdp2-store-logo"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+              <span><span className="sdp2-store-sub">App Store</span><span className="sdp2-store-name">iOS</span></span>
+            </a>}
+            {app.playStoreUrl   && <a href={app.playStoreUrl}   target="_blank" rel="noopener noreferrer" className="sdp2-store-btn">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="sdp2-store-logo"><path d="M3.18 23.76c.35.2.74.24 1.12.12L14.31 12 3.3.12C2.92 0 2.53.04 2.18.24c-.7.4-1.18 1.16-1.18 2v19.52c0 .84.48 1.6 1.18 2zm4.37-11.9l2.27-2.27 7.63 4.41-9.9-2.14zM19.44 10c-.55-.32-9.82-5.67-9.82-5.67L5.87 8.07 18.5 12l.94-.54zM5.87 15.93l3.75 3.74s9.27-5.36 9.82-5.68l-.94-.54-12.63 2.48z"/></svg>
+              <span><span className="sdp2-store-sub">Google Play</span><span className="sdp2-store-name">Android</span></span>
+            </a>}
+            {macUrl && <a href={macUrl} download className="sdp2-store-btn">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="sdp2-store-logo"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+              <span><span className="sdp2-store-sub">Download for</span><span className="sdp2-store-name">macOS</span></span>
+            </a>}
+            {windowsUrl && <a href={windowsUrl} download className="sdp2-store-btn sdp2-store-btn--ghost">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="sdp2-store-logo"><path d="M3 3h8v8H3zm10 0h8v8h-8zm-10 10h8v8H3zm10 0h8v8h-8z"/></svg>
+              <span><span className="sdp2-store-sub">Download for</span><span className="sdp2-store-name">Windows</span></span>
+            </a>}
           </div>
-        </Link>
-      </section>
+        </section>
+      )}
+
     </div>
   )
 }
