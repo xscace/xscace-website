@@ -7,7 +7,7 @@ const CONSTRAINTS = [
     cross: '×', text: 'No visible fixings',
     desc: 'Every fastener is concealed. The grille, baffle and chassis unite as a single uninterrupted surface — nothing to catch the eye, nothing to break the plane.',
     angle: { y: 0, x: 0 },
-    mode: 'normal',
+    mode: 'normal', 
   },
   {
     cross: '×', text: 'No draft angle',
