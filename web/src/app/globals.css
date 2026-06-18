@@ -4705,51 +4705,67 @@ a.p-card, a.p-card:hover {
 /* ── Common Installations — Signal Chain ──────────────────────────────────── */
 .ci-setup { padding: 48px 56px; }
 .ci-divider-line { height: 0.5px; background: #1a1a1a; }
-.ci-chain {
+
+/* 3-row layout: labels / images+connectors / names */
+.ci-row {
   display: flex; align-items: center;
-  justify-content: center; gap: 0;
-  overflow-x: auto; padding: 8px 0 4px;
+  justify-content: center; overflow-x: auto;
 }
-.ci-chain-item-wrap { display: flex; align-items: center; }
-.ci-product {
-  display: flex; flex-direction: column; align-items: center;
-  width: 120px; flex-shrink: 0; cursor: pointer;
+.ci-row-labels { margin-bottom: 10px; }
+.ci-row-imgs   { }
+.ci-row-names  { margin-top: 10px; }
+
+/* Each cell = connector (optional) + content */
+.ci-row-cell {
+  display: flex; align-items: center; flex-shrink: 0;
 }
-.ci-product:hover .ci-img { border-color: rgba(201,169,110,0.35); }
-.ci-product:hover .ci-name { color: #c9a96e; }
+
+/* The product node width — same in all rows */
+.ci-row-cell > .ci-role,
+.ci-row-cell > .ci-img,
+.ci-row-cell > .ci-img-link,
+.ci-row-cell > .ci-name,
+.ci-row-cell > .ci-qty,
+.ci-row-cell > .ci-img-avr {
+  width: 96px; flex-shrink: 0;
+}
+
+/* Spacer — same width as connector, keeps labels/names aligned */
+.ci-spacer { min-width: 24px; max-width: 72px; flex: 1; flex-shrink: 0; }
+
+.ci-img-link { display: block; width: 96px; text-decoration: none; }
+.ci-img-link:hover .ci-img { border-color: rgba(201,169,110,0.35); }
+
 .ci-role {
   font-family: 'DM Mono', monospace; font-size: 8px;
   letter-spacing: 0.16em; text-transform: uppercase;
   color: rgba(201,169,110,0.5); text-align: center;
-  margin-bottom: 8px; min-height: 14px;
+  width: 96px;
 }
 .ci-img {
   width: 96px; height: 96px;
   border: 0.5px solid #1a1a1a;
   background: #080808; overflow: hidden;
   display: flex; align-items: center; justify-content: center;
-  transition: border-color 0.3s ease; flex-shrink: 0;
+  transition: border-color 0.3s ease;
 }
 .ci-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.ci-img-avr { background: #060606; }
+.ci-img-avr { background: #060606; width: 96px; }
 .ci-img-empty { width: 100%; height: 100%; background: #0a0a0a; }
 .ci-name {
   font-family: 'Cormorant Garamond', serif; font-weight: 300;
   font-size: 14px; color: #e0dcd6; text-align: center;
-  letter-spacing: 0.02em; transition: color 0.3s ease;
-  margin-top: 8px; min-height: 20px;
+  letter-spacing: 0.02em; width: 96px;
 }
 .ci-qty {
   font-family: 'DM Mono', monospace; font-size: 8px;
   color: rgba(201,169,110,0.4); letter-spacing: 0.1em;
-  text-align: center; margin-top: 4px; min-height: 14px;
+  text-align: center; width: 96px; margin-top: 4px;
 }
 .ci-connector {
   display: flex; align-items: center;
   flex: 1; min-width: 24px; max-width: 72px;
   padding: 0 2px; flex-shrink: 0;
-  /* offset upward by half the label height to align with image centre */
-  margin-bottom: 22px;
 }
 .ci-conn-line { flex: 1; height: 0.5px; background: rgba(201,169,110,0.35); }
 .ci-conn-arrow {
@@ -4767,11 +4783,19 @@ a.p-card, a.p-card:hover {
 
 @media (max-width: 768px) {
   .ci-setup { padding: 32px 20px; }
-  .ci-product { width: 80px; }
+  .ci-row-cell > .ci-role,
+  .ci-row-cell > .ci-img,
+  .ci-row-cell > .ci-img-link,
+  .ci-row-cell > .ci-name,
+  .ci-row-cell > .ci-qty,
+  .ci-row-cell > .ci-img-avr,
+  .ci-img-link, .ci-role, .ci-name, .ci-qty { width: 68px; }
   .ci-img { width: 68px; height: 68px; }
+  .ci-img-avr { width: 68px; }
   .ci-role { font-size: 7px; }
   .ci-name { font-size: 12px; }
-  .ci-connector { min-width: 10px; max-width: 28px; }
+  .ci-connector { min-width: 10px; max-width: 24px; }
+  .ci-spacer { min-width: 10px; max-width: 24px; }
   .ci-conn-arrow { border-top-width: 3px; border-bottom-width: 3px; border-left-width: 5px; }
   .ci-meta { font-size: 12px; }
 }

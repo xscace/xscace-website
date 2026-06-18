@@ -2025,10 +2025,21 @@ export default function ProductDetail({ product }: { product: Product }) {
           return (
             <div key={setup._key} className="ci-setup">
               {si > 0 && <div className="ci-divider-line" />}
-              <div className="ci-chain">
+              {/* Row 1 — role labels */}
+              <div className="ci-row ci-row-labels">
                 {items.map((item: any, idx: number) => (
-                  <div key={idx} className="ci-chain-item-wrap">
-                    {/* Connector — between items */}
+                  <div key={idx} className="ci-row-cell">
+                    {idx > 0 && <div className="ci-spacer" />}
+                    <div className="ci-role">
+                      {item.type === 'product' ? item.sp.role : 'Source'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Row 2 — images + connectors (all perfectly aligned) */}
+              <div className="ci-row ci-row-imgs">
+                {items.map((item: any, idx: number) => (
+                  <div key={idx} className="ci-row-cell">
                     {idx > 0 && (
                       <div className="ci-connector">
                         <div className="ci-conn-line" />
@@ -2041,34 +2052,42 @@ export default function ProductDetail({ product }: { product: Product }) {
                       const img = getImageUrl(p.heroImage, 300)
                       return (
                         <a href={`/products/${p.catSlug || ''}/${p.slug || ''}`}
-                          className="ci-product" style={{textDecoration:'none'}}>
-                          <div className="ci-role">{item.sp.role}</div>
+                          className="ci-img-link">
                           <div className="ci-img">
                             {img
                               ? <img src={img} alt={p.productName} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
                               : <div className="ci-img-empty"/>
                             }
                           </div>
-                          <div className="ci-name">{p.productName}</div>
-                          {item.sp.quantity > 1 && <div className="ci-qty">×{item.sp.quantity}</div>}
                         </a>
                       )
                     })() : (
-                      <div className="ci-product">
-                        <div className="ci-role">Source</div>
-                        <div className="ci-img ci-img-avr">
-                          <svg viewBox="0 0 80 50" fill="none" style={{width:'60%',opacity:0.3}}>
-                            <rect x="2" y="2" width="76" height="46" rx="2" stroke="#c9a96e" strokeWidth="0.8"/>
-                            <rect x="8" y="10" width="28" height="5" rx="1" stroke="#c9a96e" strokeWidth="0.5"/>
-                            <rect x="8" y="19" width="40" height="5" rx="1" stroke="#c9a96e" strokeWidth="0.5"/>
-                            <rect x="8" y="28" width="32" height="5" rx="1" stroke="#c9a96e" strokeWidth="0.5"/>
-                            <text x="64" y="29" textAnchor="middle" fill="#c9a96e" fontSize="8" fontFamily="monospace">AVR</text>
-                          </svg>
-                        </div>
-                        <div className="ci-name">Any AVR</div>
-                        <div className="ci-qty">Dolby Atmos</div>
+                      <div className="ci-img ci-img-avr">
+                        <svg viewBox="0 0 80 50" fill="none" style={{width:'60%',opacity:0.3}}>
+                          <rect x="2" y="2" width="76" height="46" rx="2" stroke="#c9a96e" strokeWidth="0.8"/>
+                          <rect x="8" y="10" width="28" height="5" rx="1" stroke="#c9a96e" strokeWidth="0.5"/>
+                          <rect x="8" y="19" width="40" height="5" rx="1" stroke="#c9a96e" strokeWidth="0.5"/>
+                          <rect x="8" y="28" width="32" height="5" rx="1" stroke="#c9a96e" strokeWidth="0.5"/>
+                          <text x="64" y="29" textAnchor="middle" fill="#c9a96e" fontSize="8" fontFamily="monospace">AVR</text>
+                        </svg>
                       </div>
                     )}
+                  </div>
+                ))}
+              </div>
+              {/* Row 3 — names + qty */}
+              <div className="ci-row ci-row-names">
+                {items.map((item: any, idx: number) => (
+                  <div key={idx} className="ci-row-cell">
+                    {idx > 0 && <div className="ci-spacer" />}
+                    <div className="ci-name">
+                      {item.type === 'product' ? item.sp.product?.productName : 'Any AVR'}
+                    </div>
+                    <div className="ci-qty">
+                      {item.type === 'product'
+                        ? (item.sp.quantity > 1 ? `×${item.sp.quantity}` : '')
+                        : 'Dolby Atmos'}
+                    </div>
                   </div>
                 ))}
               </div>
