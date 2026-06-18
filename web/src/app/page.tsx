@@ -58,8 +58,15 @@ type FeaturedProduct = {
   spec: string; videoUrl: string|null; imageUrl: string; fallbackImageUrl: string|null
 }
 
+const FEATURED_FALLBACK: FeaturedProduct[] = [
+  { _id:'prod-bonsai',   href:'/products/slim-array-series/bonsai-mini-slim-array-speaker',   badge:"World's Smallest", cat:'Slim Array',  name:'Bonsai',    spec:'40W · 86 dB · 300Hz–18KHz · 8Ω', videoUrl:'https://cdn.sanity.io/files/7r0kq57d/production/9321462fead3edd96aea64e147d713d274fc4568.mp4', imageUrl:'https://cdn.sanity.io/images/7r0kq57d/production/89581883d4b073a233ffeac08b3c62c213adf3a6-525x492.png?w=800&auto=format', fallbackImageUrl:null },
+  { _id:'prod-cane',     href:'/products/slim-array-series/cane-slim-array-speaker',          badge:'23mm Thin',        cat:'Slim Array',  name:'Cane',      spec:'50W · 92 dB · 150Hz–20KHz · 8Ω', videoUrl:'https://cdn.sanity.io/files/7r0kq57d/production/c9587a4d945e0f8982ef1eea9ff96a979406d70c.mp4', imageUrl:'https://cdn.sanity.io/images/7r0kq57d/production/f143deb1faa4ec05c289b9481fbe22b806f5366c-3840x2160.png?w=800&auto=format', fallbackImageUrl:null },
+  { _id:'prod-ghost2',   href:'/products/in-ceiling-series/ghost-2-0-slim-in-ceiling-speaker', badge:'Award Winning',   cat:'In-Ceiling',  name:'Ghost 2.0', spec:'80W · 92 dB · 20Hz–20KHz · 4Ω',   videoUrl:null, imageUrl:'https://cdn.sanity.io/images/7r0kq57d/production/9139826855763d4eaaf092f3092587396989a9c2-1080x1350.png?w=800&auto=format', fallbackImageUrl:null },
+  { _id:'prod-quadcane', href:'/products/slim-array-series/quadcane-slim-array-speaker',       badge:'21mm Thin',       cat:'Slim Array',  name:'QuadCane',  spec:'100W · 104 dB · 150Hz–20KHz · 8Ω', videoUrl:'https://cdn.sanity.io/files/7r0kq57d/production/d9519eb2abae08958f4f195848a348a3be3b5221.mp4', imageUrl:'https://cdn.sanity.io/images/7r0kq57d/production/54e4d047eb5078a4aa6dd11592a43a60c6101b50-412x418.png?w=800&auto=format', fallbackImageUrl:null },
+]
+
 function useFeaturedProducts(): FeaturedProduct[] {
-  const [products, setProducts] = useState<FeaturedProduct[]>([])
+  const [products, setProducts] = useState<FeaturedProduct[]>(FEATURED_FALLBACK)
 
   useEffect(() => {
     const query = encodeURIComponent(`*[_id in ${JSON.stringify(FEATURED_IDS)}]{
@@ -162,7 +169,7 @@ function HeroBgVideo() {
 }
 
 // ── FEATURED CARD ─────────────────────────────────────────────────────────────
-function FeaturedCard({ p }: { p: typeof FEATURED[0] }) {
+function FeaturedCard({ p }: { p: FeaturedProduct }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [hovered, setHovered] = useState(false)
 
