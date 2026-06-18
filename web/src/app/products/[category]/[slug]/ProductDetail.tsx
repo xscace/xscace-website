@@ -2008,74 +2008,74 @@ export default function ProductDetail({ product }: { product: Product }) {
           <h2 className="pd-section-title">Common <em>installations</em></h2>
         </div>
 
-        {(product.typicalSetups?.length > 0 ? product.typicalSetups : []).map((setup: any) => {
+        {(product.typicalSetups?.length > 0 ? product.typicalSetups : []).map((setup: any, si: number) => {
           const isCinema = setup.label?.toLowerCase().includes('cinema') || setup.label?.toLowerCase().includes('home')
-          return (
-          <div key={setup._key} className="pd-setup-group">
-            <div className="pd-setup-group-header">
-              <div className="pd-setup-group-label">{setup.label}</div>
-              {setup.description && (
-                <div className="pd-setup-group-desc">{setup.description}</div>
-              )}
-            </div>
-            <div className="pd-setups-grid">
-              {(setup.products || []).map((sp: any) => {
-                const p = sp.product
-                if (!p) return null
-                const img = getImageUrl(p.heroImage, 600)
-                const specs = [
-                  p.powerRmsW && `${p.powerRmsW}W`,
-                  p.sensitivityDb && `${p.sensitivityDb} dB`,
-                  p.impedanceOhms && `${p.impedanceOhms}Ω`,
-                ].filter(Boolean).join(' · ')
-                return (
-                  <a key={sp._key}
-                    href={`/products/${p.catSlug || ''}/${p.slug || ''}`}
-                    className="prod-card pd-setup-prod-card">
-                    <div className="prod-img">
-                      {img
-                        ? <img src={img} alt={p.productName} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
-                        : null
-                      }
-                      <div className="p-badge" style={{top:'auto',bottom:'12px',left:'12px'}}>×{sp.quantity}</div>
-                    </div>
-                    <div className="p-body">
-                      <div className="p-cat">{sp.role}</div>
-                      <div className="p-name">{p.productName}</div>
-                      {specs && <div className="p-spec">{specs}</div>}
-                      <div className="p-foot">
-                        <span className="p-arr">View →</span>
-                      </div>
-                    </div>
-                  </a>
-                )
-              })}
+          // Build chain right-to-left: Source → Amp → Speakers
+          const items: any[] = []
 
-              {/* AVR card — only on cinema setups */}
-              {isCinema && (
-                <div className="prod-card pd-setup-prod-card pd-setup-avr-card">
-                  <div className="prod-img">
-                    <svg viewBox="0 0 120 60" fill="none" width="80" opacity="0.25">
-                      <rect x="2" y="2" width="116" height="56" rx="3" stroke="#c9a96e" strokeWidth="1"/>
-                      <rect x="10" y="10" width="30" height="8" rx="1" stroke="#c9a96e" strokeWidth="0.6" opacity="0.5"/>
-                      <rect x="10" y="22" width="50" height="8" rx="1" stroke="#c9a96e" strokeWidth="0.6" opacity="0.5"/>
-                      <rect x="10" y="34" width="40" height="8" rx="1" stroke="#c9a96e" strokeWidth="0.6" opacity="0.5"/>
-                      <circle cx="96" cy="30" r="12" stroke="#c9a96e" strokeWidth="0.8" opacity="0.4"/>
-                      <text x="96" y="34" textAnchor="middle" fill="#c9a96e" fontSize="7" fontFamily="DM Mono" opacity="0.5">AVR</text>
-                    </svg>
+          // AVR at the right (source) for cinema setups
+          if (isCinema) {
+            items.push({ type: 'avr' })
+          }
+
+          // Products in reverse order
+          const prods = [...(setup.products || [])].reverse()
+          prods.forEach((sp: any) => items.push({ type: 'product', sp }))
+
+          return (
+            <div key={setup._key} className="ci-setup">
+              {si > 0 && <div className="ci-divider-line" />}
+              <div className="ci-chain">
+                {items.map((item: any, idx: number) => (
+                  <div key={idx} className="ci-chain-item-wrap">
+                    {/* Connector — between items */}
+                    {idx > 0 && (
+                      <div className="ci-connector">
+                        <div className="ci-conn-line" />
+                        <div className="ci-conn-arrow" />
+                      </div>
+                    )}
+                    {item.type === 'product' ? (() => {
+                      const p = item.sp.product
+                      if (!p) return null
+                      const img = getImageUrl(p.heroImage, 300)
+                      return (
+                        <a href={`/products/${p.catSlug || ''}/${p.slug || ''}`}
+                          className="ci-product" style={{textDecoration:'none'}}>
+                          <div className="ci-role">{item.sp.role}</div>
+                          <div className="ci-img">
+                            {img
+                              ? <img src={img} alt={p.productName} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+                              : <div className="ci-img-empty"/>
+                            }
+                          </div>
+                          <div className="ci-name">{p.productName}</div>
+                          {item.sp.quantity > 1 && <div className="ci-qty">×{item.sp.quantity}</div>}
+                        </a>
+                      )
+                    })() : (
+                      <div className="ci-product">
+                        <div className="ci-role">Source</div>
+                        <div className="ci-img ci-img-avr">
+                          <svg viewBox="0 0 80 50" fill="none" style={{width:'60%',opacity:0.3}}>
+                            <rect x="2" y="2" width="76" height="46" rx="2" stroke="#c9a96e" strokeWidth="0.8"/>
+                            <rect x="8" y="10" width="28" height="5" rx="1" stroke="#c9a96e" strokeWidth="0.5"/>
+                            <rect x="8" y="19" width="40" height="5" rx="1" stroke="#c9a96e" strokeWidth="0.5"/>
+                            <rect x="8" y="28" width="32" height="5" rx="1" stroke="#c9a96e" strokeWidth="0.5"/>
+                            <text x="64" y="29" textAnchor="middle" fill="#c9a96e" fontSize="8" fontFamily="monospace">AVR</text>
+                          </svg>
+                        </div>
+                        <div className="ci-name">Any AVR</div>
+                        <div className="ci-qty">Dolby Atmos</div>
+                      </div>
+                    )}
                   </div>
-                  <div className="p-body">
-                    <div className="p-cat">AV Receiver</div>
-                    <div className="p-name">Any AVR</div>
-                    <div className="p-spec">Dolby Atmos · DTS:X · 7.2.4+</div>
-                    <div className="p-foot">
-                      <span className="p-arr" style={{color:'rgba(201,169,110,0.3)',fontSize:'9px'}}>Denon · Marantz · Yamaha</span>
-                    </div>
-                  </div>
-                </div>
-              )}
+                ))}
+              </div>
+              <div className="ci-meta">
+                {setup.label}{setup.description ? ` · ${setup.description}` : ''}
+              </div>
             </div>
-          </div>
           )
         })}
 
