@@ -287,22 +287,7 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
         spot.target.position.set(0, 0, 0)
         spotRef.current = spot
 
-        // Contact shadow disc
-        const sc = document.createElement('canvas')
-        sc.width = 256; sc.height = 256
-        const sctx = sc.getContext('2d')!
-        const sg = sctx.createRadialGradient(128, 128, 8, 128, 128, 110)
-        sg.addColorStop(0, 'rgba(0,0,0,0.7)')
-        sg.addColorStop(0.5, 'rgba(0,0,0,0.25)')
-        sg.addColorStop(1, 'rgba(0,0,0,0)')
-        sctx.fillStyle = sg; sctx.fillRect(0, 0, 256, 256)
-        const disc = new THREE.Mesh(
-          new THREE.PlaneGeometry(0.6, 0.6),
-          new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(sc), transparent: true, depthWrite: false })
-        )
-        disc.rotation.x = -Math.PI / 2
-        disc.position.y = -0.26
-        scene.add(disc)
+
 
         // ── HDR Environment Map (studio lighting reflection) ──
         // Procedural HDR: simulate a studio with warm key + cool fill
