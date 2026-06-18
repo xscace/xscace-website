@@ -34,44 +34,76 @@ function shuffle<T>(arr: T[]): T[] {
 const SHUFFLED = shuffle(HERO_VIDEOS)
 
 // ── FEATURED PRODUCTS ─────────────────────────────────────────────────────────
-const FEATURED = [
-  {
-    href: '/products/slim-array-series/bonsai-mini-slim-array-speaker',
-    badge: "World's Smallest",
-    cat: 'Slim Array',
-    name: 'Bonsai',
-    spec: '40W · 86 dB · 300Hz–18KHz · 8Ω',
-    videoUrl: 'https://cdn.sanity.io/files/7r0kq57d/production/9321462fead3edd96aea64e147d713d274fc4568.mp4',
-    imageUrl: 'https://cdn.sanity.io/images/7r0kq57d/production/89581883d4b073a233ffeac08b3c62c213adf3a6-525x492.png?w=800&auto=format',
-  },
-  {
-    href: '/products/slim-array-series/cane-slim-array-speaker',
-    badge: '23mm Thin',
-    cat: 'Slim Array',
-    name: 'Cane',
-    spec: '50W · 92 dB · 150Hz–20KHz · 8Ω',
-    videoUrl: 'https://cdn.sanity.io/files/7r0kq57d/production/c9587a4d945e0f8982ef1eea9ff96a979406d70c.mp4',
-    imageUrl: 'https://cdn.sanity.io/images/7r0kq57d/production/f143deb1faa4ec05c289b9481fbe22b806f5366c-3840x2160.png?w=800&auto=format',
-  },
-  {
-    href: '/products/in-ceiling-series/ghost-2-0-slim-in-ceiling-speaker',
-    badge: 'Award Winning',
-    cat: 'In-Ceiling',
-    name: 'Ghost 2.0',
-    spec: '80W · 92 dB · 20Hz–20KHz · 4Ω',
-    videoUrl: null,
-    imageUrl: 'https://cdn.sanity.io/images/7r0kq57d/production/9139826855763d4eaaf092f3092587396989a9c2-1080x1350.png?w=800&auto=format',
-  },
-  {
-    href: '/products/slim-array-series/quadcane-slim-array-speaker',
-    badge: '21mm Thin',
-    cat: 'Slim Array',
-    name: 'QuadCane',
-    spec: '100W · 104 dB · 150Hz–20KHz · 8Ω',
-    videoUrl: 'https://cdn.sanity.io/files/7r0kq57d/production/d9519eb2abae08958f4f195848a348a3be3b5221.mp4',
-    imageUrl: 'https://cdn.sanity.io/images/7r0kq57d/production/54e4d047eb5078a4aa6dd11592a43a60c6101b50-412x418.png?w=800&auto=format',
-  },
-]
+const FEATURED_IDS = ['prod-bonsai', 'prod-cane', 'prod-ghost2', 'prod-quadcane']
+
+const BADGE_MAP: Record<string,string> = {
+  'prod-bonsai':   "World's Smallest",
+  'prod-cane':     '23mm Thin',
+  'prod-ghost2':   'Award Winning',
+  'prod-quadcane': '21mm Thin',
+}
+
+function sanityImgUrl(ref: string, w = 800) {
+  const b = ref.replace('image-', '').split('-')
+  const ext = b.pop(); const dims = b.pop(); const hash = b.join('-')
+  return `https://cdn.sanity.io/images/7r0kq57d/production/${hash}-${dims}.${ext}?w=${w}&auto=format&q=85`
+}
+function sanityFileUrl(ref: string) {
+  const id = ref.replace('file-', '').replace(/-([a-zA-Z0-9]+)$/, '.$1')
+  return `https://cdn.sanity.io/files/7r0kq57d/production/${id}`
+}
+
+type FeaturedProduct = {
+  _id: string; href: string; badge: string; cat: string; name: string
+  spec: string; videoUrl: string|null; imageUrl: string; fallbackImageUrl: string|null
+}
+
+function useFeaturedProducts(): FeaturedProduct[] {
+  const [products, setProducts] = useState<FeaturedProduct[]>([])
+
+  useEffect(() => {
+    const query = encodeURIComponent(`*[_id in ${JSON.stringify(FEATURED_IDS)}]{
+      _id, productName, tagline, series,
+      "catSlug": category->slug.current, "slug": slug.current,
+      "heroImageRef": heroImage.asset._ref,
+      "heroVideoRef": heroVideoFile.asset._ref,
+      "fallbackImageRef": coalesce(lifestyleImages[0].asset._ref, galleryImages[0].asset._ref),
+      sensitivityDb, powerRmsW, freqLowHz, freqHighHz, impedanceOhms
+    }`)
+
+    fetch(`https://7r0kq57d.api.sanity.io/v2024-01-01/data/query/production?query=${query}`)
+      .then(r => r.json())
+      .then(({ result }) => {
+        // Sort by FEATURED_IDS order
+        const byId = Object.fromEntries((result || []).map((p: any) => [p._id, p]))
+        const mapped: FeaturedProduct[] = FEATURED_IDS.map(id => {
+          const p = byId[id]
+          if (!p) return null
+          const spec = [
+            p.powerRmsW && `${p.powerRmsW}W`,
+            p.sensitivityDb && `${p.sensitivityDb} dB`,
+            p.freqLowHz && p.freqHighHz && `${p.freqLowHz}Hz–${p.freqHighHz}kHz`,
+            p.impedanceOhms && `${p.impedanceOhms}Ω`,
+          ].filter(Boolean).join(' · ')
+          return {
+            _id: id,
+            href: `/products/${p.catSlug}/${p.slug}`,
+            badge: BADGE_MAP[id] || '',
+            cat: p.series || '',
+            name: p.productName,
+            spec,
+            videoUrl: p.heroVideoRef ? sanityFileUrl(p.heroVideoRef) : null,
+            imageUrl: p.heroImageRef ? sanityImgUrl(p.heroImageRef) : '',
+            fallbackImageUrl: p.fallbackImageRef ? sanityImgUrl(p.fallbackImageRef) : null,
+          }
+        }).filter(Boolean) as FeaturedProduct[]
+        setProducts(mapped)
+      })
+      .catch(console.error)
+  }, [])
+
+  return products
+}
 
 // ── HERO BG VIDEO COMPONENT ───────────────────────────────────────────────────
 // Two video elements cross-fade so there's never a black flash between clips.
@@ -276,6 +308,7 @@ function ContactForm() {
 
 // ── PAGE ──────────────────────────────────────────────────────────────────────
 export default function HomePage() {
+  const featured = useFeaturedProducts()
 
   useEffect(() => {
     const obs = new IntersectionObserver(entries => {
@@ -358,7 +391,7 @@ export default function HomePage() {
     <div className="sec-lnk">View all products</div>
   </div>
   <div className="prod-grid">
-    {FEATURED.map(p => <FeaturedCard key={p.name} p={p} />)}
+    {featured.map(p => <FeaturedCard key={p._id} p={p} />)}
   </div>
 </section>
 
