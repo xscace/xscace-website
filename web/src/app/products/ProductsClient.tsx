@@ -704,7 +704,12 @@ export default function ProductsClient({
         <div className="catalogue-section products-section" id="catalogue">
           <div className="products-sec-header">
             <div className="products-sec-ey">Full Catalogue</div>
-            <h2 className="catalogue-title">Every <em>product</em></h2>
+            <h2 className="products-sec-title">
+              {activeFilter === 'all'
+                ? <>Every <em>product</em></>
+                : <>{categories.find(c => c.slug.current === activeFilter)?.name || 'Products'}</>
+              }
+            </h2>
           </div>
           <div ref={gridRef} className="catalogue-grid"
             style={{ opacity: gridVisible ? 1 : 0, transition: 'opacity .18s ease' }}>
