@@ -3278,8 +3278,9 @@ a.p-card, a.p-card:hover {
 .acc-card {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  min-height: 520px;
+  min-height: 520px; max-height: 520px;
   border-top: 0.5px solid rgba(201,169,110,0.07);
+  overflow: hidden;
 }
 .acc-card-flip { direction: rtl; }
 .acc-card-flip > * { direction: ltr; }
@@ -3288,6 +3289,7 @@ a.p-card, a.p-card:hover {
 .acc-img-side {
   position: relative; background: #000;
   display: flex; align-items: center; justify-content: center;
+  overflow: hidden; max-height: 520px;
 }
 
 /* Reveal slider */
