@@ -4706,96 +4706,80 @@ a.p-card, a.p-card:hover {
 .ci-setup { padding: 48px 56px; }
 .ci-divider-line { height: 0.5px; background: #1a1a1a; }
 
-/* 3-row layout: labels / images+connectors / names */
-.ci-row {
-  display: flex; align-items: center;
-  justify-content: center; overflow-x: auto;
-}
-.ci-row-labels { margin-bottom: 10px; }
-.ci-row-imgs   { }
-.ci-row-names  { margin-top: 10px; }
-
-/* Each cell = connector (optional) + content */
-.ci-row-cell {
-  display: flex; align-items: center; flex-shrink: 0;
+.ci-chain {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-x: auto;
+  padding: 4px 0;
 }
 
-/* The product node width — same in all rows */
-.ci-row-cell > .ci-role,
-.ci-row-cell > .ci-img,
-.ci-row-cell > .ci-img-link,
-.ci-row-cell > .ci-name,
-.ci-row-cell > .ci-qty,
-.ci-row-cell > .ci-img-avr {
-  width: 96px; flex-shrink: 0;
+.ci-product {
+  display: flex; flex-direction: column; align-items: center;
+  width: 104px; flex-shrink: 0; text-decoration: none;
 }
-
-/* Spacer — same width as connector, keeps labels/names aligned */
-.ci-spacer { width: 48px; flex-shrink: 0; }
-
-.ci-img-link { display: block; width: 96px; text-decoration: none; }
-.ci-img-link:hover .ci-img { border-color: rgba(201,169,110,0.35); }
+.ci-product:hover .ci-img { border-color: rgba(201,169,110,0.35); }
+.ci-product:hover .ci-name { color: #c9a96e; }
 
 .ci-role {
   font-family: 'DM Mono', monospace; font-size: 8px;
   letter-spacing: 0.16em; text-transform: uppercase;
   color: rgba(201,169,110,0.5); text-align: center;
-  width: 96px;
+  height: 20px; display: flex; align-items: center; justify-content: center;
+  width: 104px; padding: 0 4px; box-sizing: border-box;
 }
 .ci-img {
-  width: 96px; height: 96px;
-  border: 0.5px solid #1a1a1a;
-  background: #080808; overflow: hidden;
-  display: flex; align-items: center; justify-content: center;
+  width: 88px; height: 88px; flex-shrink: 0;
+  border: 0.5px solid #1a1a1a; background: #080808;
+  overflow: hidden; display: flex; align-items: center; justify-content: center;
   transition: border-color 0.3s ease;
 }
 .ci-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.ci-img-avr { background: #060606; width: 96px; }
+.ci-img-avr { background: #060606; }
 .ci-img-empty { width: 100%; height: 100%; background: #0a0a0a; }
 .ci-name {
   font-family: 'Cormorant Garamond', serif; font-weight: 300;
   font-size: 14px; color: #e0dcd6; text-align: center;
-  letter-spacing: 0.02em; width: 96px;
+  letter-spacing: 0.02em; transition: color 0.3s ease;
+  margin-top: 8px; width: 104px; padding: 0 4px; box-sizing: border-box;
 }
 .ci-qty {
   font-family: 'DM Mono', monospace; font-size: 8px;
   color: rgba(201,169,110,0.4); letter-spacing: 0.1em;
-  text-align: center; width: 96px; margin-top: 4px;
+  text-align: center; margin-top: 3px; width: 104px;
+  min-height: 14px;
 }
+
+/* Connector sits between products.
+   margin-top: 20px = height of .ci-role label, so line aligns to image centre */
 .ci-connector {
   display: flex; align-items: center;
   width: 48px; flex-shrink: 0;
+  margin-top: 20px;
   padding: 0 4px;
 }
 .ci-conn-line { flex: 1; height: 0.5px; background: rgba(201,169,110,0.35); }
 .ci-conn-arrow {
-  width: 0; height: 0;
+  width: 0; height: 0; flex-shrink: 0;
   border-top: 4px solid transparent;
   border-bottom: 4px solid transparent;
   border-left: 7px solid rgba(201,169,110,0.7);
-  flex-shrink: 0;
 }
+
 .ci-meta {
-  text-align: center; margin-top: 28px;
+  text-align: center; margin-top: 24px;
   font-family: 'Cormorant Garamond', serif; font-style: italic;
   font-size: 14px; color: rgba(200,196,188,0.35); letter-spacing: 0.04em;
 }
 
 @media (max-width: 768px) {
-  .ci-setup { padding: 32px 20px; }
-  .ci-row-cell > .ci-role,
-  .ci-row-cell > .ci-img,
-  .ci-row-cell > .ci-img-link,
-  .ci-row-cell > .ci-name,
-  .ci-row-cell > .ci-qty,
-  .ci-row-cell > .ci-img-avr,
-  .ci-img-link, .ci-role, .ci-name, .ci-qty { width: 68px; }
-  .ci-img { width: 68px; height: 68px; }
-  .ci-img-avr { width: 68px; }
-  .ci-role { font-size: 7px; }
-  .ci-name { font-size: 12px; }
-  .ci-connector { width: 28px; }
-  .ci-spacer { width: 28px; }
+  .ci-setup { padding: 32px 16px; }
+  .ci-product { width: 76px; }
+  .ci-role { width: 76px; font-size: 7px; height: 18px; }
+  .ci-img { width: 64px; height: 64px; }
+  .ci-name { font-size: 11px; width: 76px; }
+  .ci-qty { width: 76px; }
+  .ci-connector { width: 24px; margin-top: 18px; }
   .ci-conn-arrow { border-top-width: 3px; border-bottom-width: 3px; border-left-width: 5px; }
   .ci-meta { font-size: 12px; }
 }
