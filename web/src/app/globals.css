@@ -4704,56 +4704,59 @@ a.p-card, a.p-card:hover {
 
 /* ── Common Installations — Signal Chain ──────────────────────────────────── */
 .ci-setup { padding: 48px 56px; }
-.ci-divider-line { height: 0.5px; background: #1a1a1a; margin-bottom: 0; }
+.ci-divider-line { height: 0.5px; background: #1a1a1a; }
 .ci-chain {
-  display: flex; align-items: flex-end;
+  display: flex; align-items: center;
   justify-content: center; gap: 0;
-  overflow-x: auto; padding-bottom: 4px;
+  overflow-x: auto; padding: 8px 0 4px;
 }
-.ci-chain-item-wrap { display: flex; align-items: flex-end; }
+.ci-chain-item-wrap { display: flex; align-items: center; }
 .ci-product {
   display: flex; flex-direction: column; align-items: center;
-  gap: 8px; width: 120px; flex-shrink: 0; cursor: pointer;
+  width: 120px; flex-shrink: 0; cursor: pointer;
 }
-.ci-product:hover .ci-img { border-color: rgba(201,169,110,0.3); }
+.ci-product:hover .ci-img { border-color: rgba(201,169,110,0.35); }
 .ci-product:hover .ci-name { color: #c9a96e; }
+.ci-role {
+  font-family: 'DM Mono', monospace; font-size: 8px;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: rgba(201,169,110,0.5); text-align: center;
+  margin-bottom: 8px; min-height: 14px;
+}
 .ci-img {
   width: 96px; height: 96px;
   border: 0.5px solid #1a1a1a;
-  background: #080808;
-  overflow: hidden;
+  background: #080808; overflow: hidden;
   display: flex; align-items: center; justify-content: center;
-  transition: border-color 0.3s ease;
-  flex-shrink: 0;
+  transition: border-color 0.3s ease; flex-shrink: 0;
 }
 .ci-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .ci-img-avr { background: #060606; }
 .ci-img-empty { width: 100%; height: 100%; background: #0a0a0a; }
-.ci-role {
-  font-family: 'DM Mono', monospace; font-size: 8px;
-  letter-spacing: 0.16em; text-transform: uppercase;
-  color: rgba(201,169,110,0.45); text-align: center;
-}
 .ci-name {
   font-family: 'Cormorant Garamond', serif; font-weight: 300;
   font-size: 14px; color: #e0dcd6; text-align: center;
   letter-spacing: 0.02em; transition: color 0.3s ease;
+  margin-top: 8px; min-height: 20px;
 }
 .ci-qty {
   font-family: 'DM Mono', monospace; font-size: 8px;
-  color: rgba(201,169,110,0.35); letter-spacing: 0.1em; text-align: center;
+  color: rgba(201,169,110,0.4); letter-spacing: 0.1em;
+  text-align: center; margin-top: 4px; min-height: 14px;
 }
 .ci-connector {
   display: flex; align-items: center;
   flex: 1; min-width: 24px; max-width: 72px;
-  padding: 0 2px; margin-bottom: 40px; flex-shrink: 0;
+  padding: 0 2px; flex-shrink: 0;
+  /* offset upward by half the label height to align with image centre */
+  margin-bottom: 22px;
 }
-.ci-conn-line { flex: 1; height: 0.5px; background: rgba(201,169,110,0.18); }
+.ci-conn-line { flex: 1; height: 0.5px; background: rgba(201,169,110,0.35); }
 .ci-conn-arrow {
   width: 0; height: 0;
-  border-top: 3px solid transparent;
-  border-bottom: 3px solid transparent;
-  border-left: 5px solid rgba(201,169,110,0.25);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 7px solid rgba(201,169,110,0.7);
   flex-shrink: 0;
 }
 .ci-meta {
@@ -4766,8 +4769,10 @@ a.p-card, a.p-card:hover {
   .ci-setup { padding: 32px 20px; }
   .ci-product { width: 80px; }
   .ci-img { width: 68px; height: 68px; }
+  .ci-role { font-size: 7px; }
   .ci-name { font-size: 12px; }
-  .ci-connector { min-width: 12px; max-width: 32px; }
+  .ci-connector { min-width: 10px; max-width: 28px; }
+  .ci-conn-arrow { border-top-width: 3px; border-bottom-width: 3px; border-left-width: 5px; }
   .ci-meta { font-size: 12px; }
 }
 /* ───────────────────────────────────────────────────────────────────────────── */
