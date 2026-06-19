@@ -4732,13 +4732,13 @@ a.p-card, a.p-card:hover {
 }
 .ci-img {
   width: 88px; height: 88px; flex-shrink: 0;
-  border: 0.5px solid #1a1a1a; background: #080808;
+  border: 0.5px solid #1a1a1a; background: #000;
   overflow: hidden; display: flex; align-items: center; justify-content: center;
   transition: border-color 0.3s ease;
 }
 .ci-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.ci-img-avr { background: #060606; }
-.ci-img-empty { width: 100%; height: 100%; background: #0a0a0a; }
+.ci-img-avr { background: #000; }
+.ci-img-empty { width: 100%; height: 100%; background: #000; }
 .ci-name {
   font-family: 'Cormorant Garamond', serif; font-weight: 300;
   font-size: 14px; color: #e0dcd6; text-align: center;
