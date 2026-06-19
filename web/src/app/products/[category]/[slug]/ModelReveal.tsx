@@ -17,7 +17,7 @@ const CONSTRAINTS_MAP: Record<string, Constraint[]> = {
     { cross:'×', text:'No draft angle',            desc:'CNC machined, not cast. Zero draft — every edge is geometrically perfect and flush. No taper, no step, no visible gap against the wall.', angle:{y:Math.PI*0.38,x:0}, mode:'normal' },
     { cross:'×', text:'No unnecessary pattern',    desc:'The only perforations are acoustic. Each 0.7mm aperture exists because sound requires it — not for decoration.', angle:{y:0,x:0.18}, mode:'normal' },
     { cross:'×', text:'No compromise on finish',   desc:'Anodised 6061 aerospace aluminium. The finish is applied under electrical current — it becomes part of the metal itself. Available in any RAL.', angle:{y:-Math.PI*0.28,x:0}, mode:'fingerprint' },
-    { cross:'→', text:'Just material. Just line.', desc:'When there is nothing to remove, design is complete. The Cane exists at the point where engineering and restraint arrive at the same answer.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
+    { cross:'→', text:'Just material. Just line.', desc:'When there is nothing to remove, design is complete. Every element earns its place — engineering and restraint arriving at the same answer.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
   ],
   'prod-quadcane': [
     { cross:'×', text:'No visible fixings',        desc:'Every fastener is concealed. The grille, baffle and chassis unite as a single uninterrupted surface — nothing to catch the eye, nothing to break the plane.', angle:{y:0,x:0}, mode:'normal' },
@@ -27,11 +27,11 @@ const CONSTRAINTS_MAP: Record<string, Constraint[]> = {
     { cross:'→', text:'Four drivers. One voice.',  desc:'The QuadCane array is tuned as a single acoustic unit — four drivers time-aligned and phase-matched so the room hears one speaker, not four.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
   ],
   'prod-ghost2': [
+    { cross:'×', text:'No draft angle',            desc:'CNC machined, not cast. Zero draft — every edge is geometrically perfect and flush. No taper, no step, no visible gap against the ceiling.', angle:{y:Math.PI*0.38,x:0}, mode:'normal' },
     { cross:'×', text:'Flush to 0.3mm',            desc:'The bezel sits within a 0.3mm tolerance of your ceiling plane. No lip, no shadow line, no visual interruption. The ceiling you designed remains exactly as drawn.', angle:{y:0,x:0}, mode:'normal' },
-    { cross:'×', text:'No baffle diffraction',     desc:'The driver is recessed behind the micro-perforated grille. Sound exits before the baffle edge exists — eliminating the diffraction that colours conventional in-ceiling sound.', angle:{y:Math.PI*0.3,x:0.2}, mode:'normal' },
-    { cross:'×', text:'No paint masking',          desc:'The grille accepts emulsion directly. Paint it once, paint it again — the acoustic apertures remain clear and the speaker disappears entirely into your ceiling.', angle:{y:0,x:0.3}, mode:'normal' },
-    { cross:'×', text:'No asymmetric dispersion',  desc:'Dual coincident drivers deliver identical coverage at every listening position. No sweet spot. No dead zone. The room performs uniformly from every seat.', angle:{y:-Math.PI*0.25,x:0}, mode:'normal' },
-    { cross:'→', text:'The ceiling you designed, exactly.', desc:'When there is nothing to see, the room speaks for itself. The Ghost 2.0 is the point where acoustic engineering becomes invisible.', angle:{y:Math.PI*0.15,x:-0.15}, mode:'normal', last:true },
+    { cross:'×', text:'No unnecessary pattern',    desc:'The only perforations are acoustic. Each 0.7mm aperture exists because sound requires it — not for decoration.', angle:{y:0,x:0.3}, mode:'normal' },
+    { cross:'×', text:'No visible fixings',        desc:'Every fastener is concealed. The grille, baffle and chassis unite as a single uninterrupted surface — nothing to catch the eye, nothing to break the plane.', angle:{y:-Math.PI*0.25,x:0}, mode:'normal' },
+    { cross:'→', text:'Just material. Just line.', desc:'When there is nothing to remove, design is complete. The Ghost 2.0 exists at the point where acoustic engineering and restraint arrive at the same answer.', angle:{y:Math.PI*0.15,x:-0.15}, mode:'normal', last:true },
   ],
 }
 
@@ -357,17 +357,17 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
             currentXRef.current = s.rot[0]
             currentYRef.current = s.rot[1]
 
-            // Apply anodised aluminium material — skip for Ghost (keep original GLB materials)
+            // Preserve original GLB materials for all products (colours set by 3D designer)
             model.traverse((child: any) => {
               if (!child.isMesh) return
               origMatsRef.current.set(child, child.material)
-              if (productId === 'prod-ghost2') {
-                // Ghost 2.0: preserve original GLB materials, just set up wireframe variant
-                wireMatsRef.current.set(child, new THREE.MeshBasicMaterial({
-                  color: new THREE.Color(0xc9a96e), wireframe: true, transparent: true, opacity: 0.3,
-                }))
-                return
-              }
+              // Always use original material — just set up wireframe variant
+              wireMatsRef.current.set(child, new THREE.MeshBasicMaterial({
+                color: new THREE.Color(0xc9a96e), wireframe: true, transparent: true, opacity: 0.3,
+              }))
+              return
+              // (anodised aluminium override removed — GLB materials used as-is)
+              if (false) {
 
               // ── Anodised aluminium normal map (brushed grain) ──
               const nmSize = 256

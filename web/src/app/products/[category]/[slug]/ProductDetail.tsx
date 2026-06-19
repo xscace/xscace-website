@@ -1831,6 +1831,21 @@ export default function ProductDetail({ product }: { product: Product }) {
                 </span>
               )}
 
+              {/* Award Winning tag — Ghost 2.0 */}
+              {product._id === 'prod-ghost2' && (
+                <span style={{
+                  display:'inline-flex', alignItems:'center', gap:6,
+                  padding:'4px 10px', border:'0.5px solid rgba(201,169,110,0.4)',
+                  fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'.14em',
+                  textTransform:'uppercase', color:'#c9a96e',
+                }}>
+                  <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+                    <polygon points="4,0 5,3 8,3 5.5,5 6.5,8 4,6 1.5,8 2.5,5 0,3 3,3" fill="#c9a96e" opacity="0.8"/>
+                  </svg>
+                  Award Winning
+                </span>
+              )}
+
               {/* Custom RAL — spinning prism border + liquid drops */}
               {product.customRalAvailable && <RainbowPill/>}
 
