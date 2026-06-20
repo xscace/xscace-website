@@ -109,7 +109,7 @@ const MODEL_SETTINGS: Record<string, {
   cam: [number,number,number], rot: [number,number,number], fov: number,
   exposure: number, ambient: number, key: number, fill: number
 }> = {
-  'prod-bonsai':    { cam:[-0.12,0.84,3.27], rot:[0.108,-1.032,-1.542], fov:41, exposure:3.35, ambient:0,   key:0.1, fill:0.5 },
+  'prod-bonsai':    { cam:[-0.12,0.84,3.27], rot:[0.108,-1.032,-1.542], fov:41, exposure:0.65, ambient:0,   key:0.0, fill:0.8 },
   'prod-cane':      { cam:[-0.08,0.34,3.03], rot:[0.248,-0.942,-1.502], fov:43, exposure:0.6,  ambient:1.1, key:2.4, fill:1.0 },
   'prod-ghost2':    { cam:[-0.01,0,3],          rot:[0.318,-0.012,0.000],  fov:69, exposure:0.9,  ambient:0,   key:0.8, fill:0   },
   'prod-acacia6-pw':{ cam:[0,0,3],              rot:[0.000,-0.702,0.000],  fov:78, exposure:0.15, ambient:0,   key:5.0, fill:0.8 },
