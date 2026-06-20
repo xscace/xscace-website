@@ -283,15 +283,14 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
         const back = new THREE.DirectionalLight(0xfff8ee, 0.05)
         back.position.set(0, 2, -1.5); scene.add(back)
 
-        // Cursor spotlight
-        const spot = new THREE.SpotLight(0xfff5e0, 0)
-        spot.angle = Math.PI / 7
-        spot.penumbra = 0.85
-        spot.decay = 2.2
-        spot.distance = 3.5
-        scene.add(spot); scene.add(spot.target)
-        spot.target.position.set(0, 0, 0)
+        // Cursor follow light — PointLight tracks pointer position over the model
+        const spot = new THREE.PointLight(0xfff8e7, 0, 8, 2)
+        spot.position.set(0, 0, 3)
+        scene.add(spot)
         spotRef.current = spot
+        // Lerp targets for smooth follow
+        const spotTarget = { x: 0, y: 0, z: 3 }
+        ;(spotRef as any)._target = spotTarget
 
 
 
@@ -386,13 +385,24 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
             groupRef.current.rotation.x = currentXRef.current
           }
 
-          // Cursor spotlight
-          const mx = mouseRef.current.x, my = mouseRef.current.y
-          const dist = Math.sqrt(mx * mx + my * my)
-          const intensity = 0.3 + Math.max(0, 1 - dist * 0.5) * 2.2
-          if (spotRef.current) {
-            spotRef.current.position.set(mx * 1.1, -my * 0.7 + 0.4, 1.2)
-            spotRef.current.intensity = intensity
+          // Cursor follow light — lerp PointLight to mouse position in 3D space
+          if (spotRef.current && (spotRef as any)._target) {
+            const mx = mouseRef.current.x  // -1 to 1, x axis
+            const my = mouseRef.current.y  // -1 to 1, y axis (screen down = positive)
+            const t = (spotRef as any)._target
+            // Map screen coords to 3D: x matches, y inverts (screen down = 3D up is negative)
+            // Camera is at s.cam[2] depth, light sits halfway between camera and model
+            const targetX = mx * 1.6
+            const targetY = -my * 1.2
+            const targetZ = 2.8
+            // Smooth lerp — 0.1 gives a natural lag
+            t.x += (targetX - t.x) * 0.1
+            t.y += (targetY - t.y) * 0.1
+            t.z += (targetZ - t.z) * 0.1
+            spotRef.current.position.set(t.x, t.y, t.z)
+            // Intensity: max when centred, fades at edges
+            const dist = Math.sqrt(mx * mx + my * my)
+            spotRef.current.intensity = 1.2 + Math.max(0, 1 - dist * 0.7) * 1.8
           }
 
           renderer.render(scene, camera)
