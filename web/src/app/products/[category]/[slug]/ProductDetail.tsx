@@ -156,9 +156,7 @@ function EQCurve({ freqLow, freqHigh, sensitivity, eqData }: {
     const plotH = H - PAD.t - PAD.b
 
     // Log frequency mapping
-    const xMin = Math.min(fLo * 0.5, 20)
-    const xMax = Math.max(fHi * 2, fHi + 100)
-    const logToX = (f: number) => PAD.l + (Math.log10(f / xMin) / Math.log10(xMax / xMin)) * plotW
+    const logToX = (f: number) => PAD.l + (Math.log10(f / 20) / Math.log10(20000 / 20)) * plotW
     // dB axis: -30 to +12dB range
     const DB_MIN = -30, DB_MAX = 12
     const dbToY = (db: number) => PAD.t + plotH * (1 - (db - DB_MIN) / (DB_MAX - DB_MIN))
@@ -237,14 +235,13 @@ function EQCurve({ freqLow, freqHigh, sensitivity, eqData }: {
     }
 
     // ── Draw grid ──
-    const allTicks = [20, 30, 50, 100, 200, 300, 500, 1000, 2000, 5000, 10000, 20000]
-    const freqTicks = allTicks.filter(f => f >= xMin * 0.8 && f <= xMax * 1.2)
+    const freqTicks = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]
     const dbTicks = [-24, -18, -12, -6, 0, 6]
 
     ctx.strokeStyle = 'rgba(201,169,110,0.05)'
     ctx.lineWidth = 0.5
     freqTicks.forEach(f => {
-      if (f < xMin * 0.8 || f > xMax * 1.2) return
+      if (f < 20 || f > 20000) return
       const x = logToX(f)
       ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, PAD.t + plotH); ctx.stroke()
       ctx.fillStyle = 'rgba(201,169,110,0.3)'
@@ -269,7 +266,7 @@ function EQCurve({ freqLow, freqHigh, sensitivity, eqData }: {
     const points: [number, number][] = []
 
     for (let i = 0; i <= STEPS; i++) {
-      const f = xMin * Math.pow(xMax / xMin, i / STEPS)
+      const f = 20 * Math.pow(20000 / 20, i / STEPS)
       let db = 0
 
       // Apply high-pass roll-off
@@ -1950,23 +1947,17 @@ export default function ProductDetail({ product }: { product: Product }) {
           productName={product.productName}
           getImageUrl={getImageUrl}
         />
-      ) : isSub && product.galleryImages?.length > 0 ? (
+      ) : isSub && (product.galleryImages?.length > 0 || product.lifestyleImages?.length > 0) ? (
         <section style={{background:'#000'}}>
           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:1}}>
-            {(() => {
-              const gal = product.galleryImages
-              const imgs = gal.length >= 2
-                ? [gal[0], gal[gal.length - 1]]  // first and last
-                : [gal[0]]
-              return imgs.map((img: any, i: number) => {
-                const url = getImageUrl(img, 1200)
-                return url ? (
-                  <div key={i} style={{background:'#000', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', minHeight:400}}>
-                    <img src={url} alt={product.productName} style={{width:'100%',height:'100%',objectFit:'contain',display:'block'}}/>
-                  </div>
-                ) : null
-              })
-            })()}
+            {[...(product.lifestyleImages||[]), ...(product.galleryImages||[])].slice(0,2).map((img: any, i: number) => {
+              const url = getImageUrl(img, 1200)
+              return url ? (
+                <div key={i} style={{background:'#000', aspectRatio:'4/3', overflow:'hidden'}}>
+                  <img src={url} alt={product.productName} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+                </div>
+              ) : null
+            })}
           </div>
         </section>
       ) : null}
@@ -2366,183 +2357,34 @@ export default function ProductDetail({ product }: { product: Product }) {
           </a>
         </section>
       )}
-      {/* Enhanced sections for Acacia 6 Powered */}
-      {isSub && product._id === 'prod-acacia6-pw' && (<>
-
-        {/* ── Section 3: XSCACE Network Controller enhanced ── */}
-        <section style={{background:'#000', borderTop:'0.5px solid #111', padding:'64px 56px'}}>
-          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:48, alignItems:'center'}}>
-            <div>
-              <div style={{fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'.2em', textTransform:'uppercase', color:'rgba(201,169,110,0.55)', marginBottom:16}}>Full Control · Over LAN</div>
-              <h2 style={{fontFamily:"'Cormorant Garamond',serif", fontWeight:300, fontSize:'clamp(28px,2.8vw,42px)', color:'#eeebe5', lineHeight:1.1, marginBottom:20}}>
-                Controlled by <em style={{fontStyle:'italic',color:'#c9a96e'}}>XSCACE</em><br/>Network Controller
-              </h2>
-              <p style={{fontFamily:"'Barlow',sans-serif", fontWeight:300, fontSize:14, color:'rgba(200,196,188,0.65)', lineHeight:1.7, marginBottom:32}}>
-                The XSCACE Network Controller connects to the Acacia 6 Powered over your local network. 
-                Adjust the built-in DSP in real time — crossover frequency, parametric EQ bands, output delay, 
-                channel routing, and preset management — all without touching the hardware.
-              </p>
-              <div style={{display:'flex', flexDirection:'column', gap:12, marginBottom:32}}>
-                {[
-                  'Parametric EQ — 5-band per channel',
-                  'Variable crossover · 40–200Hz',
-                  'Channel delay · up to 27ms',
-                  'Factory + custom preset management',
-                  'Real-time level monitoring',
-                ].map(f => (
-                  <div key={f} style={{display:'flex', alignItems:'center', gap:10}}>
-                    <span style={{fontFamily:"'DM Mono',monospace", fontSize:10, color:'rgba(201,169,110,0.6)'}}>×</span>
-                    <span style={{fontFamily:"'Barlow',sans-serif", fontWeight:300, fontSize:13, color:'rgba(200,196,188,0.7)'}}>{f}</span>
-                  </div>
-                ))}
-              </div>
-              <a href="/software/network-controller" style={{
-                display:'inline-flex', alignItems:'center', gap:8,
-                fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:'.14em', textTransform:'uppercase',
-                color:'#c9a96e', border:'0.5px solid rgba(201,169,110,0.4)', padding:'10px 20px',
-                textDecoration:'none',
-              }}>Download Free →</a>
-            </div>
-            <div style={{position:'relative'}}>
-              <div style={{background:'#0a0a0a', border:'1px solid #1a1a1a', borderRadius:4, overflow:'hidden', boxShadow:'0 24px 80px rgba(0,0,0,0.8)'}}>
-                <div style={{height:10, background:'#0d0d0d', borderBottom:'1px solid #141414', display:'flex', alignItems:'center', paddingLeft:8, gap:4}}>
-                  <div style={{width:6,height:6,borderRadius:'50%',background:'#1e1e1e'}}/><div style={{width:6,height:6,borderRadius:'50%',background:'#1e1e1e'}}/><div style={{width:6,height:6,borderRadius:'50%',background:'#1e1e1e'}}/>
-                </div>
-                <img src="https://cdn.sanity.io/images/7r0kq57d/production/886620094c00c68ad5e10fb34b4c2071a7dccfa1-2922x1912.png?w=900&auto=format&q=85" alt="XSCACE Network Controller" style={{width:'100%',display:'block'}}/>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Section 4: Control System Compatibility ── */}
-        <section style={{background:'#000', borderTop:'0.5px solid #111', padding:'64px 56px'}}>
-          <div style={{marginBottom:48}}>
-            <div style={{fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'.2em', textTransform:'uppercase', color:'rgba(201,169,110,0.55)', marginBottom:16}}>Open Integration</div>
-            <h2 style={{fontFamily:"'Cormorant Garamond',serif", fontWeight:300, fontSize:'clamp(28px,2.8vw,42px)', color:'#eeebe5', lineHeight:1.1}}>
-              Works with any <em style={{fontStyle:'italic',color:'#c9a96e'}}>control system</em>
-            </h2>
-            <p style={{fontFamily:"'Barlow',sans-serif", fontWeight:300, fontSize:14, color:'rgba(200,196,188,0.55)', lineHeight:1.7, marginTop:16, maxWidth:640}}>
-              The Acacia 6 Powered exposes a full TCP/IP command API over your local network. 
-              Any RS-232 or IP-capable control system can integrate natively — no middleware, no adapters.
-            </p>
-          </div>
-          <div style={{display:'flex', gap:32, flexWrap:'wrap', alignItems:'center', marginBottom:48}}>
-            {['Control4', 'Crestron', 'Savant', 'AMX', 'RTI', 'Josh.ai'].map(brand => (
-              <div key={brand} style={{
-                padding:'12px 24px', border:'0.5px solid #1a1a1a',
-                fontFamily:"'Cormorant Garamond',serif", fontWeight:300, fontSize:18,
-                color:'rgba(200,196,188,0.5)', letterSpacing:'0.02em',
-              }}>{brand}</div>
-            ))}
-          </div>
-          <div style={{display:'flex', gap:16}}>
-            <a href="/api/acacia6-api-commands.pdf" download style={{
-              display:'inline-flex', alignItems:'center', gap:8,
-              fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:'.14em', textTransform:'uppercase',
-              color:'#000', background:'#c9a96e', padding:'10px 20px', textDecoration:'none',
-            }}>
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v7M3 6l3 3 3-3M1 10h10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
-              Download API Commands
-            </a>
-            <a href="mailto:support@xscace.com?subject=Driver Request — Acacia 6 Powered" style={{
-              display:'inline-flex', alignItems:'center', gap:8,
-              fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:'.14em', textTransform:'uppercase',
-              color:'#c9a96e', border:'0.5px solid rgba(201,169,110,0.4)', padding:'10px 20px', textDecoration:'none',
-            }}>Request Custom Driver →</a>
-          </div>
-        </section>
-
-        {/* ── Section 5: 3-Channel Built-in Amplifier ── */}
-        <section style={{background:'#000', borderTop:'0.5px solid #111', padding:'64px 56px'}}>
-          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:48, alignItems:'center'}}>
-            <div>
-              <div style={{fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'.2em', textTransform:'uppercase', color:'rgba(201,169,110,0.55)', marginBottom:16}}>Built-in · 200W Class D</div>
-              <h2 style={{fontFamily:"'Cormorant Garamond',serif", fontWeight:300, fontSize:'clamp(28px,2.8vw,42px)', color:'#eeebe5', lineHeight:1.1, marginBottom:20}}>
-                One box.<br/><em style={{fontStyle:'italic',color:'#c9a96e'}}>Three channels.</em>
-              </h2>
-              <p style={{fontFamily:"'Barlow',sans-serif", fontWeight:300, fontSize:14, color:'rgba(200,196,188,0.65)', lineHeight:1.7, marginBottom:32}}>
-                The Acacia 6 Powered contains a 200W Class D amplifier with three discrete output channels — 
-                one dedicated LFE channel driving the internal subwoofer driver, plus two full-range speaker 
-                outputs for any external speakers in your system. No separate amplifier required.
-              </p>
-              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:1, marginBottom:32}}>
-                {[
-                  ['CH 1', 'Internal Sub', '200W LFE'],
-                  ['CH 2', 'Speaker Out L', 'Full Range'],
-                  ['CH 3', 'Speaker Out R', 'Full Range'],
-                ].map(([ch, name, desc]) => (
-                  <div key={ch} style={{background:'#080808', padding:'20px 16px', borderTop:'2px solid rgba(201,169,110,0.2)'}}>
-                    <div style={{fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:'.16em', color:'rgba(201,169,110,0.4)', marginBottom:8}}>{ch}</div>
-                    <div style={{fontFamily:"'Cormorant Garamond',serif", fontSize:16, color:'#e8e4de', marginBottom:4}}>{name}</div>
-                    <div style={{fontFamily:"'DM Mono',monospace", fontSize:9, color:'rgba(200,196,188,0.4)'}}>{desc}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div style={{display:'flex', flexDirection:'column', gap:1}}>
-              {/* Signal flow diagram */}
-              <svg viewBox="0 0 400 280" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:'100%'}}>
-                {/* Source */}
-                <rect x="10" y="110" width="80" height="60" rx="2" fill="#080808" stroke="#1a1a1a" strokeWidth="0.5"/>
-                <text x="50" y="135" textAnchor="middle" fill="#888" fontSize="9" fontFamily="monospace">SOURCE</text>
-                <text x="50" y="148" textAnchor="middle" fill="#555" fontSize="8" fontFamily="monospace">LFE / LINE</text>
-                {/* Arrow */}
-                <line x1="90" y1="140" x2="130" y2="140" stroke="rgba(201,169,110,0.3)" strokeWidth="0.8"/>
-                <polygon points="130,137 136,140 130,143" fill="rgba(201,169,110,0.4)"/>
-                {/* Amp box */}
-                <rect x="136" y="80" width="100" height="120" rx="2" fill="#0a0a0a" stroke="rgba(201,169,110,0.2)" strokeWidth="0.5"/>
-                <text x="186" y="108" textAnchor="middle" fill="#c9a96e" fontSize="8" fontFamily="monospace" opacity="0.7">200W CLASS D</text>
-                <line x1="136" y1="118" x2="236" y2="118" stroke="#111" strokeWidth="0.5"/>
-                <text x="186" y="134" textAnchor="middle" fill="#888" fontSize="9" fontFamily="monospace">ACACIA 6</text>
-                <text x="186" y="147" textAnchor="middle" fill="#888" fontSize="9" fontFamily="monospace">POWERED</text>
-                <line x1="136" y1="158" x2="236" y2="158" stroke="#111" strokeWidth="0.5"/>
-                <text x="186" y="172" textAnchor="middle" fill="#555" fontSize="7" fontFamily="monospace">3-CHANNEL AMP</text>
-                {/* Output lines */}
-                <line x1="236" y1="100" x2="280" y2="60" stroke="rgba(201,169,110,0.25)" strokeWidth="0.8"/>
-                <line x1="236" y1="140" x2="280" y2="140" stroke="rgba(201,169,110,0.35)" strokeWidth="0.8"/>
-                <line x1="236" y1="180" x2="280" y2="220" stroke="rgba(201,169,110,0.25)" strokeWidth="0.8"/>
-                {/* Outputs */}
-                <rect x="280" y="36" width="110" height="48" rx="2" fill="#080808" stroke="#1a1a1a" strokeWidth="0.5"/>
-                <text x="335" y="56" textAnchor="middle" fill="#888" fontSize="8" fontFamily="monospace">CH 2 — L</text>
-                <text x="335" y="68" textAnchor="middle" fill="#555" fontSize="7" fontFamily="monospace">Full Range Speaker</text>
-                <rect x="280" y="116" width="110" height="48" rx="2" fill="#080808" stroke="rgba(201,169,110,0.2)" strokeWidth="0.5"/>
-                <text x="335" y="136" textAnchor="middle" fill="#c9a96e" fontSize="8" fontFamily="monospace" opacity="0.8">CH 1 — LFE</text>
-                <text x="335" y="148" textAnchor="middle" fill="#555" fontSize="7" fontFamily="monospace">Internal Subwoofer</text>
-                <rect x="280" y="196" width="110" height="48" rx="2" fill="#080808" stroke="#1a1a1a" strokeWidth="0.5"/>
-                <text x="335" y="216" textAnchor="middle" fill="#888" fontSize="8" fontFamily="monospace">CH 3 — R</text>
-                <text x="335" y="228" textAnchor="middle" fill="#555" fontSize="7" fontFamily="monospace">Full Range Speaker</text>
-              </svg>
-            </div>
-          </div>
-        </section>
-
-      </>)}
-
-      {/* Network Controller: shown on DSP amps */}
-      {isAmp && product.hasDsp && (
-      {/* Network Controller: shown on DSP amps (original) */}
-      {(isAmp && product.hasDsp) && false && (
+      {/* Network Controller: shown on DSP amps AND powered subs */}
+      {(isAmp && product.hasDsp) || isSub ? (
         <section className="pdp-sw-strip">
           <div className="pdp-sw-label">Desktop Software</div>
           <a href="/software/network-controller" className="pdp-sw-card">
-            <div className="pdp-sw-card-icon pdp-sw-card-icon--desktop">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                <rect x="2" y="3" width="20" height="14" rx="2"/>
-                <line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
-              </svg>
+            <div className="pdp-sw-card-icon pdp-sw-card-icon--desktop" style={{position:'relative',width:140,minWidth:140,height:96,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end'}}>
+              <div style={{width:'100%',background:'#0a0a0a',border:'1px solid #222',borderRadius:'4px 4px 0 0',overflow:'hidden'}}>
+                <div style={{height:'8px',background:'#0d0d0d',borderBottom:'1px solid #1a1a1a',display:'flex',alignItems:'center',paddingLeft:'6px',gap:'3px'}}>
+                  <div style={{width:'4px',height:'4px',borderRadius:'50%',background:'#1e1e1e'}}/><div style={{width:'4px',height:'4px',borderRadius:'50%',background:'#1e1e1e'}}/><div style={{width:'4px',height:'4px',borderRadius:'50%',background:'#1e1e1e'}}/>
+                </div>
+                <img src="https://cdn.sanity.io/images/7r0kq57d/production/886620094c00c68ad5e10fb34b4c2071a7dccfa1-2922x1912.png?w=900&auto=format&q=85"
+                  alt="Network Controller" style={{width:'100%',height:'64px',objectFit:'cover',objectPosition:'top',display:'block'}}/>
+              </div>
+              <div style={{width:'108%',height:'5px',background:'#111',borderRadius:'0 0 3px 3px'}}/>
             </div>
             <div className="pdp-sw-card-body">
-              <div className="pdp-sw-card-platform">macOS & Windows</div>
+              <div className="pdp-sw-card-platform">Mac & Windows</div>
               <div className="pdp-sw-card-name">XSCACE Network Controller</div>
               <div className="pdp-sw-card-desc">
-                Configure this amplifier from your Mac or Windows PC. Adjust crossover frequencies,
-                parametric EQ, output delay, and channel routing — all in real time over the network.
+                Control DSP parameters, EQ, crossover, delay, and channel routing over your local network.
+                Full preset management and real-time tuning from your desktop.
               </div>
               <div className="pdp-sw-card-cta">Learn more →</div>
             </div>
           </a>
         </section>
-      )}
+      ) : null}
+
 
       {/* ── GALLERY — last section ── */}
       {galleryAll.length > 0 && (
