@@ -35,6 +35,14 @@ const CONSTRAINTS_MAP: Record<string, Constraint[]> = {
   ],
 }
 
+  'prod-acacia6-pw': [
+    { cross:'×', text:'No port noise',             desc:'XS-Flow port geometry eliminates turbulence at the vent exit. Full bass output at reference levels — no chuffing, no compression, no audible artefact.', angle:{y:0,x:0.1}, mode:'normal' },
+    { cross:'×', text:'No external amplifier',     desc:'A 200W Class D amplifier lives inside the enclosure. One cable in, sound out. No rack, no matching, no separate power supply.', angle:{y:Math.PI*0.3,x:0}, mode:'normal' },
+    { cross:'×', text:'No crossover guesswork',    desc:'The LFE input accepts a dedicated subwoofer signal directly. The built-in low-pass filter is adjustable — set it once and forget it.', angle:{y:0,x:-0.15}, mode:'normal' },
+    { cross:'×', text:'No visible driver',         desc:'The grille sits flush with the enclosure face. No protruding cone, no visible surround. A sealed surface that happens to reproduce 35Hz.', angle:{y:-Math.PI*0.25,x:0}, mode:'normal' },
+    { cross:'→', text:'Bass that disappears.',     desc:'The Acacia 6 is felt before it is heard. Pressure without presence — the room fills with low frequency energy and the source stays invisible.', angle:{y:Math.PI*0.15,x:0.05}, mode:'normal', last:true },
+  ],
+
 // Fallback for products without specific constraints
 const CONSTRAINTS_DEFAULT: Constraint[] = [
   { cross:'×', text:'No visible fixings',        desc:'Every fastener is concealed. The grille, baffle and chassis unite as a single uninterrupted surface.', angle:{y:0,x:0}, mode:'normal' },

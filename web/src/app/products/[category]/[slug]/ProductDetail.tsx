@@ -594,7 +594,7 @@ function ARWallBtn({ modelUrl, productName }: { modelUrl: string; productName: s
             <rect x="4.5" y="6" width="3.5" height="8" rx="0.4" stroke="currentColor" strokeWidth="0.6" opacity="0.5"/>
           </svg>
         </span>
-        <span className="ar-wall-label">View it on your wall</span>
+        <span className="ar-wall-label">View it in your space</span>
         <span className="ar-wall-tag">AR</span>
       </button>
 
@@ -1936,17 +1936,48 @@ export default function ProductDetail({ product }: { product: Product }) {
 
             
 
+      {/* Banyan Canopy in-wall sub — Acacia 6 mounting alternative */}
+      {isSub && product._id === 'prod-acacia6-pw' && (
+        <section className="pd-section" style={{background:'#000', borderTop:'0.5px solid #111'}}>
+          <h2 className="pd-section-title">Mount <em>your way</em></h2>
+          <div className="acc-card">
+            <div className="acc-img-side" style={{background:'#000', display:'flex', alignItems:'center', justifyContent:'center'}}>
+              <img src="https://cdn.sanity.io/images/7r0kq57d/production/9d0365583ea560154e5d4cefe3451c4b4b9a50ef-1026x2269.png?w=600&auto=format&q=85"
+                alt="Banyan Canopy" style={{maxHeight:440, objectFit:'contain', display:'block', padding:24}}/>
+            </div>
+            <div className="acc-info-side">
+              <div className="acc-eyebrow">In-Wall Alternative</div>
+              <div className="acc-name">Banyan Canopy</div>
+              <div className="acc-desc">The in-wall subwoofer variant. Identical acoustic performance installed flush into the wall cavity — completely invisible. Pairs directly with the Acacia 6 signal chain.</div>
+              <a href="/products/outdoor-series/banyan-canopy-line-array-speaker" className="acc-enquire">View Banyan Canopy →</a>
+            </div>
+          </div>
+        </section>
+      )}
       {/* wave divider */}
       <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
       {/* ── RESOURCES & MEDIA ── */}
-      {(product.productVideos && product.productVideos.length > 0) && (
+      {(product.productVideos && product.productVideos.length > 0) ? (
         <VideoGallery
           images={[]}
           videos={product.productVideos || []}
           productName={product.productName}
           getImageUrl={getImageUrl}
         />
-      )}
+      ) : isSub && (product.galleryImages?.length > 0 || product.lifestyleImages?.length > 0) ? (
+        <section style={{background:'#000'}}>
+          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:1}}>
+            {[...(product.lifestyleImages||[]), ...(product.galleryImages||[])].slice(0,2).map((img: any, i: number) => {
+              const url = getImageUrl(img, 1200)
+              return url ? (
+                <div key={i} style={{background:'#000', aspectRatio:'4/3', overflow:'hidden'}}>
+                  <img src={url} alt={product.productName} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+                </div>
+              ) : null
+            })}
+          </div>
+        </section>
+      ) : null}
 
 
 
@@ -1972,10 +2003,27 @@ export default function ProductDetail({ product }: { product: Product }) {
               <div className="pd-chart-label">Frequency Response</div>
               <FreqResponseChart product={product}/>
             </div>
-            {product.directivityHDeg && (
+            {product.directivityHDeg && !isSub && (
               <div className="pd-chart-panel">
                 <div className="pd-chart-label">Polar Pattern</div>
                 <PolarChart product={product}/>
+              </div>
+            )}
+            {isSub && product.galleryImages?.[1] && (
+              <div className="pd-chart-panel">
+                <div className="pd-chart-label">Rear Panel</div>
+                <div style={{background:'#000', overflow:'hidden', borderRadius:0}}>
+                  <img src={getImageUrl(product.galleryImages[1], 900)} alt="Rear panel"
+                    style={{width:'100%', objectFit:'contain', display:'block', padding:16, boxSizing:'border-box', maxHeight:240}}/>
+                </div>
+                <div style={{marginTop:16}}>
+                  {[['LFE Input','RCA'],['Line Input L/R','RCA Stereo'],['Speaker Out','Binding Posts'],['Power','IEC C14 · 100–240V'],['Control','Volume · LPF · Phase']].map(([l,v])=>(
+                    <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'0.5px solid #111'}}>
+                      <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:'rgba(201,169,110,0.5)',letterSpacing:'.1em'}}>{l}</span>
+                      <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:13,color:'#c8c4bc'}}>{v}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -2284,8 +2332,35 @@ export default function ProductDetail({ product }: { product: Product }) {
           </a>
         </section>
       )}
-      {/* Network Controller: shown on DSP amps */}
-      {isAmp && product.hasDsp && (
+      {/* Network Controller: shown on DSP amps AND powered subs */}
+      {(isAmp && product.hasDsp) || isSub ? (
+        <section className="pdp-sw-strip">
+          <div className="pdp-sw-label">Desktop Software</div>
+          <a href="/software/network-controller" className="pdp-sw-card">
+            <div className="pdp-sw-card-icon pdp-sw-card-icon--desktop" style={{position:'relative',width:140,minWidth:140,height:96,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end'}}>
+              <div style={{width:'100%',background:'#0a0a0a',border:'1px solid #222',borderRadius:'4px 4px 0 0',overflow:'hidden'}}>
+                <div style={{height:'8px',background:'#0d0d0d',borderBottom:'1px solid #1a1a1a',display:'flex',alignItems:'center',paddingLeft:'6px',gap:'3px'}}>
+                  <div style={{width:'4px',height:'4px',borderRadius:'50%',background:'#1e1e1e'}}/><div style={{width:'4px',height:'4px',borderRadius:'50%',background:'#1e1e1e'}}/><div style={{width:'4px',height:'4px',borderRadius:'50%',background:'#1e1e1e'}}/>
+                </div>
+                <img src="https://cdn.sanity.io/images/7r0kq57d/production/886620094c00c68ad5e10fb34b4c2071a7dccfa1-2922x1912.png?w=900&auto=format&q=85"
+                  alt="Network Controller" style={{width:'100%',height:'64px',objectFit:'cover',objectPosition:'top',display:'block'}}/>
+              </div>
+              <div style={{width:'108%',height:'5px',background:'#111',borderRadius:'0 0 3px 3px'}}/>
+            </div>
+            <div className="pdp-sw-card-body">
+              <div className="pdp-sw-card-platform">Mac & Windows</div>
+              <div className="pdp-sw-card-name">XSCACE Network Controller</div>
+              <div className="pdp-sw-card-desc">
+                Control DSP parameters, EQ, crossover, delay, and channel routing over your local network.
+                Full preset management and real-time tuning from your desktop.
+              </div>
+              <div className="pdp-sw-card-cta">Learn more →</div>
+            </div>
+          </a>
+        </section>
+      ) : null}
+      {/* Network Controller: shown on DSP amps (original) */}
+      {(isAmp && product.hasDsp) && false && (
         <section className="pdp-sw-strip">
           <div className="pdp-sw-label">Desktop Software</div>
           <a href="/software/network-controller" className="pdp-sw-card">
