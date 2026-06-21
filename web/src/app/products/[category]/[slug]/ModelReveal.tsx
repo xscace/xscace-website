@@ -402,7 +402,7 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
             spotRef.current.position.set(t.x, t.y, t.z)
             // Intensity: max when centred, fades at edges
             const dist = Math.sqrt(mx * mx + my * my)
-            spotRef.current.intensity = 1.2 + Math.max(0, 1 - dist * 0.7) * 1.8
+            spotRef.current.intensity = 0.4 + Math.max(0, 1 - dist * 0.7) * 0.8
           }
 
           renderer.render(scene, camera)
