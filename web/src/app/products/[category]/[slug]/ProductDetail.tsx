@@ -1936,24 +1936,7 @@ export default function ProductDetail({ product }: { product: Product }) {
 
             
 
-      {/* Banyan Canopy in-wall sub — Acacia 6 mounting alternative */}
-      {isSub && product._id === 'prod-acacia6-pw' && (
-        <section className="pd-section" style={{background:'#000', borderTop:'0.5px solid #111'}}>
-          <h2 className="pd-section-title">Mount <em>your way</em></h2>
-          <div className="acc-card">
-            <div className="acc-img-side" style={{background:'#000', display:'flex', alignItems:'center', justifyContent:'center'}}>
-              <img src="https://cdn.sanity.io/images/7r0kq57d/production/9d0365583ea560154e5d4cefe3451c4b4b9a50ef-1026x2269.png?w=600&auto=format&q=85"
-                alt="Banyan Canopy" style={{maxHeight:440, objectFit:'contain', display:'block', padding:24}}/>
-            </div>
-            <div className="acc-info-side">
-              <div className="acc-eyebrow">In-Wall Alternative</div>
-              <div className="acc-name">Banyan Canopy</div>
-              <div className="acc-desc">The in-wall subwoofer variant. Identical acoustic performance installed flush into the wall cavity — completely invisible. Pairs directly with the Acacia 6 signal chain.</div>
-              <a href="/products/outdoor-series/banyan-canopy-line-array-speaker" className="acc-enquire">View Banyan Canopy →</a>
-            </div>
-          </div>
-        </section>
-      )}
+
       {/* wave divider */}
       <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
       {/* ── RESOURCES & MEDIA ── */}
@@ -1992,34 +1975,7 @@ export default function ProductDetail({ product }: { product: Product }) {
       )}
 
 
-      {/* Acacia 6 mounting alternatives — In-Wall Passive + Standard Passive */}
-      {isSub && product._id === 'prod-acacia6-pw' && (
-        <section className="pd-acc-section">
-          <h2 className="pd-section-title">Mount <em>your way</em></h2>
-          <div className="acc-card">
-            <div className="acc-img-side">
-              <RevealSlider heroUrl="https://cdn.sanity.io/images/7r0kq57d/production/6a523608c448d66d4aade311a296fc9c646557be-3840x2159.png?w=600&auto=format&q=85" lifestyleUrl="https://cdn.sanity.io/images/7r0kq57d/production/e2e9023f6373b647b7ab2b42481e0cd08121dddb-1755x1298.png?w=600&auto=format&q=85" alt="Acacia 6 In-Wall Passive"/>
-            </div>
-            <div className="acc-info-side">
-              <div className="acc-eyebrow">In-Wall Passive</div>
-              <div className="acc-name">Acacia 6 In-Wall Passive</div>
-              <div className="acc-desc">Identical acoustic performance installed flush into the wall cavity. Completely invisible. Requires an external amplifier with LFE output.</div>
-              <a href="/products/subwoofer-series/acacia-6-in-wall-passive-subwoofer" className="acc-enquire">View Acacia 6 In-Wall →</a>
-            </div>
-          </div>
-          <div className="acc-card acc-card-flip">
-            <div className="acc-img-side">
-              <RevealSlider heroUrl="https://cdn.sanity.io/images/7r0kq57d/production/b618d2f9e49502d4d61f76c96c9f70f506a07ee2-976x548.png?w=600&auto=format&q=85" lifestyleUrl="https://cdn.sanity.io/images/7r0kq57d/production/e6eac14f84672ccf95e6aba0c2b81b53bc5a4377-979x549.png?w=600&auto=format&q=85" alt="Acacia 6 Standard Passive"/>
-            </div>
-            <div className="acc-info-side">
-              <div className="acc-eyebrow">Standard Passive</div>
-              <div className="acc-name">Acacia 6 Standard Passive</div>
-              <div className="acc-desc">Same enclosure and driver, without the built-in amplifier. Pair with any subwoofer output for a fully custom signal chain.</div>
-              <a href="/products/subwoofer-series/acacia-6-standard-passive-subwoofer" className="acc-enquire">View Acacia 6 Passive →</a>
-            </div>
-          </div>
-        </section>
-      )}
+
 
       {/* ── FR + POLAR CHARTS ── */}
       {!isAmp && product.sensitivityDb && product.freqLowHz && (
@@ -2044,9 +2000,25 @@ export default function ProductDetail({ product }: { product: Product }) {
             )}
             {isSub && product.galleryImages?.[1] && (
               <div className="pd-chart-panel">
-                <div className="pd-chart-label">Rear Panel</div>
+                <div className="pd-chart-label">Rear Panel &amp; Connections</div>
                 <img src={getImageUrl(product.galleryImages[1], 900)} alt="Rear panel"
-                  style={{width:'100%', objectFit:'contain', display:'block', background:'#000', padding:12, maxHeight:280}}/>
+                  style={{width:'100%', objectFit:'contain', display:'block', background:'#000', padding:12, maxHeight:240}}/>
+                {(product.inputs || product.outputs) && (
+                  <div style={{marginTop:12}}>
+                    {product.inputs && (
+                      <div style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'0.5px solid #111'}}>
+                        <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:'rgba(201,169,110,0.5)',letterSpacing:'.1em'}}>INPUTS</span>
+                        <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:13,color:'#c8c4bc',textAlign:'right',maxWidth:'60%'}}>{product.inputs}</span>
+                      </div>
+                    )}
+                    {product.outputs && (
+                      <div style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'0.5px solid #111'}}>
+                        <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:'rgba(201,169,110,0.5)',letterSpacing:'.1em'}}>OUTPUTS</span>
+                        <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:13,color:'#c8c4bc',textAlign:'right',maxWidth:'60%'}}>{product.outputs}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -2199,6 +2171,36 @@ export default function ProductDetail({ product }: { product: Product }) {
       
 
             {/* ── SETUPS ── */}
+
+
+      {/* Acacia 6 mounting alternatives — In-Wall Passive + Standard Passive */}
+      {isSub && product._id === 'prod-acacia6-pw' && (
+        <section className="pd-acc-section">
+          <h2 className="pd-section-title">Mount <em>your way</em></h2>
+          <div className="acc-card">
+            <div className="acc-img-side">
+              <RevealSlider heroUrl="https://cdn.sanity.io/images/7r0kq57d/production/6a523608c448d66d4aade311a296fc9c646557be-3840x2159.png?w=600&auto=format&q=85" lifestyleUrl="https://cdn.sanity.io/images/7r0kq57d/production/e2e9023f6373b647b7ab2b42481e0cd08121dddb-1755x1298.png?w=600&auto=format&q=85" alt="Acacia 6 In-Wall Passive"/>
+            </div>
+            <div className="acc-info-side">
+              <div className="acc-eyebrow">In-Wall Passive</div>
+              <div className="acc-name">Acacia 6 In-Wall Passive</div>
+              <div className="acc-desc">Identical acoustic performance installed flush into the wall cavity. Completely invisible. Requires an external amplifier with LFE output.</div>
+              <a href="/products/subwoofer-series/acacia-6-in-wall-passive-subwoofer" className="acc-enquire">View Acacia 6 In-Wall →</a>
+            </div>
+          </div>
+          <div className="acc-card acc-card-flip">
+            <div className="acc-img-side">
+              <RevealSlider heroUrl="https://cdn.sanity.io/images/7r0kq57d/production/b618d2f9e49502d4d61f76c96c9f70f506a07ee2-976x548.png?w=600&auto=format&q=85" lifestyleUrl="https://cdn.sanity.io/images/7r0kq57d/production/e6eac14f84672ccf95e6aba0c2b81b53bc5a4377-979x549.png?w=600&auto=format&q=85" alt="Acacia 6 Standard Passive"/>
+            </div>
+            <div className="acc-info-side">
+              <div className="acc-eyebrow">Standard Passive</div>
+              <div className="acc-name">Acacia 6 Standard Passive</div>
+              <div className="acc-desc">Same enclosure and driver, without the built-in amplifier. Pair with any subwoofer output for a fully custom signal chain.</div>
+              <a href="/products/subwoofer-series/acacia-6-standard-passive-subwoofer" className="acc-enquire">View Acacia 6 Passive →</a>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* wave divider */}
       <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
