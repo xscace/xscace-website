@@ -49,7 +49,7 @@ const CONSTRAINTS_DEFAULT: Constraint[] = [
   { cross:'→', text:'Engineered to disappear.',  desc:'When there is nothing to remove, design is complete.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
 ]
 
-const FLAGSHIP_IDS = ['prod-bonsai', 'prod-cane', 'prod-quadcane', 'prod-ghost2']
+const FLAGSHIP_IDS = ['prod-bonsai', 'prod-cane', 'prod-quadcane', 'prod-ghost2', 'prod-acacia6-pw']
 
 interface Props {
   modelUrl?: string

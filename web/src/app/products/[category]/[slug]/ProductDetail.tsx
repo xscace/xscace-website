@@ -1991,6 +1991,36 @@ export default function ProductDetail({ product }: { product: Product }) {
         <DimensionDrawing product={product}/>
       )}
 
+
+      {/* Acacia 6 mounting alternatives — In-Wall Passive + Standard Passive */}
+      {isSub && product._id === 'prod-acacia6-pw' && (
+        <section className="pd-acc-section">
+          <h2 className="pd-section-title">Mount <em>your way</em></h2>
+          <div className="acc-card">
+            <div className="acc-img-side">
+              <RevealSlider heroUrl="https://cdn.sanity.io/images/7r0kq57d/production/6a523608c448d66d4aade311a296fc9c646557be-3840x2159.png?w=600&auto=format&q=85" lifestyleUrl="https://cdn.sanity.io/images/7r0kq57d/production/e2e9023f6373b647b7ab2b42481e0cd08121dddb-1755x1298.png?w=600&auto=format&q=85" alt="Acacia 6 In-Wall Passive"/>
+            </div>
+            <div className="acc-info-side">
+              <div className="acc-eyebrow">In-Wall Passive</div>
+              <div className="acc-name">Acacia 6 In-Wall Passive</div>
+              <div className="acc-desc">Identical acoustic performance installed flush into the wall cavity. Completely invisible. Requires an external amplifier with LFE output.</div>
+              <a href="/products/subwoofer-series/acacia-6-in-wall-passive-subwoofer" className="acc-enquire">View Acacia 6 In-Wall →</a>
+            </div>
+          </div>
+          <div className="acc-card acc-card-flip">
+            <div className="acc-img-side">
+              <RevealSlider heroUrl="https://cdn.sanity.io/images/7r0kq57d/production/b618d2f9e49502d4d61f76c96c9f70f506a07ee2-976x548.png?w=600&auto=format&q=85" lifestyleUrl="https://cdn.sanity.io/images/7r0kq57d/production/e6eac14f84672ccf95e6aba0c2b81b53bc5a4377-979x549.png?w=600&auto=format&q=85" alt="Acacia 6 Standard Passive"/>
+            </div>
+            <div className="acc-info-side">
+              <div className="acc-eyebrow">Standard Passive</div>
+              <div className="acc-name">Acacia 6 Standard Passive</div>
+              <div className="acc-desc">Same enclosure and driver, without the built-in amplifier. Pair with any subwoofer output for a fully custom signal chain.</div>
+              <a href="/products/subwoofer-series/acacia-6-standard-passive-subwoofer" className="acc-enquire">View Acacia 6 Passive →</a>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ── FR + POLAR CHARTS ── */}
       {!isAmp && product.sensitivityDb && product.freqLowHz && (
         <section className="pd-section pd-charts-section">
@@ -2000,7 +2030,10 @@ export default function ProductDetail({ product }: { product: Product }) {
           </div>
           <div className="pd-charts-grid">
             <div className="pd-chart-panel">
-              <div className="pd-chart-label">Frequency Response</div>
+              <div className="pd-chart-label">
+                Frequency Response
+                {isSub && <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:'rgba(201,169,110,0.4)',marginLeft:8,letterSpacing:'.1em'}}>Subwoofer range</span>}
+              </div>
               <FreqResponseChart product={product}/>
             </div>
             {product.directivityHDeg && !isSub && (
@@ -2012,18 +2045,8 @@ export default function ProductDetail({ product }: { product: Product }) {
             {isSub && product.galleryImages?.[1] && (
               <div className="pd-chart-panel">
                 <div className="pd-chart-label">Rear Panel</div>
-                <div style={{background:'#000', overflow:'hidden', borderRadius:0}}>
-                  <img src={getImageUrl(product.galleryImages[1], 900)} alt="Rear panel"
-                    style={{width:'100%', objectFit:'contain', display:'block', padding:16, boxSizing:'border-box', maxHeight:240}}/>
-                </div>
-                <div style={{marginTop:16}}>
-                  {[['LFE Input','RCA'],['Line Input L/R','RCA Stereo'],['Speaker Out','Binding Posts'],['Power','IEC C14 · 100–240V'],['Control','Volume · LPF · Phase']].map(([l,v])=>(
-                    <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'0.5px solid #111'}}>
-                      <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:'rgba(201,169,110,0.5)',letterSpacing:'.1em'}}>{l}</span>
-                      <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:13,color:'#c8c4bc'}}>{v}</span>
-                    </div>
-                  ))}
-                </div>
+                <img src={getImageUrl(product.galleryImages[1], 900)} alt="Rear panel"
+                  style={{width:'100%', objectFit:'contain', display:'block', background:'#000', padding:12, maxHeight:280}}/>
               </div>
             )}
           </div>
