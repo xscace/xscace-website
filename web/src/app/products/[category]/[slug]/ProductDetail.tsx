@@ -156,7 +156,9 @@ function EQCurve({ freqLow, freqHigh, sensitivity, eqData }: {
     const plotH = H - PAD.t - PAD.b
 
     // Log frequency mapping
-    const logToX = (f: number) => PAD.l + (Math.log10(f / 20) / Math.log10(20000 / 20)) * plotW
+    const xMin = Math.min(fLo * 0.4, 20)
+    const xMax = Math.max(fHi * 3, fHi + 200)
+    const logToX = (f: number) => PAD.l + (Math.log10(f / xMin) / Math.log10(xMax / xMin)) * plotW
     // dB axis: -30 to +12dB range
     const DB_MIN = -30, DB_MAX = 12
     const dbToY = (db: number) => PAD.t + plotH * (1 - (db - DB_MIN) / (DB_MAX - DB_MIN))
@@ -235,13 +237,13 @@ function EQCurve({ freqLow, freqHigh, sensitivity, eqData }: {
     }
 
     // ── Draw grid ──
-    const freqTicks = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]
+    const freqTicks = [20, 30, 50, 100, 200, 300, 500, 1000, 2000, 5000, 10000, 20000].filter(f => f >= xMin * 0.8 && f <= xMax * 1.2)
     const dbTicks = [-24, -18, -12, -6, 0, 6]
 
     ctx.strokeStyle = 'rgba(201,169,110,0.05)'
     ctx.lineWidth = 0.5
     freqTicks.forEach(f => {
-      if (f < 20 || f > 20000) return
+      if (f < xMin * 0.8 || f > xMax * 1.2) return
       const x = logToX(f)
       ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, PAD.t + plotH); ctx.stroke()
       ctx.fillStyle = 'rgba(201,169,110,0.3)'
@@ -266,7 +268,7 @@ function EQCurve({ freqLow, freqHigh, sensitivity, eqData }: {
     const points: [number, number][] = []
 
     for (let i = 0; i <= STEPS; i++) {
-      const f = 20 * Math.pow(20000 / 20, i / STEPS)
+      const f = xMin * Math.pow(xMax / xMin, i / STEPS)
       let db = 0
 
       // Apply high-pass roll-off
@@ -685,7 +687,7 @@ function FreqResponseChart({ product }: { product: any }) {
         ctx.fillText(String(db), PAD.l - 5, y + 3)
       }
     }
-    for (const f of [50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]) {
+    for (const f of [30, 50, 100, 200, 300, 500, 1000, 2000, 5000, 10000, 20000].filter(f => f >= xMin && f <= xMax * 1.1)) {
       const x = fx(f)
       ctx.strokeStyle = GRID; ctx.lineWidth = 0.4
       ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, PAD.t + PH); ctx.stroke()
@@ -1947,17 +1949,21 @@ export default function ProductDetail({ product }: { product: Product }) {
           productName={product.productName}
           getImageUrl={getImageUrl}
         />
-      ) : isSub && (product.galleryImages?.length > 0 || product.lifestyleImages?.length > 0) ? (
+      ) : isSub && product.galleryImages?.length > 0 ? (
         <section style={{background:'#000'}}>
           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:1}}>
-            {[...(product.lifestyleImages||[]), ...(product.galleryImages||[])].slice(0,2).map((img: any, i: number) => {
-              const url = getImageUrl(img, 1200)
-              return url ? (
-                <div key={i} style={{background:'#000', aspectRatio:'4/3', overflow:'hidden'}}>
-                  <img src={url} alt={product.productName} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
-                </div>
-              ) : null
-            })}
+            {(() => {
+              const g = product.galleryImages
+              const imgs = g.length >= 2 ? [g[0], g[g.length - 1]] : [g[0]]
+              return imgs.map((img: any, i: number) => {
+                const url = getImageUrl(img, 1200)
+                return url ? (
+                  <div key={i} style={{background:'#000', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', minHeight:400}}>
+                    <img src={url} alt={product.productName} style={{width:'100%', height:'100%', objectFit:'contain', display:'block'}}/>
+                  </div>
+                ) : null
+              })
+            })()}
           </div>
         </section>
       ) : null}
@@ -2205,6 +2211,115 @@ export default function ProductDetail({ product }: { product: Product }) {
       {/* wave divider */}
       <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
 
+
+      {/* ── Section 3: Enhanced NC section ── */}
+      <section style={{background:'#000', borderTop:'0.5px solid #111', padding:'64px 56px'}}>
+        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:56, alignItems:'center'}}>
+          <div>
+            <div style={{fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'.2em', textTransform:'uppercase', color:'rgba(201,169,110,0.55)', marginBottom:16}}>Full DSP Control · Over LAN</div>
+            <h2 style={{fontFamily:"'Cormorant Garamond',serif", fontWeight:300, fontSize:'clamp(28px,2.8vw,42px)', color:'#eeebe5', lineHeight:1.1, marginBottom:20}}>
+              Controlled by <em style={{fontStyle:'italic', color:'#c9a96e'}}>XSCACE</em><br/>Network Controller
+            </h2>
+            <p style={{fontFamily:"'Barlow',sans-serif", fontWeight:300, fontSize:14, color:'rgba(200,196,188,0.6)', lineHeight:1.75, marginBottom:28}}>
+              Connect to the Acacia 6 Powered over your local network. Adjust the built-in DSP in real time — crossover frequency, parametric EQ, output delay, and channel routing — without touching the hardware.
+            </p>
+            <div style={{display:'flex', flexDirection:'column', gap:10, marginBottom:32}}>
+              {['Parametric EQ — 5 bands per channel', 'Variable crossover · 40–200Hz', 'Channel delay · up to 27ms', 'Factory + custom preset management', 'Real-time level monitoring'].map(f => (
+                <div key={f} style={{display:'flex', alignItems:'flex-start', gap:12}}>
+                  <span style={{fontFamily:"'DM Mono',monospace", fontSize:10, color:'rgba(201,169,110,0.5)', marginTop:2}}>×</span>
+                  <span style={{fontFamily:"'Barlow',sans-serif", fontWeight:300, fontSize:13, color:'rgba(200,196,188,0.65)'}}>{f}</span>
+                </div>
+              ))}
+            </div>
+            <a href="/software/network-controller" style={{display:'inline-flex', alignItems:'center', gap:8, fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'.14em', textTransform:'uppercase', color:'#c9a96e', border:'0.5px solid rgba(201,169,110,0.4)', padding:'10px 20px', textDecoration:'none'}}>Download Free →</a>
+          </div>
+          <div>
+            <div style={{background:'#0a0a0a', border:'1px solid #1a1a1a', borderRadius:4, overflow:'hidden', boxShadow:'0 24px 80px rgba(0,0,0,0.8)'}}>
+              <div style={{height:10, background:'#0d0d0d', borderBottom:'1px solid #141414', display:'flex', alignItems:'center', paddingLeft:8, gap:4}}>
+                <div style={{width:6,height:6,borderRadius:'50%',background:'#1e1e1e'}}/><div style={{width:6,height:6,borderRadius:'50%',background:'#1e1e1e'}}/><div style={{width:6,height:6,borderRadius:'50%',background:'#1e1e1e'}}/>
+              </div>
+              <img src="https://cdn.sanity.io/images/7r0kq57d/production/886620094c00c68ad5e10fb34b4c2071a7dccfa1-2922x1912.png?w=900&auto=format&q=85" alt="XSCACE Network Controller" style={{width:'100%', display:'block'}}/>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Section 4: Control System Compatibility ── */}
+      <section style={{background:'#000', borderTop:'0.5px solid #111', padding:'64px 56px'}}>
+        <div style={{marginBottom:40}}>
+          <div style={{fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'.2em', textTransform:'uppercase', color:'rgba(201,169,110,0.55)', marginBottom:16}}>Open Integration · TCP/IP API</div>
+          <h2 style={{fontFamily:"'Cormorant Garamond',serif", fontWeight:300, fontSize:'clamp(28px,2.8vw,42px)', color:'#eeebe5', lineHeight:1.1}}>
+            Works with any <em style={{fontStyle:'italic', color:'#c9a96e'}}>control system</em>
+          </h2>
+          <p style={{fontFamily:"'Barlow',sans-serif", fontWeight:300, fontSize:14, color:'rgba(200,196,188,0.55)', lineHeight:1.75, marginTop:16, maxWidth:600}}>
+            The Acacia 6 Powered exposes a full TCP/IP command API. Any IP-capable control system integrates natively — no middleware, no adapters.
+          </p>
+        </div>
+        <div style={{display:'flex', gap:1, flexWrap:'wrap', marginBottom:48}}>
+          {['Control4','Crestron','Savant','AMX','RTI','Josh.ai'].map(brand => (
+            <div key={brand} style={{padding:'14px 28px', border:'0.5px solid #1a1a1a', fontFamily:"'Cormorant Garamond',serif", fontWeight:300, fontSize:20, color:'rgba(200,196,188,0.4)', letterSpacing:'0.02em', background:'#000'}}>{brand}</div>
+          ))}
+        </div>
+        <div style={{display:'flex', gap:12, flexWrap:'wrap'}}>
+          <a href="/downloads/acacia6-api-commands.pdf" download style={{display:'inline-flex', alignItems:'center', gap:8, fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'.14em', textTransform:'uppercase', color:'#000', background:'#c9a96e', padding:'10px 20px', textDecoration:'none'}}>
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v6M3 5l2.5 2.5L8 5M1 9.5h9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
+            Download API Commands
+          </a>
+          <a href="mailto:support@xscace.com?subject=Driver Request — Acacia 6 Powered" style={{display:'inline-flex', alignItems:'center', gap:8, fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'.14em', textTransform:'uppercase', color:'#c9a96e', border:'0.5px solid rgba(201,169,110,0.4)', padding:'10px 20px', textDecoration:'none'}}>Request Custom Driver →</a>
+        </div>
+      </section>
+
+      {/* ── Section 5: 3-Channel Amplifier ── */}
+      <section style={{background:'#000', borderTop:'0.5px solid #111', padding:'64px 56px'}}>
+        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:56, alignItems:'center'}}>
+          <div>
+            <div style={{fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'.2em', textTransform:'uppercase', color:'rgba(201,169,110,0.55)', marginBottom:16}}>Built-in · 200W Class D · 3 Channels</div>
+            <h2 style={{fontFamily:"'Cormorant Garamond',serif", fontWeight:300, fontSize:'clamp(28px,2.8vw,42px)', color:'#eeebe5', lineHeight:1.1, marginBottom:20}}>
+              One box.<br/><em style={{fontStyle:'italic', color:'#c9a96e'}}>Three channels.</em>
+            </h2>
+            <p style={{fontFamily:"'Barlow',sans-serif", fontWeight:300, fontSize:14, color:'rgba(200,196,188,0.6)', lineHeight:1.75, marginBottom:32}}>
+              A 200W Class D amplifier with three discrete channels — one drives the internal subwoofer driver, two drive any external speakers in your system. No separate amplifier required.
+            </p>
+            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:1}}>
+              {([['CH 1', 'Internal Sub', '200W LFE'], ['CH 2', 'Speaker Out L', 'Full Range'], ['CH 3', 'Speaker Out R', 'Full Range']] as [string,string,string][]).map(([ch, name, desc]) => (
+                <div key={ch} style={{background:'#080808', padding:'20px 16px', borderTop:'1.5px solid rgba(201,169,110,0.2)'}}>
+                  <div style={{fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:'.16em', color:'rgba(201,169,110,0.4)', marginBottom:8}}>{ch}</div>
+                  <div style={{fontFamily:"'Cormorant Garamond',serif", fontSize:15, color:'#e8e4de', marginBottom:4}}>{name}</div>
+                  <div style={{fontFamily:"'DM Mono',monospace", fontSize:9, color:'rgba(200,196,188,0.35)'}}>{desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <svg viewBox="0 0 380 260" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:'100%'}}>
+              <rect x="8" y="100" width="80" height="60" rx="2" fill="#080808" stroke="#1a1a1a" strokeWidth="0.5"/>
+              <text x="48" y="126" textAnchor="middle" fill="#666" fontSize="9" fontFamily="monospace">SOURCE</text>
+              <text x="48" y="139" textAnchor="middle" fill="#444" fontSize="8" fontFamily="monospace">LFE / LINE IN</text>
+              <line x1="88" y1="130" x2="122" y2="130" stroke="rgba(201,169,110,0.25)" strokeWidth="0.8"/>
+              <polygon points="122,127 128,130 122,133" fill="rgba(201,169,110,0.35)"/>
+              <rect x="128" y="70" width="96" height="120" rx="2" fill="#0a0a0a" stroke="rgba(201,169,110,0.2)" strokeWidth="0.5"/>
+              <text x="176" y="96" textAnchor="middle" fill="#c9a96e" fontSize="7" fontFamily="monospace" opacity="0.6">200W CLASS D</text>
+              <line x1="128" y1="108" x2="224" y2="108" stroke="#111" strokeWidth="0.5"/>
+              <text x="176" y="128" textAnchor="middle" fill="#888" fontSize="9" fontFamily="monospace">ACACIA 6</text>
+              <text x="176" y="142" textAnchor="middle" fill="#888" fontSize="9" fontFamily="monospace">POWERED</text>
+              <line x1="128" y1="154" x2="224" y2="154" stroke="#111" strokeWidth="0.5"/>
+              <text x="176" y="170" textAnchor="middle" fill="#444" fontSize="7" fontFamily="monospace">3-CHANNEL AMP</text>
+              <line x1="224" y1="92" x2="266" y2="50" stroke="rgba(201,169,110,0.2)" strokeWidth="0.8"/>
+              <line x1="224" y1="130" x2="266" y2="130" stroke="rgba(201,169,110,0.3)" strokeWidth="0.8"/>
+              <line x1="224" y1="168" x2="266" y2="210" stroke="rgba(201,169,110,0.2)" strokeWidth="0.8"/>
+              <rect x="266" y="26" width="106" height="48" rx="2" fill="#080808" stroke="#1a1a1a" strokeWidth="0.5"/>
+              <text x="319" y="46" textAnchor="middle" fill="#777" fontSize="8" fontFamily="monospace">CH 2 — L OUT</text>
+              <text x="319" y="58" textAnchor="middle" fill="#444" fontSize="7" fontFamily="monospace">Full Range · Any Speaker</text>
+              <rect x="266" y="106" width="106" height="48" rx="2" fill="#080808" stroke="rgba(201,169,110,0.25)" strokeWidth="0.5"/>
+              <text x="319" y="126" textAnchor="middle" fill="#c9a96e" fontSize="8" fontFamily="monospace" opacity="0.8">CH 1 — LFE</text>
+              <text x="319" y="138" textAnchor="middle" fill="#444" fontSize="7" fontFamily="monospace">Internal Subwoofer</text>
+              <rect x="266" y="186" width="106" height="48" rx="2" fill="#080808" stroke="#1a1a1a" strokeWidth="0.5"/>
+              <text x="319" y="206" textAnchor="middle" fill="#777" fontSize="8" fontFamily="monospace">CH 3 — R OUT</text>
+              <text x="319" y="218" textAnchor="middle" fill="#444" fontSize="7" fontFamily="monospace">Full Range · Any Speaker</text>
+            </svg>
+          </div>
+        </div>
+      </section>
       {/* ── DOWNLOADS ── */}
       {hasDownloads && (
         <section className="pd-section pd-downloads-section">
