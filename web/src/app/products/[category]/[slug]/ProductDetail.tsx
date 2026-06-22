@@ -687,7 +687,7 @@ function FreqResponseChart({ product }: { product: any }) {
         ctx.fillText(String(db), PAD.l - 5, y + 3)
       }
     }
-    for (const f of [30, 50, 100, 200, 300, 500, 1000, 2000, 5000, 10000, 20000].filter(f => f >= xMin && f <= xMax * 1.1)) {
+    for (const f of [30, 50, 100, 200, 300, 500, 1000, 2000, 5000, 10000, 20000].filter(f => Math.log10(f) >= LOG_MIN - 0.1 && Math.log10(f) <= LOG_MAX + 0.1)) {
       const x = fx(f)
       ctx.strokeStyle = GRID; ctx.lineWidth = 0.4
       ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, PAD.t + PH); ctx.stroke()
