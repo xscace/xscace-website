@@ -714,6 +714,8 @@ function FreqResponseChart({ product }: { product: any }) {
         a0=(A+1)-(A-1)*cw+s2A; a1=2*((A-1)-(A+1)*cw); a2=(A+1)-(A-1)*cw-s2A
       } else if (type === 'PK') {
         b0=1+alpha*A; b1=-2*cw; b2=1-alpha*A; a0=1+alpha/A; a1=-2*cw; a2=1-alpha/A
+      } else if (type === 'LP') {
+        b0=(1-cw)/2; b1=1-cw; b2=(1-cw)/2; a0=1+alpha; a1=-2*cw; a2=1-alpha
       }
       return [[b0,b1,b2].map(x=>x/a0), [1,a1/a0,a2/a0]]
     }
@@ -727,12 +729,9 @@ function FreqResponseChart({ product }: { product: any }) {
     }
 
     // ── Build biquad chain (matches spec sheet generator exactly) ──
-    const bqs: [number[],number[]][] = [
-      rbj('HP', fLo, 0, 0.62),          // sealed-box rolloff
-      rbj('PK', 500, 0.7, 1.8),         // Qtc bump
-      rbj('PK', 2800, -1.5, 1.1),       // presence dip
-      rbj('HS', 14000, -2.5),           // HF shelf
-    ]
+    const bqs: [number[],number[]][] = fHi < 2000
+      ? [ rbj('HP',fLo,0,0.62), rbj('LP',fHi,0,0.71), rbj('LP',fHi*1.2,0,0.71) ]
+      : [ rbj('HP',fLo,0,0.62), rbj('PK',500,0.7,1.8), rbj('PK',2800,-1.5,1.1), rbj('HS',14000,-2.5) ]
 
     // No product EQ applied — shows raw acoustic response only
 
@@ -2007,23 +2006,32 @@ export default function ProductDetail({ product }: { product: Product }) {
             )}
             {product._id === 'prod-acacia6-pw' && product.galleryImages?.[1] && (
               <div className="pd-chart-panel">
-                <div className="pd-chart-label">Rear Panel &amp; Connections</div>
-                <img src={getImageUrl(product.galleryImages[1], 900)} alt="Rear panel"
-                  style={{width:'100%', objectFit:'contain', display:'block', background:'#000', padding:12, maxHeight:240}}/>
+                <div className="pd-chart-label">Rear Panel</div>
+                <div style={{background:'#000'}}>
+                  <img src={getImageUrl(product.galleryImages[1], 900)} alt="Rear panel"
+                    style={{width:'100%',objectFit:'contain',display:'block',padding:'12px',maxHeight:200,boxSizing:'border-box'}}/>
+                </div>
                 {(product.inputs || product.outputs) && (
-                  <div style={{marginTop:12}}>
-                    {product.inputs && (
-                      <div style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'0.5px solid #111'}}>
-                        <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:'rgba(201,169,110,0.5)',letterSpacing:'.1em'}}>INPUTS</span>
-                        <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:13,color:'#c8c4bc',textAlign:'right',maxWidth:'60%'}}>{product.inputs}</span>
+                  <div style={{borderTop:'0.5px solid #0f0f0f'}}>
+                    <div style={{padding:'7px 12px 4px',fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.2em',textTransform:'uppercase',color:'rgba(201,169,110,0.3)',background:'#050505'}}>Connections</div>
+                    {[
+                      product.inputs  ? {label:'IN',  value:product.inputs,  icon:'M0,7 L2.5,7 M14,7 L11.5,7 M7,0 L7,2.5 M7,14 L7,11.5'} : null,
+                      product.outputs ? {label:'OUT', value:product.outputs, icon:'M11.5,7 L14,7 M0,7 L2.5,7 M7,0 L7,2.5 M7,14 L7,11.5'} : null,
+                    ].filter(Boolean).map(row => row && (
+                      <div key={row.label} style={{display:'grid',gridTemplateColumns:'56px 1fr',borderTop:'0.5px solid #0f0f0f'}}>
+                        <div style={{padding:'10px',background:'#080808',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:4}}>
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                            <circle cx="7" cy="7" r="4.5" stroke="rgba(201,169,110,0.5)" strokeWidth="0.8"/>
+                            <circle cx="7" cy="7" r="1.5" fill="rgba(201,169,110,0.35)"/>
+                            <path d={row.icon} stroke="rgba(201,169,110,0.5)" strokeWidth="0.8"/>
+                          </svg>
+                          <span style={{fontFamily:"'DM Mono',monospace",fontSize:6,letterSpacing:'.15em',color:'rgba(201,169,110,0.45)'}}>{row.label}</span>
+                        </div>
+                        <div style={{padding:'10px 12px',background:'#050505',display:'flex',alignItems:'center'}}>
+                          <span style={{fontFamily:"'Barlow',sans-serif",fontWeight:300,fontSize:12,color:'rgba(200,196,188,0.6)',lineHeight:1.45}}>{row.value}</span>
+                        </div>
                       </div>
-                    )}
-                    {product.outputs && (
-                      <div style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'0.5px solid #111'}}>
-                        <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:'rgba(201,169,110,0.5)',letterSpacing:'.1em'}}>OUTPUTS</span>
-                        <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:13,color:'#c8c4bc',textAlign:'right',maxWidth:'60%'}}>{product.outputs}</span>
-                      </div>
-                    )}
+                    ))}
                   </div>
                 )}
               </div>
@@ -2240,7 +2248,7 @@ export default function ProductDetail({ product }: { product: Product }) {
               <div style={{height:10, background:'#0d0d0d', borderBottom:'1px solid #141414', display:'flex', alignItems:'center', paddingLeft:8, gap:4}}>
                 <div style={{width:6,height:6,borderRadius:'50%',background:'#1e1e1e'}}/><div style={{width:6,height:6,borderRadius:'50%',background:'#1e1e1e'}}/><div style={{width:6,height:6,borderRadius:'50%',background:'#1e1e1e'}}/>
               </div>
-              <img src="https://cdn.sanity.io/images/7r0kq57d/production/886620094c00c68ad5e10fb34b4c2071a7dccfa1-2922x1912.png?w=900&auto=format&q=85" alt="XSCACE Network Controller" style={{width:'100%', display:'block'}}/>
+              <img src="https://cdn.sanity.io/images/7r0kq57d/production/886620094c00c68ad5e10fb34b4c2071a7dccfa1-2922x1912.png?w=900&auto=format&q=85" alt="XSCACE Network Controller" style={{width:'100%',display:'block',maxHeight:260,objectFit:'cover',objectPosition:'top'}}/>
             </div>
           </div>
         </div>
@@ -2258,9 +2266,46 @@ export default function ProductDetail({ product }: { product: Product }) {
           </p>
         </div>
         <div style={{display:'flex', gap:1, flexWrap:'wrap', marginBottom:48}}>
-          {['Control4','Crestron','Savant','AMX','RTI','Josh.ai'].map(brand => (
-            <div key={brand} style={{padding:'14px 28px', border:'0.5px solid #1a1a1a', fontFamily:"'Cormorant Garamond',serif", fontWeight:300, fontSize:20, color:'rgba(200,196,188,0.4)', letterSpacing:'0.02em', background:'#000'}}>{brand}</div>
-          ))}
+          {/* Control4 */}
+          <div title="Control4" style={{padding:'12px 20px',border:'0.5px solid #1a1a1a',background:'#000',display:'flex',alignItems:'center',justifyContent:'center',minWidth:100}}>
+            <svg viewBox="0 0 80 24" height="18" fill="none" opacity="0.45">
+              <text x="0" y="18" fontFamily="Arial,sans-serif" fontSize="16" fontWeight="700" fill="#e8e4de">Control</text>
+              <text x="56" y="18" fontFamily="Arial,sans-serif" fontSize="16" fontWeight="900" fill="#c9a96e">4</text>
+            </svg>
+          </div>
+          {/* Crestron */}
+          <div title="Crestron" style={{padding:'12px 20px',border:'0.5px solid #1a1a1a',background:'#000',display:'flex',alignItems:'center',justifyContent:'center',minWidth:100}}>
+            <svg viewBox="0 0 90 20" height="14" fill="none" opacity="0.45">
+              <text x="0" y="16" fontFamily="Arial,sans-serif" fontSize="13" fontWeight="700" fill="#e8e4de" letterSpacing="1.5">CRESTRON</text>
+            </svg>
+          </div>
+          {/* Savant */}
+          <div title="Savant" style={{padding:'12px 20px',border:'0.5px solid #1a1a1a',background:'#000',display:'flex',alignItems:'center',justifyContent:'center',minWidth:80}}>
+            <svg viewBox="0 0 60 24" height="18" fill="none" opacity="0.45">
+              <text x="0" y="19" fontFamily="Georgia,serif" fontSize="18" fontWeight="400" fill="#e8e4de" fontStyle="italic">Savant</text>
+            </svg>
+          </div>
+          {/* AMX */}
+          <div title="AMX" style={{padding:'12px 20px',border:'0.5px solid #1a1a1a',background:'#000',display:'flex',alignItems:'center',justifyContent:'center',minWidth:64}}>
+            <svg viewBox="0 0 42 26" height="20" fill="none" opacity="0.45">
+              <text x="0" y="22" fontFamily="Arial,sans-serif" fontSize="22" fontWeight="900" fill="#e8e4de" letterSpacing="1">AMX</text>
+            </svg>
+          </div>
+          {/* RTI */}
+          <div title="RTI" style={{padding:'12px 20px',border:'0.5px solid #1a1a1a',background:'#000',display:'flex',alignItems:'center',justifyContent:'center',minWidth:56}}>
+            <svg viewBox="0 0 32 24" height="18" fill="none" opacity="0.45">
+              <text x="0" y="20" fontFamily="Arial,sans-serif" fontSize="20" fontWeight="800" fill="#e8e4de" letterSpacing="2">RTI</text>
+            </svg>
+          </div>
+          {/* Josh.ai */}
+          <div title="Josh.ai" style={{padding:'12px 20px',border:'0.5px solid #1a1a1a',background:'#000',display:'flex',alignItems:'center',justifyContent:'center',minWidth:72}}>
+            <svg viewBox="0 0 52 22" height="16" fill="none" opacity="0.45">
+              <circle cx="6" cy="11" r="4" stroke="#e8e4de" strokeWidth="1.2"/>
+              <circle cx="6" cy="11" r="1.5" fill="#e8e4de"/>
+              <text x="14" y="16" fontFamily="Arial,sans-serif" fontSize="14" fontWeight="400" fill="#e8e4de">.ai</text>
+              <text x="14" y="16" fontFamily="Arial,sans-serif" fontSize="14" fontWeight="600" fill="#e8e4de" dx="-14" dy="0">josh</text>
+            </svg>
+          </div>
         </div>
         <div style={{display:'flex', gap:12, flexWrap:'wrap'}}>
           <a href="/downloads/acacia6-api-commands.pdf" download style={{display:'inline-flex', alignItems:'center', gap:8, fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'.14em', textTransform:'uppercase', color:'#000', background:'#c9a96e', padding:'10px 20px', textDecoration:'none'}}>
@@ -2282,18 +2327,34 @@ export default function ProductDetail({ product }: { product: Product }) {
             <p style={{fontFamily:"'Barlow',sans-serif", fontWeight:300, fontSize:14, color:'rgba(200,196,188,0.6)', lineHeight:1.75, marginBottom:32}}>
               A 200W Class D amplifier with three discrete channels — one drives the internal subwoofer driver, two drive any external speakers in your system. No separate amplifier required.
             </p>
-            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:1}}>
-              {([['CH 1', 'Internal Sub', '200W LFE'], ['CH 2', 'Speaker Out L', 'Full Range'], ['CH 3', 'Speaker Out R', 'Full Range']] as [string,string,string][]).map(([ch, name, desc]) => (
-                <div key={ch} style={{background:'#080808', padding:'20px 16px', borderTop:'1.5px solid rgba(201,169,110,0.2)'}}>
-                  <div style={{fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:'.16em', color:'rgba(201,169,110,0.4)', marginBottom:8}}>{ch}</div>
-                  <div style={{fontFamily:"'Cormorant Garamond',serif", fontSize:15, color:'#e8e4de', marginBottom:4}}>{name}</div>
-                  <div style={{fontFamily:"'DM Mono',monospace", fontSize:9, color:'rgba(200,196,188,0.35)'}}>{desc}</div>
+            <div style={{display:'flex',flexDirection:'column',gap:1,marginBottom:8}}>
+              {([
+                {ch:'CH 1',name:'Internal Subwoofer',power:'200W · LFE',note:'Dedicated low-frequency channel driving the built-in 6″ driver',accent:true},
+                {ch:'CH 2',name:'Speaker Output — L',power:'Full Range',note:'Connects to any 4–8Ω loudspeaker',accent:false},
+                {ch:'CH 3',name:'Speaker Output — R',power:'Full Range',note:'Connects to any 4–8Ω loudspeaker',accent:false},
+              ] as {ch:string,name:string,power:string,note:string,accent:boolean}[]).map(row => (
+                <div key={row.ch} style={{
+                  display:'grid',gridTemplateColumns:'48px 1fr auto',alignItems:'center',gap:0,
+                  background:row.accent ? 'rgba(201,169,110,0.03)' : '#060606',
+                  borderLeft:`2px solid ${row.accent ? 'rgba(201,169,110,0.4)' : '#111'}`,
+                }}>
+                  <div style={{padding:'16px 12px',borderRight:'0.5px solid #111',textAlign:'center'}}>
+                    <div style={{fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.12em',color:row.accent?'rgba(201,169,110,0.6)':'rgba(200,196,188,0.25)',lineHeight:1.4}}>{row.ch.replace(' ','
+')}</div>
+                  </div>
+                  <div style={{padding:'14px 16px'}}>
+                    <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:16,color:'#e0dcd6',marginBottom:3}}>{row.name}</div>
+                    <div style={{fontFamily:"'Barlow',sans-serif",fontWeight:300,fontSize:11,color:'rgba(200,196,188,0.35)',lineHeight:1.4}}>{row.note}</div>
+                  </div>
+                  <div style={{padding:'14px 16px',textAlign:'right',whiteSpace:'nowrap'}}>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:row.accent?'rgba(201,169,110,0.55)':'rgba(200,196,188,0.2)',letterSpacing:'.08em'}}>{row.power}</span>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
           <div>
-            <svg viewBox="0 0 380 260" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:'100%'}}>
+            <svg viewBox="0 0 380 260" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:'100%',opacity:0.85}}>
               <rect x="8" y="100" width="80" height="60" rx="2" fill="#080808" stroke="#1a1a1a" strokeWidth="0.5"/>
               <text x="48" y="126" textAnchor="middle" fill="#666" fontSize="9" fontFamily="monospace">SOURCE</text>
               <text x="48" y="139" textAnchor="middle" fill="#444" fontSize="8" fontFamily="monospace">LFE / LINE IN</text>
