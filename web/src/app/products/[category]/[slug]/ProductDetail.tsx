@@ -658,7 +658,8 @@ function FreqResponseChart({ product }: { product: any }) {
     const PAD = { l: 48, r: 16, t: 24, b: 36 }
     const PW = W - PAD.l - PAD.r, PH = H - PAD.t - PAD.b
     const DB_MIN = sens - 20, DB_MAX = sens + 10
-    const LOG_MIN = Math.log10(30), LOG_MAX = Math.log10(25000)
+    const LOG_MIN = Math.log10(Math.min(fLo * 0.4, 20))
+    const LOG_MAX = Math.log10(Math.max(fHi * 3, fHi + 500))
 
     const fx  = (f: number) => PAD.l + (Math.log10(f) - LOG_MIN) / (LOG_MAX - LOG_MIN) * PW
     const fdb = (db: number) => PAD.t + PH * (1 - (db - DB_MIN) / (DB_MAX - DB_MIN))
@@ -1949,7 +1950,7 @@ export default function ProductDetail({ product }: { product: Product }) {
           productName={product.productName}
           getImageUrl={getImageUrl}
         />
-      ) : isSub && product.galleryImages?.length > 0 ? (
+      ) : product._id === 'prod-acacia6-pw' && product.galleryImages?.length > 0 ? (
         <section style={{background:'#000'}}>
           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:1}}>
             {(() => {
@@ -1994,17 +1995,17 @@ export default function ProductDetail({ product }: { product: Product }) {
             <div className="pd-chart-panel">
               <div className="pd-chart-label">
                 Frequency Response
-                {isSub && <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:'rgba(201,169,110,0.4)',marginLeft:8,letterSpacing:'.1em'}}>Subwoofer range</span>}
+                {product._id === 'prod-acacia6-pw' && <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:'rgba(201,169,110,0.4)',marginLeft:8,letterSpacing:'.1em'}}>Subwoofer range</span>}
               </div>
               <FreqResponseChart product={product}/>
             </div>
-            {product.directivityHDeg && !isSub && (
+            {product.directivityHDeg && (
               <div className="pd-chart-panel">
                 <div className="pd-chart-label">Polar Pattern</div>
                 <PolarChart product={product}/>
               </div>
             )}
-            {isSub && product.galleryImages?.[1] && (
+            {product._id === 'prod-acacia6-pw' && product.galleryImages?.[1] && (
               <div className="pd-chart-panel">
                 <div className="pd-chart-label">Rear Panel &amp; Connections</div>
                 <img src={getImageUrl(product.galleryImages[1], 900)} alt="Rear panel"
@@ -2473,7 +2474,7 @@ export default function ProductDetail({ product }: { product: Product }) {
         </section>
       )}
       {/* Network Controller: shown on DSP amps AND powered subs */}
-      {(isAmp && product.hasDsp) || isSub ? (
+      {(isAmp && product.hasDsp) || product._id === 'prod-acacia6-pw' ? (
         <section className="pdp-sw-strip">
           <div className="pdp-sw-label">Desktop Software</div>
           <a href="/software/network-controller" className="pdp-sw-card">
