@@ -2213,6 +2213,7 @@ export default function ProductDetail({ product }: { product: Product }) {
       <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
 
 
+      {product._id === 'prod-acacia6-pw' && (<>
       {/* ── Section 3: Enhanced NC section ── */}
       <section style={{background:'#000', borderTop:'0.5px solid #111', padding:'64px 56px'}}>
         <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:56, alignItems:'center'}}>
@@ -2321,6 +2322,7 @@ export default function ProductDetail({ product }: { product: Product }) {
           </div>
         </div>
       </section>
+      </>)}
       {/* ── DOWNLOADS ── */}
       {hasDownloads && (
         <section className="pd-section pd-downloads-section">
@@ -2474,7 +2476,7 @@ export default function ProductDetail({ product }: { product: Product }) {
         </section>
       )}
       {/* Network Controller: shown on DSP amps AND powered subs */}
-      {(isAmp && product.hasDsp) || product._id === 'prod-acacia6-pw' ? (
+      {isAmp && product.hasDsp ? (
         <section className="pdp-sw-strip">
           <div className="pdp-sw-label">Desktop Software</div>
           <a href="/software/network-controller" className="pdp-sw-card">
