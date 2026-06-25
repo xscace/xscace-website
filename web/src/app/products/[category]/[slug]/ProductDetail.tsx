@@ -2339,8 +2339,7 @@ export default function ProductDetail({ product }: { product: Product }) {
                   borderLeft:`2px solid ${row.accent ? 'rgba(201,169,110,0.4)' : '#111'}`,
                 }}>
                   <div style={{padding:'16px 12px',borderRight:'0.5px solid #111',textAlign:'center'}}>
-                    <div style={{fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.12em',color:row.accent?'rgba(201,169,110,0.6)':'rgba(200,196,188,0.25)',lineHeight:1.4}}>{row.ch.replace(' ','
-')}</div>
+                    <div style={{fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.12em',color:row.accent?'rgba(201,169,110,0.6)':'rgba(200,196,188,0.25)',lineHeight:1.4}}>{row.ch}</div>
                   </div>
                   <div style={{padding:'14px 16px'}}>
                     <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:16,color:'#e0dcd6',marginBottom:3}}>{row.name}</div>
