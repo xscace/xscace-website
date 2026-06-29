@@ -2552,33 +2552,112 @@ export default function ProductDetail({ product }: { product: Product }) {
           </a>
         </section>
       )}
-      {/* Network Controller: shown on DSP amps AND powered subs */}
-      {isAmp && product.hasDsp ? (
-        <section className="pdp-sw-strip">
-          <div className="pdp-sw-label">Desktop Software</div>
-          <a href="/software/network-controller" className="pdp-sw-card">
-            <div className="pdp-sw-card-icon pdp-sw-card-icon--desktop" style={{position:'relative',width:140,minWidth:140,height:96,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end'}}>
-              <div style={{width:'100%',background:'#0a0a0a',border:'1px solid #222',borderRadius:'4px 4px 0 0',overflow:'hidden'}}>
-                <div style={{height:'8px',background:'#0d0d0d',borderBottom:'1px solid #1a1a1a',display:'flex',alignItems:'center',paddingLeft:'6px',gap:'3px'}}>
-                  <div style={{width:'4px',height:'4px',borderRadius:'50%',background:'#1e1e1e'}}/><div style={{width:'4px',height:'4px',borderRadius:'50%',background:'#1e1e1e'}}/><div style={{width:'4px',height:'4px',borderRadius:'50%',background:'#1e1e1e'}}/>
+      {/* Enhanced sections for DSP amps */}
+      {isAmp && product.hasDsp && (<>
+
+        {/* Channel Power Distribution */}
+        <section style={{background:'#000', borderTop:'0.5px solid #111', padding:'64px 56px'}}>
+          <div style={{marginBottom:40}}>
+            <div style={{fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'.2em', textTransform:'uppercase', color:'rgba(201,169,110,0.55)', marginBottom:16}}>400W Total · Class D</div>
+            <h2 style={{fontFamily:"'Cormorant Garamond',serif", fontWeight:300, fontSize:'clamp(28px,2.8vw,42px)', color:'#eeebe5', lineHeight:1.1}}>
+              Channel <em style={{fontStyle:'italic', color:'#c9a96e'}}>power distribution</em>
+            </h2>
+            {product.channelConfigurations && (
+              <p style={{fontFamily:"'Barlow',sans-serif", fontWeight:300, fontSize:14, color:'rgba(200,196,188,0.45)', marginTop:12}}>{product.channelConfigurations}</p>
+            )}
+          </div>
+          {(() => {
+            const isX2 = product._id === 'prod-xylem2'
+            const isX3 = product._id === 'prod-xylem3'
+            const channels: {ch:string,power:string,load:string,role:string,accent:boolean}[] = isX2
+              ? [{ch:'CH 1',power:'200W',load:'@ 8Ω',role:'Full Range — L',accent:false},{ch:'CH 2',power:'200W',load:'@ 8Ω',role:'Full Range — R',accent:false}]
+              : isX3
+              ? [{ch:'CH 1',power:'200W',load:'@ 8Ω',role:'Subwoofer / LFE',accent:true},{ch:'CH 2',power:'100W',load:'@ 8Ω',role:'Full Range — L',accent:false},{ch:'CH 3',power:'100W',load:'@ 8Ω',role:'Full Range — R',accent:false}]
+              : [{ch:'CH 1',power:'100W',load:'@ 8Ω',role:'Zone A — L',accent:false},{ch:'CH 2',power:'100W',load:'@ 8Ω',role:'Zone A — R',accent:false},{ch:'CH 3',power:'100W',load:'@ 8Ω',role:'Zone B — L',accent:false},{ch:'CH 4',power:'100W',load:'@ 8Ω',role:'Zone B — R',accent:false}]
+            return (
+              <div style={{display:'flex',flexDirection:'column',gap:1}}>
+                {channels.map(row => (
+                  <div key={row.ch} style={{display:'grid',gridTemplateColumns:'56px 100px 1fr 140px',alignItems:'center',borderLeft:`2px solid ${row.accent?'rgba(201,169,110,0.45)':'#111'}`,background:row.accent?'rgba(201,169,110,0.03)':'#060606'}}>
+                    <div style={{padding:'18px 12px',borderRight:'0.5px solid #0f0f0f',textAlign:'center'}}>
+                      <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.14em',color:row.accent?'rgba(201,169,110,0.6)':'rgba(200,196,188,0.25)'}}>{row.ch}</div>
+                    </div>
+                    <div style={{padding:'18px 16px',borderRight:'0.5px solid #0f0f0f'}}>
+                      <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:22,color:row.accent?'#c9a96e':'#e0dcd6',lineHeight:1}}>{row.power}</div>
+                      <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,color:'rgba(200,196,188,0.25)',marginTop:3}}>{row.load}</div>
+                    </div>
+                    <div style={{padding:'18px 20px'}}>
+                      <div style={{fontFamily:"'Barlow',sans-serif",fontWeight:300,fontSize:13,color:'rgba(200,196,188,0.6)'}}>{row.role}</div>
+                    </div>
+                    <div style={{padding:'18px 20px',textAlign:'right'}}>
+                      <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,color:'rgba(201,169,110,0.2)',letterSpacing:'.1em'}}>DSP · EQ · DELAY</div>
+                    </div>
+                  </div>
+                ))}
+                <div style={{display:'flex',justifyContent:'flex-end',padding:'10px 20px',borderTop:'0.5px solid #111',background:'#040404'}}>
+                  <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:'rgba(201,169,110,0.4)',letterSpacing:'.1em'}}>400W TOTAL</span>
                 </div>
-                <img src="https://cdn.sanity.io/images/7r0kq57d/production/886620094c00c68ad5e10fb34b4c2071a7dccfa1-2922x1912.png?w=900&auto=format&q=85"
-                  alt="Network Controller" style={{width:'100%',height:'64px',objectFit:'cover',objectPosition:'top',display:'block'}}/>
               </div>
-              <div style={{width:'108%',height:'5px',background:'#111',borderRadius:'0 0 3px 3px'}}/>
-            </div>
-            <div className="pdp-sw-card-body">
-              <div className="pdp-sw-card-platform">Mac & Windows</div>
-              <div className="pdp-sw-card-name">XSCACE Network Controller</div>
-              <div className="pdp-sw-card-desc">
-                Control DSP parameters, EQ, crossover, delay, and channel routing over your local network.
-                Full preset management and real-time tuning from your desktop.
-              </div>
-              <div className="pdp-sw-card-cta">Learn more →</div>
-            </div>
-          </a>
+            )
+          })()}
         </section>
-      ) : null}
+
+        {/* Network Controller — enhanced */}
+        <section style={{background:'#000', borderTop:'0.5px solid #111', padding:'64px 56px'}}>
+          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:56, alignItems:'center'}}>
+            <div>
+              <div style={{fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'.2em', textTransform:'uppercase', color:'rgba(201,169,110,0.55)', marginBottom:16}}>Mac & Windows · Free Download</div>
+              <h2 style={{fontFamily:"'Cormorant Garamond',serif", fontWeight:300, fontSize:'clamp(28px,2.8vw,42px)', color:'#eeebe5', lineHeight:1.1, marginBottom:20}}>
+                Managed by <em style={{fontStyle:'italic', color:'#c9a96e'}}>XSCACE</em><br/>Network Controller
+              </h2>
+              <p style={{fontFamily:"'Barlow',sans-serif", fontWeight:300, fontSize:14, color:'rgba(200,196,188,0.6)', lineHeight:1.75, marginBottom:28}}>
+                Connect to the {product.productName} over your local network. Configure parametric EQ, crossover, delay, routing, and presets — all in real time from your Mac or Windows PC. No USB, no physical access required.
+              </p>
+              <div style={{display:'flex', flexDirection:'column', gap:10, marginBottom:32}}>
+                {['5-band parametric EQ per channel','Variable crossover · 40–200Hz with adjustable slope','Per-channel delay up to 27ms for time alignment','Factory + custom preset save and recall','Real-time level and signal monitoring','IP-based — works over your existing network'].map(f => (
+                  <div key={f} style={{display:'flex', alignItems:'flex-start', gap:12}}>
+                    <span style={{fontFamily:"'DM Mono',monospace", fontSize:10, color:'rgba(201,169,110,0.5)', marginTop:2}}>×</span>
+                    <span style={{fontFamily:"'Barlow',sans-serif", fontWeight:300, fontSize:13, color:'rgba(200,196,188,0.65)'}}>{f}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{display:'flex', gap:12}}>
+                <a href="/software/network-controller" style={{display:'inline-flex', alignItems:'center', gap:8, fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'.14em', textTransform:'uppercase', color:'#000', background:'#c9a96e', padding:'10px 20px', textDecoration:'none'}}>Download Free →</a>
+                <a href="/software/network-controller" style={{display:'inline-flex', alignItems:'center', gap:8, fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'.14em', textTransform:'uppercase', color:'#c9a96e', border:'0.5px solid rgba(201,169,110,0.4)', padding:'10px 20px', textDecoration:'none'}}>Learn More</a>
+              </div>
+            </div>
+            <div style={{display:'flex', flexDirection:'column', gap:1}}>
+              <div style={{background:'#0a0a0a', border:'1px solid #1a1a1a', borderRadius:'4px 4px 0 0', overflow:'hidden', boxShadow:'0 24px 80px rgba(0,0,0,0.8)'}}>
+                <div style={{height:10, background:'#0d0d0d', borderBottom:'1px solid #141414', display:'flex', alignItems:'center', paddingLeft:8, gap:4}}>
+                  <div style={{width:6,height:6,borderRadius:'50%',background:'#1e1e1e'}}/><div style={{width:6,height:6,borderRadius:'50%',background:'#1e1e1e'}}/><div style={{width:6,height:6,borderRadius:'50%',background:'#1e1e1e'}}/>
+                </div>
+                <img src="https://cdn.sanity.io/images/7r0kq57d/production/886620094c00c68ad5e10fb34b4c2071a7dccfa1-2922x1912.png?w=900&auto=format&q=85" alt="XSCACE Network Controller" style={{width:'100%',display:'block',maxHeight:260,objectFit:'cover',objectPosition:'top'}}/>
+              </div>
+              <img src="https://cdn.sanity.io/images/7r0kq57d/production/35502533f088c8ee6a9fb0daeeb51b1af08edde6-2936x1912.png?w=900&auto=format&q=85" alt="Network Controller EQ" style={{width:'100%',display:'block',maxHeight:140,objectFit:'cover',objectPosition:'top',border:'1px solid #1a1a1a',borderTop:'none'}}/>
+            </div>
+          </div>
+        </section>
+
+        {/* Control System Compatibility */}
+        <section style={{background:'#000', borderTop:'0.5px solid #111', padding:'48px 56px'}}>
+          <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:24, marginBottom:32}}>
+            <div>
+              <div style={{fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'.2em', textTransform:'uppercase', color:'rgba(201,169,110,0.55)', marginBottom:10}}>Open Integration · TCP/IP API</div>
+              <h2 style={{fontFamily:"'Cormorant Garamond',serif", fontWeight:300, fontSize:'clamp(22px,2vw,32px)', color:'#eeebe5', lineHeight:1.1}}>Works with any <em style={{fontStyle:'italic', color:'#c9a96e'}}>control system</em></h2>
+            </div>
+            <div style={{display:'flex', gap:12}}>
+              <a href="/downloads/xylem-api-commands.pdf" download style={{display:'inline-flex', alignItems:'center', gap:8, fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'.14em', textTransform:'uppercase', color:'#000', background:'#c9a96e', padding:'9px 18px', textDecoration:'none'}}>Download API</a>
+              <a href={`mailto:support@xscace.com?subject=Driver Request — ${product.productName}`} style={{display:'inline-flex', alignItems:'center', gap:8, fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'.14em', textTransform:'uppercase', color:'#c9a96e', border:'0.5px solid rgba(201,169,110,0.4)', padding:'9px 18px', textDecoration:'none'}}>Request Driver →</a>
+            </div>
+          </div>
+          <div style={{display:'flex', gap:1, flexWrap:'wrap'}}>
+            {['Control4','Crestron','Savant','AMX','RTI','Josh.ai'].map(brand => (
+              <div key={brand} style={{padding:'10px 22px', border:'0.5px solid #1e1e1e', background:'#000', fontFamily:"'Barlow',sans-serif", fontWeight:300, fontSize:13, letterSpacing:'0.04em', color:'rgba(200,196,188,0.4)'}}>{brand}</div>
+            ))}
+            <div style={{padding:'10px 22px', border:'0.5px solid #1e1e1e', background:'#000', fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:'0.12em', color:'rgba(201,169,110,0.3)'}}>+ more</div>
+          </div>
+        </section>
+
+      </>)}
 
 
       {/* ── GALLERY — last section ── */}
