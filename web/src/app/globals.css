@@ -3273,6 +3273,8 @@ a.p-card, a.p-card:hover {
 /* ── ACCESSORIES SECTION ─────────────────────────────────────────────────── */
 .acc-section { background: #000; }
 .acc-header { padding: 48px 56px 0; }
+.pd-acc-section { background: #000; }
+.pd-acc-section > h2 { padding: 48px 56px 0; margin: 0; }
 
 /* Each accessory — full-width split card */
 .acc-card {
