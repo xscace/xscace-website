@@ -1975,6 +1975,108 @@ export default function ProductDetail({ product }: { product: Product }) {
       {/* wave divider */}
       <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
 
+      {/* Inside the Xylem — ADAU + PsySculpt */}
+      {isAmp && product.hasDsp && (
+        <section style={{background:'#000', borderTop:'0.5px solid #111', position:'relative', overflow:'hidden'}}>
+          <svg style={{position:'absolute',inset:0,width:'100%',height:'100%',opacity:0.028,pointerEvents:'none'}} xmlns="http://www.w3.org/2000/svg">
+            <defs><pattern id="pcbg" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="#c9a96e" strokeWidth="0.5"/></pattern></defs>
+            <rect width="100%" height="100%" fill="url(#pcbg)"/>
+          </svg>
+          <div style={{position:'relative',zIndex:1}}>
+            <div style={{padding:'64px 56px 40px'}}>
+              <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.22em',textTransform:'uppercase',color:'rgba(201,169,110,0.45)',marginBottom:14}}>SigmaDSP · ADAU1701 · PsySculpt™</div>
+              <h2 style={{fontFamily:"'Cormorant Garamond',serif",fontWeight:300,fontSize:'clamp(28px,2.8vw,44px)',color:'#eeebe5',lineHeight:1.05,maxWidth:600}}>
+                Inside the <em style={{fontStyle:'italic',color:'#c9a96e'}}>Xylem</em>
+              </h2>
+              <p style={{fontFamily:"'Barlow',sans-serif",fontWeight:300,fontSize:14,color:'rgba(200,196,188,0.45)',marginTop:14,maxWidth:560,lineHeight:1.7}}>
+                Every parameter is executed in real time by a dedicated DSP chip and shaped by XSCACE proprietary psychoacoustic processing. No approximations. No look-up tables.
+              </p>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:1,marginBottom:1}}>
+              <div style={{display:'flex',flexDirection:'column',gap:1}}>
+                {(product.productVideos||[]).slice(0,2).map((v:any,i:number) => {
+                  const ref = v.videoFile?.asset?._ref
+                  const src = v.url || (ref ? 'https://cdn.sanity.io/files/7r0kq57d/production/'+ref.replace('file-','').replace(/-([a-z0-9]+)$/,'.$1') : null)
+                  return src ? (
+                    <div key={i} style={{position:'relative',background:'#000',aspectRatio:'16/9',overflow:'hidden'}}>
+                      <video src={src} autoPlay muted loop playsInline style={{width:'100%',height:'100%',objectFit:'cover',display:'block',filter:'brightness(0.85) contrast(1.1)'}}/>
+                      <div style={{position:'absolute',bottom:12,left:14,fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.14em',color:'rgba(201,169,110,0.55)'}}>
+                        {i===0?'ADAU1701 DSP IC':'CLASS D OUTPUT STAGE'}
+                      </div>
+                    </div>
+                  ) : (
+                    <div key={i} style={{background:'#050505',aspectRatio:'16/9',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                      <span style={{fontFamily:"'DM Mono',monospace",fontSize:8,color:'rgba(201,169,110,0.15)',letterSpacing:'.12em'}}>UPLOADING SOON</span>
+                    </div>
+                  )
+                })}
+                {(!product.productVideos||product.productVideos.length===0)&&[0,1].map(i=>(
+                  <div key={i} style={{background:'#050505',aspectRatio:'16/9',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:8,color:'rgba(201,169,110,0.15)',letterSpacing:'.12em'}}>INTERNAL — PCB</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{display:'flex',flexDirection:'column',gap:1}}>
+                <div style={{padding:'40px 48px',background:'rgba(201,169,110,0.025)',flex:1,display:'flex',flexDirection:'column',justifyContent:'center',borderLeft:'2px solid rgba(201,169,110,0.15)'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:20}}>
+                    <div style={{width:6,height:6,borderRadius:'50%',background:'rgba(201,169,110,0.6)',boxShadow:'0 0 8px rgba(201,169,110,0.4)'}}/>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.2em',color:'rgba(201,169,110,0.6)'}}>SIGMADSP · ANALOG DEVICES</span>
+                  </div>
+                  <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:28,fontWeight:300,color:'#eeebe5',marginBottom:12}}>ADAU1701</div>
+                  <p style={{fontFamily:"'Barlow',sans-serif",fontWeight:300,fontSize:13,color:'rgba(200,196,188,0.55)',lineHeight:1.75,marginBottom:24}}>
+                    28/56-bit audio processor running at 50 MIPS. Executes all crossover calculations, parametric EQ biquad filters, and per-channel delay compensation in the digital domain — with onboard program storage that survives any power event.
+                  </p>
+                  <div style={{display:'flex',gap:16,flexWrap:'wrap'}}>
+                    {['50 MIPS','28/56-bit','8× Biquad','Non-volatile'].map(tag=>(
+                      <span key={tag} style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.1em',color:'rgba(201,169,110,0.35)',borderBottom:'0.5px solid rgba(201,169,110,0.15)',paddingBottom:3}}>{tag}</span>
+                    ))}
+                  </div>
+                </div>
+                <div style={{padding:'40px 48px',background:'#000',flex:1,display:'flex',flexDirection:'column',justifyContent:'center',borderLeft:'2px solid rgba(201,169,110,0.06)'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:20}}>
+                    <div style={{width:6,height:6,borderRadius:'50%',background:'rgba(201,169,110,0.35)'}}/>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.2em',color:'rgba(201,169,110,0.4)'}}>XSCACE PROPRIETARY</span>
+                  </div>
+                  <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:28,fontWeight:300,color:'#eeebe5',marginBottom:4}}>PsySculpt™</div>
+                  <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.12em',color:'rgba(201,169,110,0.3)',marginBottom:16}}>PSYCHOACOUSTIC PROCESSING</div>
+                  <p style={{fontFamily:"'Barlow',sans-serif",fontWeight:300,fontSize:13,color:'rgba(200,196,188,0.5)',lineHeight:1.75,marginBottom:20}}>
+                    Psychoacoustic tuning applied at the driver and crossover level — shaping the listening experience to how the human ear naturally perceives space, depth, and dimensionality. Runs as a processing layer on top of the ADAU1701, calibrated per speaker profile.
+                  </p>
+                  <a href="/technology#psysculpt" style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.14em',color:'rgba(201,169,110,0.45)',textDecoration:'none'}}>Learn more →</a>
+                </div>
+              </div>
+            </div>
+            <div style={{padding:'36px 56px 52px',borderTop:'0.5px solid #0f0f0f'}}>
+              <div style={{fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.2em',color:'rgba(201,169,110,0.22)',marginBottom:22}}>SIGNAL PATH</div>
+              <div style={{display:'flex',alignItems:'center',overflowX:'auto'}}>
+                {([
+                  {label:'INPUT',sub:'Analog / Hi-Level',hot:false},
+                  {label:'ADC',sub:'24-bit · 96kHz',hot:false},
+                  {label:'ADAU1701',sub:'SigmaDSP · 50 MIPS',hot:true},
+                  {label:'PsySculpt™',sub:'Psychoacoustic',hot:true},
+                  {label:'DAC',sub:'Per Channel',hot:false},
+                  {label:'Class D',sub:'400W Total',hot:false},
+                  {label:'OUTPUT',sub:'Speaker / LFE',hot:false},
+                ] as {label:string,sub:string,hot:boolean}[]).map((s,i,a)=>(
+                  <div key={s.label} style={{display:'flex',alignItems:'center',flexShrink:0}}>
+                    <div style={{padding:'12px 16px',background:s.hot?'rgba(201,169,110,0.07)':'#060606',border:`0.5px solid ${s.hot?'rgba(201,169,110,0.22)':'#111'}`,textAlign:'center',minWidth:86}}>
+                      <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.07em',color:s.hot?'rgba(201,169,110,0.8)':'rgba(200,196,188,0.32)',marginBottom:4}}>{s.label}</div>
+                      <div style={{fontFamily:"'DM Mono',monospace",fontSize:6,letterSpacing:'.05em',color:s.hot?'rgba(201,169,110,0.32)':'rgba(200,196,188,0.16)',lineHeight:1.4}}>{s.sub}</div>
+                    </div>
+                    {i<a.length-1&&(
+                      <div style={{display:'flex',alignItems:'center',padding:'0 2px'}}>
+                        <div style={{width:18,height:'0.5px',background:s.hot?'rgba(201,169,110,0.28)':'rgba(200,196,188,0.08)'}}/>
+                        <div style={{width:0,height:0,borderTop:'3px solid transparent',borderBottom:'3px solid transparent',borderLeft:`4px solid ${s.hot?'rgba(201,169,110,0.28)':'rgba(200,196,188,0.08)'}`}}/>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {isAmp && product.hasDsp && (
         <section style={{background:'#000', borderTop:'0.5px solid #111', padding:'64px 56px'}}>
           <div style={{marginBottom:40}}>
