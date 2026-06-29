@@ -1951,7 +1951,7 @@ export default function ProductDetail({ product }: { product: Product }) {
           productName={product.productName}
           getImageUrl={getImageUrl}
         />
-      ) : product._id === 'prod-acacia6-pw' && product.galleryImages?.length > 0 ? (
+      ) : ['prod-acacia6-pw','prod-acacia10-pw'].includes(product._id) && product.galleryImages?.length > 0 ? (
         <section style={{background:'#000'}}>
           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:1}}>
             {(() => {
@@ -1996,7 +1996,7 @@ export default function ProductDetail({ product }: { product: Product }) {
             <div className="pd-chart-panel">
               <div className="pd-chart-label">
                 Frequency Response
-                {product._id === 'prod-acacia6-pw' && <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:'rgba(201,169,110,0.4)',marginLeft:8,letterSpacing:'.1em'}}>Subwoofer range</span>}
+                {['prod-acacia6-pw','prod-acacia10-pw'].includes(product._id) && <span style={{fontSize:9,fontFamily:"'DM Mono',monospace",color:'rgba(201,169,110,0.4)',marginLeft:8,letterSpacing:'.1em'}}>Subwoofer range</span>}
               </div>
               <FreqResponseChart product={product}/>
             </div>
@@ -2006,7 +2006,7 @@ export default function ProductDetail({ product }: { product: Product }) {
                 <PolarChart product={product}/>
               </div>
             )}
-            {product._id === 'prod-acacia6-pw' && product.galleryImages?.[1] && (
+            {['prod-acacia6-pw','prod-acacia10-pw'].includes(product._id) && product.galleryImages?.[1] && (
               <div className="pd-chart-panel">
                 <div className="pd-chart-label">Rear Panel</div>
                 <div style={{background:'#000'}}>
@@ -2191,39 +2191,53 @@ export default function ProductDetail({ product }: { product: Product }) {
 
 
       {/* Acacia 6 mounting alternatives — In-Wall Passive + Standard Passive */}
-      {isSub && product._id === 'prod-acacia6-pw' && (
-        <section className="pd-acc-section">
-          <h2 className="pd-section-title">Mount <em>your way</em></h2>
-          <div className="acc-card">
-            <div className="acc-img-side">
-              <RevealSlider heroUrl="https://cdn.sanity.io/images/7r0kq57d/production/6a523608c448d66d4aade311a296fc9c646557be-3840x2159.png?w=600&auto=format&q=85" lifestyleUrl="https://cdn.sanity.io/images/7r0kq57d/production/e2e9023f6373b647b7ab2b42481e0cd08121dddb-1755x1298.png?w=600&auto=format&q=85" alt="Acacia 6 In-Wall Passive"/>
+      {isSub && ['prod-acacia6-pw','prod-acacia10-pw'].includes(product._id) && (() => {
+        const is10 = product._id === 'prod-acacia10-pw'
+        const iwHero = is10
+          ? 'https://cdn.sanity.io/images/7r0kq57d/production/6a523608c448d66d4aade311a296fc9c646557be-3840x2159.png?w=600&auto=format&q=85'
+          : 'https://cdn.sanity.io/images/7r0kq57d/production/6a523608c448d66d4aade311a296fc9c646557be-3840x2159.png?w=600&auto=format&q=85'
+        const iwLife = 'https://cdn.sanity.io/images/7r0kq57d/production/e2e9023f6373b647b7ab2b42481e0cd08121dddb-1755x1298.png?w=600&auto=format&q=85'
+        const stdHero = is10
+          ? 'https://cdn.sanity.io/images/7r0kq57d/production/b618d2f9e49502d4d61f76c96c9f70f506a07ee2-976x548.png?w=600&auto=format&q=85'
+          : 'https://cdn.sanity.io/images/7r0kq57d/production/b618d2f9e49502d4d61f76c96c9f70f506a07ee2-976x548.png?w=600&auto=format&q=85'
+        const stdLife = 'https://cdn.sanity.io/images/7r0kq57d/production/e6eac14f84672ccf95e6aba0c2b81b53bc5a4377-979x549.png?w=600&auto=format&q=85'
+        const name = is10 ? 'Acacia 10' : 'Acacia 6'
+        const iwSlug = is10 ? 'acacia-10-in-wall-passive-subwoofer' : 'acacia-6-in-wall-passive-subwoofer'
+        const stdSlug = is10 ? 'acacia-10-standard-passive-subwoofer' : 'acacia-6-standard-passive-subwoofer'
+        return (
+          <section className="pd-acc-section">
+            <h2 className="pd-section-title">Mount <em>your way</em></h2>
+            <div className="acc-card">
+              <div className="acc-img-side">
+                <RevealSlider heroUrl={iwHero} lifestyleUrl={iwLife} alt={`${name} In-Wall Passive`}/>
+              </div>
+              <div className="acc-info-side">
+                <div className="acc-eyebrow">In-Wall Passive</div>
+                <div className="acc-name">{name} In-Wall Passive</div>
+                <div className="acc-desc">Identical acoustic performance installed flush into the wall cavity. Completely invisible. Requires an external amplifier with LFE output.</div>
+                <a href={`/products/subwoofer-series/${iwSlug}`} className="acc-enquire">View {name} In-Wall →</a>
+              </div>
             </div>
-            <div className="acc-info-side">
-              <div className="acc-eyebrow">In-Wall Passive</div>
-              <div className="acc-name">Acacia 6 In-Wall Passive</div>
-              <div className="acc-desc">Identical acoustic performance installed flush into the wall cavity. Completely invisible. Requires an external amplifier with LFE output.</div>
-              <a href="/products/subwoofer-series/acacia-6-in-wall-passive-subwoofer" className="acc-enquire">View Acacia 6 In-Wall →</a>
+            <div className="acc-card acc-card-flip">
+              <div className="acc-img-side">
+                <RevealSlider heroUrl={stdHero} lifestyleUrl={stdLife} alt={`${name} Standard Passive`}/>
+              </div>
+              <div className="acc-info-side">
+                <div className="acc-eyebrow">Standard Passive</div>
+                <div className="acc-name">{name} Standard Passive</div>
+                <div className="acc-desc">Same enclosure and driver, without the built-in amplifier. Pair with any subwoofer output for a fully custom signal chain.</div>
+                <a href={`/products/subwoofer-series/${stdSlug}`} className="acc-enquire">View {name} Passive →</a>
+              </div>
             </div>
-          </div>
-          <div className="acc-card acc-card-flip">
-            <div className="acc-img-side">
-              <RevealSlider heroUrl="https://cdn.sanity.io/images/7r0kq57d/production/b618d2f9e49502d4d61f76c96c9f70f506a07ee2-976x548.png?w=600&auto=format&q=85" lifestyleUrl="https://cdn.sanity.io/images/7r0kq57d/production/e6eac14f84672ccf95e6aba0c2b81b53bc5a4377-979x549.png?w=600&auto=format&q=85" alt="Acacia 6 Standard Passive"/>
-            </div>
-            <div className="acc-info-side">
-              <div className="acc-eyebrow">Standard Passive</div>
-              <div className="acc-name">Acacia 6 Standard Passive</div>
-              <div className="acc-desc">Same enclosure and driver, without the built-in amplifier. Pair with any subwoofer output for a fully custom signal chain.</div>
-              <a href="/products/subwoofer-series/acacia-6-standard-passive-subwoofer" className="acc-enquire">View Acacia 6 Passive →</a>
-            </div>
-          </div>
-        </section>
-      )}
+          </section>
+        )
+      })()}
 
       {/* wave divider */}
       <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
 
 
-      {product._id === 'prod-acacia6-pw' && (<>
+      {['prod-acacia6-pw','prod-acacia10-pw'].includes(product._id) && (<>
       {/* ── Section 3: Enhanced NC section ── */}
       <section style={{background:'#000', borderTop:'0.5px solid #111', padding:'64px 56px'}}>
         <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:56, alignItems:'center'}}>
@@ -2233,7 +2247,7 @@ export default function ProductDetail({ product }: { product: Product }) {
               Controlled by <em style={{fontStyle:'italic', color:'#c9a96e'}}>XSCACE</em><br/>Network Controller
             </h2>
             <p style={{fontFamily:"'Barlow',sans-serif", fontWeight:300, fontSize:14, color:'rgba(200,196,188,0.6)', lineHeight:1.75, marginBottom:28}}>
-              Connect to the Acacia 6 Powered over your local network. Adjust the built-in DSP in real time — crossover frequency, parametric EQ, output delay, and channel routing — without touching the hardware.
+              Connect to the {product.productName} over your local network. Adjust the built-in DSP in real time — crossover frequency, parametric EQ, output delay, and channel routing — without touching the hardware.
             </p>
             <div style={{display:'flex', flexDirection:'column', gap:10, marginBottom:32}}>
               {['Parametric EQ — 5 bands per channel', 'Variable crossover · 40–200Hz', 'Channel delay · up to 27ms', 'Factory + custom preset management', 'Real-time level monitoring'].map(f => (
@@ -2264,7 +2278,7 @@ export default function ProductDetail({ product }: { product: Product }) {
             Works with any <em style={{fontStyle:'italic', color:'#c9a96e'}}>control system</em>
           </h2>
           <p style={{fontFamily:"'Barlow',sans-serif", fontWeight:300, fontSize:14, color:'rgba(200,196,188,0.55)', lineHeight:1.75, marginTop:16, maxWidth:600}}>
-            The Acacia 6 Powered exposes a full TCP/IP command API. Any IP-capable control system integrates natively — no middleware, no adapters.
+            The {product.productName} exposes a full TCP/IP command API. Any IP-capable control system integrates natively — no middleware, no adapters.
           </p>
         </div>
         <div style={{display:'flex', gap:1, flexWrap:'wrap', marginBottom:48}}>
@@ -2304,7 +2318,7 @@ export default function ProductDetail({ product }: { product: Product }) {
             </p>
             <div style={{display:'flex',flexDirection:'column',gap:1,marginBottom:8}}>
               {([
-                {ch:'CH 1',name:'Internal Subwoofer',power:'200W · LFE',note:'Dedicated low-frequency channel driving the built-in 6″ driver',accent:true},
+                {ch:'CH 1',name:'Internal Subwoofer',power:`${product.powerRmsW}W · LFE`,note:'Dedicated low-frequency channel driving the built-in 6″ driver',accent:true},
                 {ch:'CH 2',name:'Speaker Output — L',power:'Full Range',note:'Connects to any 4–8Ω loudspeaker',accent:false},
                 {ch:'CH 3',name:'Speaker Output — R',power:'Full Range',note:'Connects to any 4–8Ω loudspeaker',accent:false},
               ] as {ch:string,name:string,power:string,note:string,accent:boolean}[]).map(row => (
@@ -2370,7 +2384,7 @@ export default function ProductDetail({ product }: { product: Product }) {
               <rect x="295" y="124" width="115" height="48" rx="1" fill="#0a0900" stroke="rgba(201,169,110,0.25)" strokeWidth="0.5"/>
               <line x1="295" y1="124" x2="295" y2="172" stroke="rgba(201,169,110,0.5)" strokeWidth="2"/>
               <text x="310" y="143" fill="rgba(201,169,110,0.75)" fontSize="8" fontFamily="monospace">CH 1 · LFE</text>
-              <text x="310" y="157" fill="rgba(201,169,110,0.35)" fontSize="7" fontFamily="monospace">Internal · 200W</text>
+              <text x="310" y="157" fill="rgba(201,169,110,0.35)" fontSize="7" fontFamily="monospace">{`Internal · ${product.powerRmsW}W`}</text>
 
               {/* CH3 — Speaker R */}
               <rect x="295" y="212" width="115" height="48" rx="1" fill="#070707" stroke="#161616" strokeWidth="0.5"/>
