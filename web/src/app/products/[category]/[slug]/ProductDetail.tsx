@@ -2096,11 +2096,7 @@ export default function ProductDetail({ product }: { product: Product }) {
                     </div>
                   )
                 })}
-                {(!product.productVideos||product.productVideos.length===0)&&[0,1].map(i=>(
-                  <div key={i} style={{background:'#050505',aspectRatio:'16/9',display:'flex',alignItems:'center',justifyContent:'center'}}>
-                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:8,color:'rgba(201,169,110,0.15)',letterSpacing:'.12em'}}>INTERNAL — PCB</span>
-                  </div>
-                ))}
+
               </div>
               <div style={{display:'flex',flexDirection:'column',gap:1}}>
                 <div style={{padding:'40px 48px',background:'rgba(201,169,110,0.025)',flex:1,display:'flex',flexDirection:'column',justifyContent:'center',borderLeft:'2px solid rgba(201,169,110,0.15)'}}>
