@@ -1974,7 +1974,55 @@ export default function ProductDetail({ product }: { product: Product }) {
 
       {/* wave divider */}
       <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
-{/* ── SPECS ── */}
+      {isAmp && product.hasDsp && (
+{/* Channel Power Distribution */}
+        <section style={{background:'#000', borderTop:'0.5px solid #111', padding:'64px 56px'}}>
+          <div style={{marginBottom:40}}>
+            <div style={{fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'.2em', textTransform:'uppercase', color:'rgba(201,169,110,0.55)', marginBottom:16}}>400W Total · Class D</div>
+            <h2 style={{fontFamily:"'Cormorant Garamond',serif", fontWeight:300, fontSize:'clamp(28px,2.8vw,42px)', color:'#eeebe5', lineHeight:1.1}}>
+              Channel <em style={{fontStyle:'italic', color:'#c9a96e'}}>power distribution</em>
+            </h2>
+            {product.channelConfigurations && (
+              <p style={{fontFamily:"'Barlow',sans-serif", fontWeight:300, fontSize:14, color:'rgba(200,196,188,0.45)', marginTop:12}}>{product.channelConfigurations}</p>
+            )}
+          </div>
+          {(() => {
+            const isX2 = product._id === 'prod-xylem2'
+            const isX3 = product._id === 'prod-xylem3'
+            const channels: {ch:string,power:string,load:string,role:string,accent:boolean}[] = isX2
+              ? [{ch:'CH 1',power:'200W',load:'@ 8Ω',role:'Full Range — L',accent:false},{ch:'CH 2',power:'200W',load:'@ 8Ω',role:'Full Range — R',accent:false}]
+              : isX3
+              ? [{ch:'CH 1',power:'200W',load:'@ 8Ω',role:'Subwoofer / LFE',accent:true},{ch:'CH 2',power:'100W',load:'@ 8Ω',role:'Full Range — L',accent:false},{ch:'CH 3',power:'100W',load:'@ 8Ω',role:'Full Range — R',accent:false}]
+              : [{ch:'CH 1',power:'100W',load:'@ 8Ω',role:'Full Range — L',accent:false},{ch:'CH 2',power:'100W',load:'@ 8Ω',role:'Full Range — R',accent:false},{ch:'CH 3',power:'100W',load:'@ 8Ω',role:'Full Range — L',accent:false},{ch:'CH 4',power:'100W',load:'@ 8Ω',role:'Full Range — R',accent:false}]
+            return (
+              <div style={{display:'flex',flexDirection:'column',gap:1}}>
+                {channels.map(row => (
+                  <div key={row.ch} style={{display:'grid',gridTemplateColumns:'56px 100px 1fr 140px',alignItems:'center',borderLeft:`2px solid ${row.accent?'rgba(201,169,110,0.45)':'#111'}`,background:row.accent?'rgba(201,169,110,0.03)':'#060606'}}>
+                    <div style={{padding:'18px 12px',borderRight:'0.5px solid #0f0f0f',textAlign:'center'}}>
+                      <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.14em',color:row.accent?'rgba(201,169,110,0.6)':'rgba(200,196,188,0.25)'}}>{row.ch}</div>
+                    </div>
+                    <div style={{padding:'18px 16px',borderRight:'0.5px solid #0f0f0f'}}>
+                      <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:22,color:row.accent?'#c9a96e':'#e0dcd6',lineHeight:1}}>{row.power}</div>
+                      <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,color:'rgba(200,196,188,0.25)',marginTop:3}}>{row.load}</div>
+                    </div>
+                    <div style={{padding:'18px 20px'}}>
+                      <div style={{fontFamily:"'Barlow',sans-serif",fontWeight:300,fontSize:13,color:'rgba(200,196,188,0.6)'}}>{row.role}</div>
+                    </div>
+                    <div style={{padding:'18px 20px',textAlign:'right'}}>
+                      <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,color:'rgba(201,169,110,0.2)',letterSpacing:'.1em'}}>DSP · EQ · DELAY</div>
+                    </div>
+                  </div>
+                ))}
+                <div style={{display:'flex',justifyContent:'flex-end',padding:'10px 20px',borderTop:'0.5px solid #111',background:'#040404'}}>
+                  <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:'rgba(201,169,110,0.4)',letterSpacing:'.1em'}}>400W TOTAL</span>
+                </div>
+              </div>
+            )
+          })()}
+        </section>
+      )}
+
+      {/* ── SPECS ── */}
       <SpecsTicker product={product} acousticSpecs={acousticSpecs} physicalSpecs={physicalSpecs} connectivitySpecs={connectivitySpecs} isAmp={isAmp}/>
 
       {/* ── DIMENSION DRAWING ── */}
@@ -2554,52 +2602,6 @@ export default function ProductDetail({ product }: { product: Product }) {
       )}
       {/* Enhanced sections for DSP amps */}
       {isAmp && product.hasDsp && (<>
-
-        {/* Channel Power Distribution */}
-        <section style={{background:'#000', borderTop:'0.5px solid #111', padding:'64px 56px'}}>
-          <div style={{marginBottom:40}}>
-            <div style={{fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'.2em', textTransform:'uppercase', color:'rgba(201,169,110,0.55)', marginBottom:16}}>400W Total · Class D</div>
-            <h2 style={{fontFamily:"'Cormorant Garamond',serif", fontWeight:300, fontSize:'clamp(28px,2.8vw,42px)', color:'#eeebe5', lineHeight:1.1}}>
-              Channel <em style={{fontStyle:'italic', color:'#c9a96e'}}>power distribution</em>
-            </h2>
-            {product.channelConfigurations && (
-              <p style={{fontFamily:"'Barlow',sans-serif", fontWeight:300, fontSize:14, color:'rgba(200,196,188,0.45)', marginTop:12}}>{product.channelConfigurations}</p>
-            )}
-          </div>
-          {(() => {
-            const isX2 = product._id === 'prod-xylem2'
-            const isX3 = product._id === 'prod-xylem3'
-            const channels: {ch:string,power:string,load:string,role:string,accent:boolean}[] = isX2
-              ? [{ch:'CH 1',power:'200W',load:'@ 8Ω',role:'Full Range — L',accent:false},{ch:'CH 2',power:'200W',load:'@ 8Ω',role:'Full Range — R',accent:false}]
-              : isX3
-              ? [{ch:'CH 1',power:'200W',load:'@ 8Ω',role:'Subwoofer / LFE',accent:true},{ch:'CH 2',power:'100W',load:'@ 8Ω',role:'Full Range — L',accent:false},{ch:'CH 3',power:'100W',load:'@ 8Ω',role:'Full Range — R',accent:false}]
-              : [{ch:'CH 1',power:'100W',load:'@ 8Ω',role:'Zone A — L',accent:false},{ch:'CH 2',power:'100W',load:'@ 8Ω',role:'Zone A — R',accent:false},{ch:'CH 3',power:'100W',load:'@ 8Ω',role:'Zone B — L',accent:false},{ch:'CH 4',power:'100W',load:'@ 8Ω',role:'Zone B — R',accent:false}]
-            return (
-              <div style={{display:'flex',flexDirection:'column',gap:1}}>
-                {channels.map(row => (
-                  <div key={row.ch} style={{display:'grid',gridTemplateColumns:'56px 100px 1fr 140px',alignItems:'center',borderLeft:`2px solid ${row.accent?'rgba(201,169,110,0.45)':'#111'}`,background:row.accent?'rgba(201,169,110,0.03)':'#060606'}}>
-                    <div style={{padding:'18px 12px',borderRight:'0.5px solid #0f0f0f',textAlign:'center'}}>
-                      <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.14em',color:row.accent?'rgba(201,169,110,0.6)':'rgba(200,196,188,0.25)'}}>{row.ch}</div>
-                    </div>
-                    <div style={{padding:'18px 16px',borderRight:'0.5px solid #0f0f0f'}}>
-                      <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:22,color:row.accent?'#c9a96e':'#e0dcd6',lineHeight:1}}>{row.power}</div>
-                      <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,color:'rgba(200,196,188,0.25)',marginTop:3}}>{row.load}</div>
-                    </div>
-                    <div style={{padding:'18px 20px'}}>
-                      <div style={{fontFamily:"'Barlow',sans-serif",fontWeight:300,fontSize:13,color:'rgba(200,196,188,0.6)'}}>{row.role}</div>
-                    </div>
-                    <div style={{padding:'18px 20px',textAlign:'right'}}>
-                      <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,color:'rgba(201,169,110,0.2)',letterSpacing:'.1em'}}>DSP · EQ · DELAY</div>
-                    </div>
-                  </div>
-                ))}
-                <div style={{display:'flex',justifyContent:'flex-end',padding:'10px 20px',borderTop:'0.5px solid #111',background:'#040404'}}>
-                  <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:'rgba(201,169,110,0.4)',letterSpacing:'.1em'}}>400W TOTAL</span>
-                </div>
-              </div>
-            )
-          })()}
-        </section>
 
         {/* Network Controller — enhanced */}
         <section style={{background:'#000', borderTop:'0.5px solid #111', padding:'64px 56px'}}>
