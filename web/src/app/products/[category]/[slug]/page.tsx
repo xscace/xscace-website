@@ -15,6 +15,7 @@ async function getProduct(slug: string) {
       cutoutTemplateImage, directivityPlotImage,
       heroVideoFile{ asset{ _ref } }, heroVideo, model3dUrl, arViewLink, hasArView,
       productVideos[]{ videoFile{ asset{ _ref } }, url, title, type, thumbnail },
+      "xylemVideos": *[_id == "prod-xylem2"][0].productVideos[]{ videoFile{ asset{ _ref } }, url, title, type, thumbnail },
       powerRmsW, powerPeakW, impedanceOhms, sensitivityDb,
       freqLowHz, freqHighHz, freqQualifier,
       driverCount, driverSize, driverMaterial, driverDescription,
