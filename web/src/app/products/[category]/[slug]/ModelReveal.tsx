@@ -40,6 +40,13 @@ const CONSTRAINTS_MAP: Record<string, Constraint[]> = {
     { cross:'×', text:'No visible driver',         desc:'The grille sits flush with the enclosure face. No protruding cone, no visible surround. A sealed surface that happens to reproduce 35Hz.', angle:{y:-Math.PI*0.25,x:0}, mode:'normal' },
     { cross:'→', text:'Bass that disappears.',     desc:'The Acacia 6 is felt before it is heard. Pressure without presence — the room fills with low frequency energy and the source stays invisible.', angle:{y:Math.PI*0.15,x:0.05}, mode:'normal', last:true },
   ],
+  'prod-acacia10-pw': [
+    { cross:'×', text:'No port noise',             desc:'XS-Flow port geometry eliminates turbulence at the vent exit. Full bass output at reference levels — no chuffing, no compression, no audible artefact.', angle:{y:0,x:0.1}, mode:'normal' },
+    { cross:'×', text:'No external amplifier',     desc:'A 200W Class D amplifier lives inside the enclosure. One cable in, sound out. No rack, no matching, no separate power supply.', angle:{y:Math.PI*0.3,x:0}, mode:'normal' },
+    { cross:'×', text:'No crossover guesswork',    desc:'The LFE input accepts a dedicated subwoofer signal directly. The built-in low-pass filter is adjustable — set it once and forget it.', angle:{y:0,x:-0.15}, mode:'normal' },
+    { cross:'×', text:'No visible driver',         desc:'The grille sits flush with the enclosure face. No protruding cone, no visible surround. A sealed surface that happens to reproduce 35Hz.', angle:{y:-Math.PI*0.25,x:0}, mode:'normal' },
+    { cross:'→', text:'Bass that disappears.',     desc:'The Acacia 10 is felt before it is heard. Pressure without presence — the room fills with low frequency energy and the source stays invisible.', angle:{y:Math.PI*0.15,x:0.05}, mode:'normal', last:true },
+  ],
 }
 
 // Fallback for products without specific constraints
@@ -49,7 +56,7 @@ const CONSTRAINTS_DEFAULT: Constraint[] = [
   { cross:'→', text:'Engineered to disappear.',  desc:'When there is nothing to remove, design is complete.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
 ]
 
-const FLAGSHIP_IDS = ['prod-bonsai', 'prod-cane', 'prod-quadcane', 'prod-ghost2', 'prod-acacia6-pw']
+const FLAGSHIP_IDS = ['prod-bonsai', 'prod-cane', 'prod-quadcane', 'prod-ghost2', 'prod-acacia6-pw', 'prod-acacia10-pw']
 
 interface Props {
   modelUrl?: string
@@ -225,6 +232,7 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
     'prod-cane':      { cam:[-0.08,0.56,3.03], rot:[0.138,-0.792,-1.502], fov:49, exposure:0.25, ambient:0,   key:2.0, fill:0.7 },
     'prod-ghost2':    { cam:[-0.01,0,3],          rot:[0.318,-0.012,0.000],  fov:69, exposure:0.9,  ambient:0,   key:0.8, fill:0   },
     'prod-acacia6-pw':{ cam:[0,0,3],              rot:[0.000,-0.702,0.000],  fov:78, exposure:0.15, ambient:0,   key:5.0, fill:0.8 },
+    'prod-acacia10-pw':{ cam:[0,0,3],             rot:[0.000,-0.702,0.000],  fov:78, exposure:0.15, ambient:0,   key:5.0, fill:0.8 },
     'prod-xylem3':    { cam:[-0.01,-0.67,3],      rot:[-2.512,0.000,0.000],  fov:78, exposure:0.6,  ambient:0,   key:0.0, fill:1.6 },
     'prod-quadcane':  { cam:[0.18,-0.14,2.43],    rot:[2.308,1.588,-0.702],  fov:45, exposure:0.65, ambient:0,   key:0.0, fill:0.8 },
   }
