@@ -1976,7 +1976,6 @@ export default function ProductDetail({ product }: { product: Product }) {
       <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
 
       {isAmp && product.hasDsp && (
-        {/* Channel Power Distribution */}
         <section style={{background:'#000', borderTop:'0.5px solid #111', padding:'64px 56px'}}>
           <div style={{marginBottom:40}}>
             <div style={{fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'.2em', textTransform:'uppercase', color:'rgba(201,169,110,0.55)', marginBottom:16}}>400W Total · Class D</div>
