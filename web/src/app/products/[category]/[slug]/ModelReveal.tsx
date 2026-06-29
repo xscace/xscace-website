@@ -49,6 +49,28 @@ const CONSTRAINTS_MAP: Record<string, Constraint[]> = {
   ],
 }
 
+  'prod-xylem2': [
+    { cross:'×', text:'No rack required',          desc:'The Xylem 2 mounts behind a screen, inside a cabinet, or within a wall box. No separate rack space, no ventilation cutouts, no visible hardware in the room.', angle:{y:0,x:0}, mode:'normal' },
+    { cross:'×', text:'No passive crossover',      desc:'DSP-active crossover runs inside the unit. Each output is individually time-aligned and equalised in the digital domain — no passive components in the signal path.', angle:{y:Math.PI*0.3,x:0}, mode:'normal' },
+    { cross:'×', text:'No configuration drift',   desc:'Every parameter is stored in non-volatile memory. Power cycle, power cut, firmware update — the amplifier returns to the exact state you configured.', angle:{y:0,x:0.2}, mode:'normal' },
+    { cross:'×', text:'No signal degradation',    desc:'Class D topology with 0.01% THD+N. 400W total across 2 channels, each independently regulated. Drive any 4–8Ω load without compensation.', angle:{y:-Math.PI*0.25,x:0}, mode:'normal' },
+    { cross:'→', text:'Every parameter. Recalled.', desc:'The Xylem 2 is the infrastructure behind the sound — invisible in the room, precise in the rack, total in its control.', angle:{y:Math.PI*0.15,x:0.05}, mode:'normal', last:true },
+  ],
+  'prod-xylem3': [
+    { cross:'×', text:'No rack required',          desc:'The Xylem 3 fits inside a cabinet, wall box, or behind any panel with a single power cable. No rack infrastructure, no separate sub amplifier.', angle:{y:0,x:0}, mode:'normal' },
+    { cross:'×', text:'No separate sub amp',       desc:'The dedicated 200W LFE channel drives any passive subwoofer directly. The two full-range channels handle satellites. One box, one cable run, complete system.', angle:{y:Math.PI*0.3,x:0}, mode:'normal' },
+    { cross:'×', text:'No passive crossover',      desc:'DSP-active crossover separates bass from full-range in the digital domain. Crossover frequency, slope, and alignment are set precisely in software.', angle:{y:0,x:0.2}, mode:'normal' },
+    { cross:'×', text:'No configuration drift',   desc:'Every DSP parameter is stored in non-volatile memory. The amplifier returns to the exact state you configured after any power event.', angle:{y:-Math.PI*0.25,x:0}, mode:'normal' },
+    { cross:'→', text:'2.1 — in one unit.',       desc:'The Xylem 3 is the only amplifier you need for a complete 2.1 system. Satellites, subwoofer, crossover, EQ — all resolved inside a single chassis.', angle:{y:Math.PI*0.15,x:0.05}, mode:'normal', last:true },
+  ],
+  'prod-xylem4': [
+    { cross:'×', text:'No rack required',          desc:'The Xylem 4 fits inside a cabinet or wall cavity. Four channels of amplification in a chassis that disappears behind the installation.', angle:{y:0,x:0}, mode:'normal' },
+    { cross:'×', text:'No zone controller',        desc:'Each channel can be independently configured — different EQ, different delay, different level. Drive four separate zones from one unit without any additional hardware.', angle:{y:Math.PI*0.3,x:0}, mode:'normal' },
+    { cross:'×', text:'No passive crossover',      desc:'DSP-active crossover on all four channels. Each output is individually time-aligned to the listening position and room geometry.', angle:{y:0,x:0.2}, mode:'normal' },
+    { cross:'×', text:'No synchronisation issues', desc:'All four channels share a single clock domain. Phase coherence between zones is maintained to the sample — no latency offset between drivers.', angle:{y:-Math.PI*0.25,x:0}, mode:'normal' },
+    { cross:'→', text:'Four channels. One system.', desc:'The Xylem 4 is the foundation of any multi-zone architectural installation — four independently managed channels in the space of one.', angle:{y:Math.PI*0.15,x:0.05}, mode:'normal', last:true },
+  ],
+
 // Fallback for products without specific constraints
 const CONSTRAINTS_DEFAULT: Constraint[] = [
   { cross:'×', text:'No visible fixings',        desc:'Every fastener is concealed. The grille, baffle and chassis unite as a single uninterrupted surface.', angle:{y:0,x:0}, mode:'normal' },
@@ -56,7 +78,7 @@ const CONSTRAINTS_DEFAULT: Constraint[] = [
   { cross:'→', text:'Engineered to disappear.',  desc:'When there is nothing to remove, design is complete.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
 ]
 
-const FLAGSHIP_IDS = ['prod-bonsai', 'prod-cane', 'prod-quadcane', 'prod-ghost2', 'prod-acacia6-pw', 'prod-acacia10-pw']
+const FLAGSHIP_IDS = ['prod-bonsai', 'prod-cane', 'prod-quadcane', 'prod-ghost2', 'prod-acacia6-pw', 'prod-acacia10-pw', 'prod-xylem2', 'prod-xylem3', 'prod-xylem4']
 
 interface Props {
   modelUrl?: string
@@ -233,7 +255,9 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
     'prod-ghost2':    { cam:[-0.01,0,3],          rot:[0.318,-0.012,0.000],  fov:69, exposure:0.9,  ambient:0,   key:0.8, fill:0   },
     'prod-acacia6-pw':{ cam:[0,0,3],              rot:[0.000,-0.702,0.000],  fov:78, exposure:0.15, ambient:0,   key:5.0, fill:0.8 },
     'prod-acacia10-pw':{ cam:[0,0,3],             rot:[0.000,-0.702,0.000],  fov:78, exposure:0.15, ambient:0,   key:5.0, fill:0.8 },
+    'prod-xylem2':    { cam:[-0.01,-0.67,3],      rot:[-2.512,0.000,0.000],  fov:78, exposure:0.6,  ambient:0,   key:0.0, fill:1.6 },
     'prod-xylem3':    { cam:[-0.01,-0.67,3],      rot:[-2.512,0.000,0.000],  fov:78, exposure:0.6,  ambient:0,   key:0.0, fill:1.6 },
+    'prod-xylem4':    { cam:[-0.01,-0.67,3],      rot:[-2.512,0.000,0.000],  fov:78, exposure:0.6,  ambient:0,   key:0.0, fill:1.6 },
     'prod-quadcane':  { cam:[0.18,-0.14,2.43],    rot:[2.308,1.588,-0.702],  fov:45, exposure:0.65, ambient:0,   key:0.0, fill:0.8 },
   }
   const s = (productId && MODEL_SETTINGS[productId]) ? MODEL_SETTINGS[productId]
