@@ -47,8 +47,7 @@ const CONSTRAINTS_MAP: Record<string, Constraint[]> = {
     { cross:'×', text:'No visible driver',         desc:'The grille sits flush with the enclosure face. No protruding cone, no visible surround. A sealed surface that happens to reproduce 35Hz.', angle:{y:-Math.PI*0.25,x:0}, mode:'normal' },
     { cross:'→', text:'Bass that disappears.',     desc:'The Acacia 10 is felt before it is heard. Pressure without presence — the room fills with low frequency energy and the source stays invisible.', angle:{y:Math.PI*0.15,x:0.05}, mode:'normal', last:true },
   ],
-}
-
+,
   'prod-xylem2': [
     { cross:'×', text:'No rack required',          desc:'The Xylem 2 mounts behind a screen, inside a cabinet, or within a wall box. No separate rack space, no ventilation cutouts, no visible hardware in the room.', angle:{y:0,x:0}, mode:'normal' },
     { cross:'×', text:'No passive crossover',      desc:'DSP-active crossover runs inside the unit. Each output is individually time-aligned and equalised in the digital domain — no passive components in the signal path.', angle:{y:Math.PI*0.3,x:0}, mode:'normal' },
@@ -70,6 +69,7 @@ const CONSTRAINTS_MAP: Record<string, Constraint[]> = {
     { cross:'×', text:'No synchronisation issues', desc:'All four channels share a single clock domain. Phase coherence between zones is maintained to the sample — no latency offset between drivers.', angle:{y:-Math.PI*0.25,x:0}, mode:'normal' },
     { cross:'→', text:'Four channels. One system.', desc:'The Xylem 4 is the foundation of any multi-zone architectural installation — four independently managed channels in the space of one.', angle:{y:Math.PI*0.15,x:0.05}, mode:'normal', last:true },
   ],
+}
 
 // Fallback for products without specific constraints
 const CONSTRAINTS_DEFAULT: Constraint[] = [
