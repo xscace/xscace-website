@@ -1578,6 +1578,92 @@ function RainbowPill() {
 }
 
 
+// ── Animated Signal Chain ────────────────────────────────────────────────────
+const SIGNAL_STAGES = [
+  {label:'INPUT',    sub:'Analog / Hi-Level',   dsp:false},
+  {label:'ADC',      sub:'24-bit · 96kHz',       dsp:false},
+  {label:'ADAU1701', sub:'SigmaDSP · 50 MIPS',  dsp:true },
+  {label:'PsySculpt™',sub:'Psychoacoustic',      dsp:true },
+  {label:'DAC',      sub:'Per Channel',           dsp:false},
+  {label:'Class D',  sub:'400W Total',            dsp:false},
+  {label:'OUTPUT',   sub:'Speaker / LFE',         dsp:false},
+]
+
+function SignalChain() {
+  const [active, setActive] = useState(0)
+  const [lit, setLit] = useState<number[]>([])
+
+  useEffect(() => {
+    let step = 0
+    const tick = () => {
+      setActive(step)
+      setLit(prev => {
+        const next = [...new Set([...prev, step])]
+        return next.length > SIGNAL_STAGES.length ? [] : next
+      })
+      step = (step + 1) % (SIGNAL_STAGES.length + 1)
+      if (step === 0) setLit([])
+    }
+    const id = setInterval(tick, 500)
+    return () => clearInterval(id)
+  }, [])
+
+  return (
+    <div style={{padding:'36px 56px 52px', borderTop:'0.5px solid #0f0f0f'}}>
+      <div style={{fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.2em',color:'rgba(201,169,110,0.22)',marginBottom:22}}>SIGNAL PATH · LIVE</div>
+      <div style={{display:'flex',alignItems:'center',overflowX:'auto'}}>
+        {SIGNAL_STAGES.map((s,i,a) => {
+          const isActive = active === i
+          const isPast = lit.includes(i)
+          const glow = isActive || isPast
+          const isDsp = s.dsp
+          return (
+            <div key={s.label} style={{display:'flex',alignItems:'center',flexShrink:0}}>
+              <div style={{
+                padding:'14px 18px',
+                background: isActive ? (isDsp?'rgba(201,169,110,0.12)':'rgba(200,196,188,0.06)')
+                          : isPast   ? (isDsp?'rgba(201,169,110,0.06)':'rgba(200,196,188,0.025)')
+                          : '#060606',
+                border:`0.5px solid ${isActive?(isDsp?'rgba(201,169,110,0.5)':'rgba(200,196,188,0.25)'):isPast?(isDsp?'rgba(201,169,110,0.2)':'rgba(200,196,188,0.08)'):'#0f0f0f'}`,
+                textAlign:'center', minWidth:88,
+                transition:'all 0.35s ease',
+                boxShadow: isActive && isDsp ? '0 0 16px rgba(201,169,110,0.15)' : 'none',
+              }}>
+                <div style={{
+                  fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.07em',marginBottom:5,
+                  color: isActive?(isDsp?'#c9a96e':'rgba(200,196,188,0.8)'):isPast?(isDsp?'rgba(201,169,110,0.55)':'rgba(200,196,188,0.3)'):'rgba(200,196,188,0.18)',
+                  transition:'color 0.35s ease',
+                }}>{s.label}</div>
+                <div style={{
+                  fontFamily:"'DM Mono',monospace",fontSize:6,letterSpacing:'.05em',lineHeight:1.4,
+                  color: isActive?(isDsp?'rgba(201,169,110,0.45)':'rgba(200,196,188,0.4)'):isPast?(isDsp?'rgba(201,169,110,0.25)':'rgba(200,196,188,0.15)'):'rgba(200,196,188,0.1)',
+                  transition:'color 0.35s ease',
+                }}>{s.sub}</div>
+              </div>
+              {i < a.length - 1 && (
+                <div style={{display:'flex',alignItems:'center',padding:'0 3px',flexShrink:0}}>
+                  <div style={{
+                    width:24, height:'0.5px',
+                    background: isPast?(isDsp?'rgba(201,169,110,0.4)':'rgba(200,196,188,0.2)'):'rgba(200,196,188,0.06)',
+                    transition:'background 0.35s ease',
+                  }}/>
+                  <div style={{
+                    width:0,height:0,
+                    borderTop:'3px solid transparent',borderBottom:'3px solid transparent',
+                    borderLeft:`5px solid ${isPast?(isDsp?'rgba(201,169,110,0.5)':'rgba(200,196,188,0.25)'):'rgba(200,196,188,0.06)'}`,
+                    transition:'border-color 0.35s ease',
+                  }}/>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+
 export default function ProductDetail({ product }: { product: Product }) {
   const [activeGallery, setActiveGallery] = useState(0)
   const waveRafsRef = useRef<number[]>([])
@@ -1944,7 +2030,7 @@ export default function ProductDetail({ product }: { product: Product }) {
       {/* wave divider */}
       <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
       {/* ── RESOURCES & MEDIA ── */}
-      {(product.productVideos && product.productVideos.length > 0) ? (
+      {(product.productVideos && product.productVideos.length > 0 && !isAmp) ? (
         <VideoGallery
           images={[]}
           videos={product.productVideos || []}
@@ -1994,7 +2080,7 @@ export default function ProductDetail({ product }: { product: Product }) {
             </div>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:1,marginBottom:1}}>
               <div style={{display:'flex',flexDirection:'column',gap:1}}>
-                {(product.productVideos||[]).slice(0,2).map((v:any,i:number) => {
+                {((product.productVideos||[]).length > 0 ? product.productVideos : (product.xylemVideos||[])).slice(0,2).map((v:any,i:number) => {
                   const ref = v.videoFile?.asset?._ref
                   const src = v.url || (ref ? 'https://cdn.sanity.io/files/7r0kq57d/production/'+ref.replace('file-','').replace(/-([a-z0-9]+)$/,'.$1') : null)
                   return src ? (
@@ -2046,33 +2132,8 @@ export default function ProductDetail({ product }: { product: Product }) {
                 </div>
               </div>
             </div>
-            <div style={{padding:'36px 56px 52px',borderTop:'0.5px solid #0f0f0f'}}>
-              <div style={{fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.2em',color:'rgba(201,169,110,0.22)',marginBottom:22}}>SIGNAL PATH</div>
-              <div style={{display:'flex',alignItems:'center',overflowX:'auto'}}>
-                {([
-                  {label:'INPUT',sub:'Analog / Hi-Level',hot:false},
-                  {label:'ADC',sub:'24-bit · 96kHz',hot:false},
-                  {label:'ADAU1701',sub:'SigmaDSP · 50 MIPS',hot:true},
-                  {label:'PsySculpt™',sub:'Psychoacoustic',hot:true},
-                  {label:'DAC',sub:'Per Channel',hot:false},
-                  {label:'Class D',sub:'400W Total',hot:false},
-                  {label:'OUTPUT',sub:'Speaker / LFE',hot:false},
-                ] as {label:string,sub:string,hot:boolean}[]).map((s,i,a)=>(
-                  <div key={s.label} style={{display:'flex',alignItems:'center',flexShrink:0}}>
-                    <div style={{padding:'12px 16px',background:s.hot?'rgba(201,169,110,0.07)':'#060606',border:`0.5px solid ${s.hot?'rgba(201,169,110,0.22)':'#111'}`,textAlign:'center',minWidth:86}}>
-                      <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.07em',color:s.hot?'rgba(201,169,110,0.8)':'rgba(200,196,188,0.32)',marginBottom:4}}>{s.label}</div>
-                      <div style={{fontFamily:"'DM Mono',monospace",fontSize:6,letterSpacing:'.05em',color:s.hot?'rgba(201,169,110,0.32)':'rgba(200,196,188,0.16)',lineHeight:1.4}}>{s.sub}</div>
-                    </div>
-                    {i<a.length-1&&(
-                      <div style={{display:'flex',alignItems:'center',padding:'0 2px'}}>
-                        <div style={{width:18,height:'0.5px',background:s.hot?'rgba(201,169,110,0.28)':'rgba(200,196,188,0.08)'}}/>
-                        <div style={{width:0,height:0,borderTop:'3px solid transparent',borderBottom:'3px solid transparent',borderLeft:`4px solid ${s.hot?'rgba(201,169,110,0.28)':'rgba(200,196,188,0.08)'}`}}/>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
+            <SignalChain/>
+            
           </div>
         </section>
       )}
