@@ -1768,7 +1768,7 @@ export default function ProductDetail({ product }: { product: Product }) {
 
             {/* Key specs pills — row 1 */}
             <div className="pd-hero-pills">
-              {product.powerRmsW && <span className="pd-pill">{product.powerRmsW}W</span>}
+              {product.powerRmsW && !isAmp && <span className="pd-pill">{product.powerRmsW}W</span>}
               {product.totalPowerW && <span className="pd-pill">{product.totalPowerW}W</span>}
               {product.impedanceOhms && <span className="pd-pill">{product.impedanceOhms}Ω</span>}
               {product.freqLowHz && product.freqHighHz && (
@@ -1992,41 +1992,68 @@ export default function ProductDetail({ product }: { product: Product }) {
             const channels: {ch:string,power:string,load:string,role:string,accent:boolean}[] = isX2
               ? [{ch:'CH 1',power:'200W',load:'8Ω',role:'Full Range — L',accent:false},{ch:'CH 2',power:'200W',load:'8Ω',role:'Full Range — R',accent:false}]
               : isX3
-              ? [{ch:'CH 1',power:'200W',load:'8Ω',role:'Subwoofer / LFE',accent:true},{ch:'CH 2',power:'100W',load:'8Ω',role:'Full Range — L',accent:false},{ch:'CH 3',power:'100W',load:'8Ω',role:'Full Range — R',accent:false}]
+              ? [{ch:'CH 1',power:'100W',load:'8Ω',role:'Full Range — L',accent:false},{ch:'CH 2',power:'100W',load:'8Ω',role:'Full Range — R',accent:false},{ch:'CH 3',power:'200W',load:'8Ω',role:'Subwoofer / LFE',accent:true}]
               : [{ch:'CH 1',power:'100W',load:'8Ω',role:'Full Range — L',accent:false},{ch:'CH 2',power:'100W',load:'8Ω',role:'Full Range — R',accent:false},{ch:'CH 3',power:'100W',load:'8Ω',role:'Full Range — L',accent:false},{ch:'CH 4',power:'100W',load:'8Ω',role:'Full Range — R',accent:false}]
             return (
               <div style={{border:'0.5px solid #111',overflow:'hidden'}}>
-                <div style={{display:'grid',gridTemplateColumns:'72px 110px 1fr 130px',background:'#040404',borderBottom:'0.5px solid #111'}}>
-                  {['Channel','Power','Function','DSP'].map(h => (
-                    <div key={h} style={{padding:'7px 14px',fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.16em',color:'rgba(201,169,110,0.28)'}}>{h}</div>
+                {/* Column labels */}
+                <div style={{display:'grid',gridTemplateColumns:'64px 96px 1fr 100px',background:'#000',borderBottom:'0.5px solid rgba(201,169,110,0.08)'}}>
+                  {[['CH',''],['PWR',''],['Function',''],['','']].map(([h],i) => (
+                    <div key={i} style={{padding:'6px 14px',fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.2em',color:'rgba(201,169,110,0.22)'}}>{h}</div>
                   ))}
                 </div>
                 {channels.map((row,i) => (
                   <div key={row.ch} style={{
-                    display:'grid',gridTemplateColumns:'72px 110px 1fr 130px',alignItems:'center',
-                    background:row.accent?'rgba(201,169,110,0.03)':i%2===0?'#050505':'#040404',
-                    borderBottom:'0.5px solid rgba(255,255,255,0.03)',
-                    borderLeft:`2px solid ${row.accent?'rgba(201,169,110,0.5)':'transparent'}`,
+                    display:'grid',gridTemplateColumns:'64px 96px 1fr 100px',alignItems:'stretch',
+                    background:'#000',
+                    borderBottom:`0.5px solid ${row.accent?'rgba(201,169,110,0.12)':'rgba(255,255,255,0.02)'}`,
                   }}>
-                    <div style={{padding:'14px'}}>
-                      <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.1em',color:row.accent?'rgba(201,169,110,0.65)':'rgba(200,196,188,0.28)'}}>{row.ch}</span>
+                    {/* CH number */}
+                    <div style={{
+                      padding:'20px 14px',
+                      background:row.accent?'rgba(201,169,110,0.06)':'rgba(255,255,255,0.015)',
+                      borderRight:`1px solid ${row.accent?'rgba(201,169,110,0.2)':'rgba(255,255,255,0.03)'}`,
+                      display:'flex',flexDirection:'column',justifyContent:'center',
+                    }}>
+                      <span style={{fontFamily:"'DM Mono',monospace",fontSize:10,letterSpacing:'.08em',color:row.accent?'rgba(201,169,110,0.8)':'rgba(200,196,188,0.22)'}}>{row.ch}</span>
                     </div>
-                    <div style={{padding:'14px'}}>
-                      <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:20,color:row.accent?'#c9a96e':'#d0ccc6'}}>{row.power}</span>
-                      <span style={{fontFamily:"'DM Mono',monospace",fontSize:8,color:'rgba(200,196,188,0.2)',marginLeft:5}}>@ {row.load}</span>
+                    {/* Power */}
+                    <div style={{
+                      padding:'20px 14px',
+                      borderRight:'1px solid rgba(255,255,255,0.03)',
+                      display:'flex',flexDirection:'column',justifyContent:'center',
+                    }}>
+                      <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:24,color:row.accent?'#c9a96e':'rgba(216,212,206,0.85)',lineHeight:1}}>{row.power}</span>
+                      <span style={{fontFamily:"'DM Mono',monospace",fontSize:7,color:'rgba(200,196,188,0.18)',marginTop:4,letterSpacing:'.06em'}}>{row.load}</span>
                     </div>
-                    <div style={{padding:'14px'}}>
-                      <span style={{fontFamily:"'Barlow',sans-serif",fontWeight:300,fontSize:13,color:row.accent?'rgba(201,169,110,0.65)':'rgba(200,196,188,0.5)'}}>{row.role}</span>
+                    {/* Role */}
+                    <div style={{
+                      padding:'20px 20px',
+                      display:'flex',alignItems:'center',
+                    }}>
+                      <div>
+                        <div style={{fontFamily:"'Barlow',sans-serif",fontWeight:300,fontSize:13,color:row.accent?'rgba(201,169,110,0.75)':'rgba(200,196,188,0.48)',lineHeight:1.3}}>{row.role}</div>
+                        {row.accent && <div style={{fontFamily:"'DM Mono',monospace",fontSize:7,color:'rgba(201,169,110,0.35)',marginTop:5,letterSpacing:'.12em'}}>DEDICATED CHANNEL</div>}
+                      </div>
                     </div>
-                    <div style={{padding:'14px'}}>
-                      <span style={{fontFamily:"'DM Mono',monospace",fontSize:7,color:'rgba(201,169,110,0.15)',letterSpacing:'.08em'}}>EQ · DELAY · XOVER</span>
+                    {/* DSP tag */}
+                    <div style={{
+                      padding:'20px 14px',
+                      display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'flex-end',
+                      borderLeft:'1px solid rgba(255,255,255,0.02)',
+                    }}>
+                      <div style={{display:'flex',flexDirection:'column',gap:3,alignItems:'flex-end'}}>
+                        {['EQ','DELAY','XOVER'].map(tag => (
+                          <span key={tag} style={{fontFamily:"'DM Mono',monospace",fontSize:6,color:row.accent?'rgba(201,169,110,0.25)':'rgba(200,196,188,0.12)',letterSpacing:'.12em'}}>{tag}</span>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ))}
-                <div style={{display:'grid',gridTemplateColumns:'72px 110px 1fr 130px',borderTop:'0.5px solid #111',background:'#030303'}}>
-                  <div style={{padding:'9px 14px',gridColumn:'1/3',fontFamily:"'DM Mono',monospace",fontSize:7,color:'rgba(201,169,110,0.3)',letterSpacing:'.12em'}}>TOTAL OUTPUT</div>
-                  <div style={{padding:'9px 14px'}}><span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:16,color:'rgba(201,169,110,0.45)'}}>400W</span></div>
-                  <div/>
+                {/* Total row */}
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 20px',background:'#000',borderTop:'0.5px solid rgba(201,169,110,0.1)'}}>
+                  <span style={{fontFamily:"'DM Mono',monospace",fontSize:7,color:'rgba(201,169,110,0.25)',letterSpacing:'.18em'}}>TOTAL OUTPUT</span>
+                  <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:18,color:'rgba(201,169,110,0.5)'}}>400W</span>
                 </div>
               </div>
             )
