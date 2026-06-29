@@ -524,7 +524,9 @@ function ARWallBtn({ modelUrl, productName }: { modelUrl: string; productName: s
 
   const triggerAR = () => {
     loadMV(() => {
-      const src = modelUrl.startsWith('http') ? modelUrl : window.location.origin + modelUrl
+      // Route GLB through the API so it has correct headers for WebXR
+      const glbPath = modelUrl.startsWith('/models/') ? '/api/glb/' + modelUrl.replace('/models/','') : modelUrl
+      const src = modelUrl.startsWith('http') ? modelUrl : window.location.origin + glbPath
       const mv  = document.createElement('model-viewer') as any
       mv.src    = src
       mv.setAttribute('ar', '')
@@ -1958,8 +1960,8 @@ export default function ProductDetail({ product }: { product: Product }) {
               return imgs.map((img: any, i: number) => {
                 const url = getImageUrl(img, 1200)
                 return url ? (
-                  <div key={i} style={{background:'#000', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', minHeight:400}}>
-                    <img src={url} alt={product.productName} style={{width:'100%', height:'100%', objectFit:'contain', display:'block'}}/>
+                  <div key={i} style={{background:'#000', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', padding:'20px', minHeight:280}}>
+                    <img src={url} alt={product.productName} style={{maxWidth:'100%', maxHeight:280, objectFit:'contain', display:'block'}}/>
                   </div>
                 ) : null
               })
@@ -2266,46 +2268,19 @@ export default function ProductDetail({ product }: { product: Product }) {
           </p>
         </div>
         <div style={{display:'flex', gap:1, flexWrap:'wrap', marginBottom:48}}>
-          {/* Control4 */}
-          <div title="Control4" style={{padding:'12px 20px',border:'0.5px solid #1a1a1a',background:'#000',display:'flex',alignItems:'center',justifyContent:'center',minWidth:100}}>
-            <svg viewBox="0 0 80 24" height="18" fill="none" opacity="0.45">
-              <text x="0" y="18" fontFamily="Arial,sans-serif" fontSize="16" fontWeight="700" fill="#e8e4de">Control</text>
-              <text x="56" y="18" fontFamily="Arial,sans-serif" fontSize="16" fontWeight="900" fill="#c9a96e">4</text>
-            </svg>
-          </div>
-          {/* Crestron */}
-          <div title="Crestron" style={{padding:'12px 20px',border:'0.5px solid #1a1a1a',background:'#000',display:'flex',alignItems:'center',justifyContent:'center',minWidth:100}}>
-            <svg viewBox="0 0 90 20" height="14" fill="none" opacity="0.45">
-              <text x="0" y="16" fontFamily="Arial,sans-serif" fontSize="13" fontWeight="700" fill="#e8e4de" letterSpacing="1.5">CRESTRON</text>
-            </svg>
-          </div>
-          {/* Savant */}
-          <div title="Savant" style={{padding:'12px 20px',border:'0.5px solid #1a1a1a',background:'#000',display:'flex',alignItems:'center',justifyContent:'center',minWidth:80}}>
-            <svg viewBox="0 0 60 24" height="18" fill="none" opacity="0.45">
-              <text x="0" y="19" fontFamily="Georgia,serif" fontSize="18" fontWeight="400" fill="#e8e4de" fontStyle="italic">Savant</text>
-            </svg>
-          </div>
-          {/* AMX */}
-          <div title="AMX" style={{padding:'12px 20px',border:'0.5px solid #1a1a1a',background:'#000',display:'flex',alignItems:'center',justifyContent:'center',minWidth:64}}>
-            <svg viewBox="0 0 42 26" height="20" fill="none" opacity="0.45">
-              <text x="0" y="22" fontFamily="Arial,sans-serif" fontSize="22" fontWeight="900" fill="#e8e4de" letterSpacing="1">AMX</text>
-            </svg>
-          </div>
-          {/* RTI */}
-          <div title="RTI" style={{padding:'12px 20px',border:'0.5px solid #1a1a1a',background:'#000',display:'flex',alignItems:'center',justifyContent:'center',minWidth:56}}>
-            <svg viewBox="0 0 32 24" height="18" fill="none" opacity="0.45">
-              <text x="0" y="20" fontFamily="Arial,sans-serif" fontSize="20" fontWeight="800" fill="#e8e4de" letterSpacing="2">RTI</text>
-            </svg>
-          </div>
-          {/* Josh.ai */}
-          <div title="Josh.ai" style={{padding:'12px 20px',border:'0.5px solid #1a1a1a',background:'#000',display:'flex',alignItems:'center',justifyContent:'center',minWidth:72}}>
-            <svg viewBox="0 0 52 22" height="16" fill="none" opacity="0.45">
-              <circle cx="6" cy="11" r="4" stroke="#e8e4de" strokeWidth="1.2"/>
-              <circle cx="6" cy="11" r="1.5" fill="#e8e4de"/>
-              <text x="14" y="16" fontFamily="Arial,sans-serif" fontSize="14" fontWeight="400" fill="#e8e4de">.ai</text>
-              <text x="14" y="16" fontFamily="Arial,sans-serif" fontSize="14" fontWeight="600" fill="#e8e4de" dx="-14" dy="0">josh</text>
-            </svg>
-          </div>
+          {['Control4', 'Crestron', 'Savant', 'AMX', 'RTI', 'Josh.ai'].map(brand => (
+            <div key={brand} style={{
+              padding:'10px 22px', border:'0.5px solid #1e1e1e', background:'#000',
+              fontFamily:"'Barlow',sans-serif", fontWeight:300, fontSize:13,
+              letterSpacing:'0.04em', color:'rgba(200,196,188,0.45)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+            }}>{brand}</div>
+          ))}
+          <div style={{
+            padding:'10px 22px', border:'0.5px solid #1e1e1e', background:'#000',
+            fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:'0.12em',
+            color:'rgba(201,169,110,0.3)', display:'flex', alignItems:'center',
+          }}>+ more</div>
         </div>
         <div style={{display:'flex', gap:12, flexWrap:'wrap'}}>
           <a href="/downloads/acacia6-api-commands.pdf" download style={{display:'inline-flex', alignItems:'center', gap:8, fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'.14em', textTransform:'uppercase', color:'#000', background:'#c9a96e', padding:'10px 20px', textDecoration:'none'}}>
@@ -2353,31 +2328,59 @@ export default function ProductDetail({ product }: { product: Product }) {
             </div>
           </div>
           <div>
-            <svg viewBox="0 0 380 260" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:'100%',opacity:0.85}}>
-              <rect x="8" y="100" width="80" height="60" rx="2" fill="#080808" stroke="#1a1a1a" strokeWidth="0.5"/>
-              <text x="48" y="126" textAnchor="middle" fill="#666" fontSize="9" fontFamily="monospace">SOURCE</text>
-              <text x="48" y="139" textAnchor="middle" fill="#444" fontSize="8" fontFamily="monospace">LFE / LINE IN</text>
-              <line x1="88" y1="130" x2="122" y2="130" stroke="rgba(201,169,110,0.25)" strokeWidth="0.8"/>
-              <polygon points="122,127 128,130 122,133" fill="rgba(201,169,110,0.35)"/>
-              <rect x="128" y="70" width="96" height="120" rx="2" fill="#0a0a0a" stroke="rgba(201,169,110,0.2)" strokeWidth="0.5"/>
-              <text x="176" y="96" textAnchor="middle" fill="#c9a96e" fontSize="7" fontFamily="monospace" opacity="0.6">200W CLASS D</text>
-              <line x1="128" y1="108" x2="224" y2="108" stroke="#111" strokeWidth="0.5"/>
-              <text x="176" y="128" textAnchor="middle" fill="#888" fontSize="9" fontFamily="monospace">ACACIA 6</text>
-              <text x="176" y="142" textAnchor="middle" fill="#888" fontSize="9" fontFamily="monospace">POWERED</text>
-              <line x1="128" y1="154" x2="224" y2="154" stroke="#111" strokeWidth="0.5"/>
-              <text x="176" y="170" textAnchor="middle" fill="#444" fontSize="7" fontFamily="monospace">3-CHANNEL AMP</text>
-              <line x1="224" y1="92" x2="266" y2="50" stroke="rgba(201,169,110,0.2)" strokeWidth="0.8"/>
-              <line x1="224" y1="130" x2="266" y2="130" stroke="rgba(201,169,110,0.3)" strokeWidth="0.8"/>
-              <line x1="224" y1="168" x2="266" y2="210" stroke="rgba(201,169,110,0.2)" strokeWidth="0.8"/>
-              <rect x="266" y="26" width="106" height="48" rx="2" fill="#080808" stroke="#1a1a1a" strokeWidth="0.5"/>
-              <text x="319" y="46" textAnchor="middle" fill="#777" fontSize="8" fontFamily="monospace">CH 2 — L OUT</text>
-              <text x="319" y="58" textAnchor="middle" fill="#444" fontSize="7" fontFamily="monospace">Full Range · Any Speaker</text>
-              <rect x="266" y="106" width="106" height="48" rx="2" fill="#080808" stroke="rgba(201,169,110,0.25)" strokeWidth="0.5"/>
-              <text x="319" y="126" textAnchor="middle" fill="#c9a96e" fontSize="8" fontFamily="monospace" opacity="0.8">CH 1 — LFE</text>
-              <text x="319" y="138" textAnchor="middle" fill="#444" fontSize="7" fontFamily="monospace">Internal Subwoofer</text>
-              <rect x="266" y="186" width="106" height="48" rx="2" fill="#080808" stroke="#1a1a1a" strokeWidth="0.5"/>
-              <text x="319" y="206" textAnchor="middle" fill="#777" fontSize="8" fontFamily="monospace">CH 3 — R OUT</text>
-              <text x="319" y="218" textAnchor="middle" fill="#444" fontSize="7" fontFamily="monospace">Full Range · Any Speaker</text>
+            <svg viewBox="0 0 420 300" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:'100%'}}>
+              {/* Grid lines */}
+              <line x1="0" y1="100" x2="420" y2="100" stroke="#0d0d0d" strokeWidth="0.5"/>
+              <line x1="0" y1="200" x2="420" y2="200" stroke="#0d0d0d" strokeWidth="0.5"/>
+
+              {/* Source block */}
+              <rect x="10" y="120" width="90" height="56" rx="1" fill="#080808" stroke="#181818" strokeWidth="0.5"/>
+              <text x="55" y="144" textAnchor="middle" fill="rgba(200,196,188,0.35)" fontSize="8" fontFamily="monospace" letterSpacing="1">SOURCE</text>
+              <text x="55" y="158" textAnchor="middle" fill="rgba(201,169,110,0.3)" fontSize="7" fontFamily="monospace">LFE / LINE IN</text>
+
+              {/* Arrow source → amp */}
+              <line x1="100" y1="148" x2="145" y2="148" stroke="rgba(201,169,110,0.2)" strokeWidth="0.8" strokeDasharray="3,2"/>
+              <polygon points="145,145 151,148 145,151" fill="rgba(201,169,110,0.3)"/>
+
+              {/* Amp block */}
+              <rect x="151" y="72" width="108" height="152" rx="1" fill="#050505" stroke="rgba(201,169,110,0.15)" strokeWidth="0.5"/>
+              {/* Amp top label */}
+              <text x="205" y="92" textAnchor="middle" fill="rgba(201,169,110,0.5)" fontSize="7" fontFamily="monospace" letterSpacing="1.5">200W CLASS D</text>
+              <line x1="151" y1="100" x2="259" y2="100" stroke="#111" strokeWidth="0.5"/>
+              {/* Amp name */}
+              <text x="205" y="130" textAnchor="middle" fill="rgba(200,196,188,0.6)" fontSize="11" fontFamily="serif">Acacia 6</text>
+              <text x="205" y="147" textAnchor="middle" fill="rgba(200,196,188,0.3)" fontSize="8" fontFamily="monospace">POWERED</text>
+              <line x1="151" y1="160" x2="259" y2="160" stroke="#111" strokeWidth="0.5"/>
+              <text x="205" y="177" textAnchor="middle" fill="rgba(201,169,110,0.25)" fontSize="6" fontFamily="monospace" letterSpacing="1">3-CHANNEL AMP</text>
+              <text x="205" y="192" textAnchor="middle" fill="rgba(201,169,110,0.2)" fontSize="6" fontFamily="monospace" letterSpacing="0.5">CH1 · CH2 · CH3</text>
+              <line x1="151" y1="202" x2="259" y2="202" stroke="#111" strokeWidth="0.5"/>
+              <text x="205" y="216" textAnchor="middle" fill="#2a2a2a" fontSize="6" fontFamily="monospace">DSP · EQ · CROSSOVER</text>
+
+              {/* Output lines */}
+              <line x1="259" y1="100" x2="295" y2="62" stroke="rgba(201,169,110,0.15)" strokeWidth="0.8"/>
+              <line x1="259" y1="148" x2="295" y2="148" stroke="rgba(201,169,110,0.3)" strokeWidth="1.2"/>
+              <line x1="259" y1="196" x2="295" y2="236" stroke="rgba(201,169,110,0.15)" strokeWidth="0.8"/>
+
+              {/* CH2 — Speaker L */}
+              <rect x="295" y="38" width="115" height="48" rx="1" fill="#070707" stroke="#161616" strokeWidth="0.5"/>
+              <text x="310" y="56" fill="rgba(200,196,188,0.4)" fontSize="8" fontFamily="monospace">CH 2</text>
+              <text x="310" y="70" fill="rgba(200,196,188,0.25)" fontSize="7" fontFamily="monospace">Speaker Out — L</text>
+
+              {/* CH1 — LFE (highlighted) */}
+              <rect x="295" y="124" width="115" height="48" rx="1" fill="#0a0900" stroke="rgba(201,169,110,0.25)" strokeWidth="0.5"/>
+              <line x1="295" y1="124" x2="295" y2="172" stroke="rgba(201,169,110,0.5)" strokeWidth="2"/>
+              <text x="310" y="143" fill="rgba(201,169,110,0.75)" fontSize="8" fontFamily="monospace">CH 1 · LFE</text>
+              <text x="310" y="157" fill="rgba(201,169,110,0.35)" fontSize="7" fontFamily="monospace">Internal · 200W</text>
+
+              {/* CH3 — Speaker R */}
+              <rect x="295" y="212" width="115" height="48" rx="1" fill="#070707" stroke="#161616" strokeWidth="0.5"/>
+              <text x="310" y="230" fill="rgba(200,196,188,0.4)" fontSize="8" fontFamily="monospace">CH 3</text>
+              <text x="310" y="244" fill="rgba(200,196,188,0.25)" fontSize="7" fontFamily="monospace">Speaker Out — R</text>
+
+              {/* Arrow tips on outputs */}
+              <polygon points="295,59 301,62 295,65" fill="rgba(201,169,110,0.2)"/>
+              <polygon points="295,145 301,148 295,151" fill="rgba(201,169,110,0.4)"/>
+              <polygon points="295,233 301,236 295,239" fill="rgba(201,169,110,0.2)"/>
             </svg>
           </div>
         </div>
