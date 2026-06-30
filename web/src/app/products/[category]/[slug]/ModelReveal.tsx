@@ -40,6 +40,20 @@ const CONSTRAINTS_MAP: Record<string, Constraint[]> = {
     { cross:'×', text:'No asymmetric dispersion',  desc:'Dual coincident drivers deliver identical coverage at every listening position. No sweet spot. No dead zone. The room performs uniformly from every seat.', angle:{y:-Math.PI*0.25,x:0}, mode:'normal' },
     { cross:'→', text:'The ceiling you designed, exactly.', desc:'When there is nothing to see, the room speaks for itself. The Ghost 2.0 is the point where acoustic engineering becomes invisible.', angle:{y:Math.PI*0.15,x:-0.15}, mode:'normal', last:true },
   ],
+  'prod-aspen6': [
+    { cross:'×', text:'No pointing required',       desc:'The Aspen 6 is a coaxial point source — tweeter and woofer share a single acoustic centre. Every seat in the room receives identical timbre, identical imaging. There is no sweet spot because the entire room is the sweet spot.', angle:{y:0,x:0}, mode:'normal' },
+    { cross:'×', text:'No orientation constraint',  desc:'A circle has no front. The Aspen 6 can be installed at any rotation and the acoustic axis remains perfectly on-axis with the listener. No alignment marks, no critical orientation.', angle:{y:Math.PI*0.38,x:0}, mode:'normal' },
+    { cross:'×', text:'No baffle-step colouration', desc:'The flush-mount geometry eliminates the baffle-step discontinuity. Treble energy is not directed forward at the expense of bass — the response is flat, not tilted by the enclosure.', angle:{y:0,x:0.18}, mode:'normal' },
+    { cross:'×', text:'No paint masking',           desc:'The grille accepts emulsion directly. One coat and the Aspen 6 disappears entirely into the ceiling. Available pre-painted or ready to accept any finish.', angle:{y:-Math.PI*0.28,x:0}, mode:'fingerprint' },
+    { cross:'→', text:'50Hz to 22kHz. One cutout.', desc:'The Aspen 6 returns a full-range acoustic window from a single 248mm cutout. One speaker. One hole. Nothing visible.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
+  ],
+  'prod-aspen8': [
+    { cross:'×', text:'No pointing required',       desc:'The Aspen 8 is a coaxial point source — tweeter and woofer share a single acoustic centre. Every seat in the room receives identical timbre, identical imaging. There is no sweet spot because the entire room is the sweet spot.', angle:{y:0,x:0}, mode:'normal' },
+    { cross:'×', text:'No orientation constraint',  desc:'A circle has no front. The Aspen 8 can be installed at any rotation and the acoustic axis remains perfectly on-axis with the listener. No alignment marks, no critical orientation.', angle:{y:Math.PI*0.38,x:0}, mode:'normal' },
+    { cross:'×', text:'No baffle-step colouration', desc:'The flush-mount geometry eliminates the baffle-step discontinuity. Treble energy is not directed forward at the expense of bass — the response is flat, not tilted by the enclosure.', angle:{y:0,x:0.18}, mode:'normal' },
+    { cross:'×', text:'No paint masking',           desc:'The grille accepts emulsion directly. One coat and the Aspen 8 disappears entirely into the ceiling. Available pre-painted or ready to accept any finish.', angle:{y:-Math.PI*0.28,x:0}, mode:'fingerprint' },
+    { cross:'→', text:'40Hz to 22kHz. One cutout.', desc:'The Aspen 8 returns a full-range acoustic window — down to 40Hz — from a single 285mm cutout. One speaker. One hole. Nothing visible.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
+  ],
   'prod-acacia6-pw': [
     { cross:'×', text:'No port noise',             desc:'XS-Flow port geometry eliminates turbulence at the vent exit. Full bass output at reference levels — no chuffing, no compression, no audible artefact.', angle:{y:0,x:0.1}, mode:'normal' },
     { cross:'×', text:'No external amplifier',     desc:'A 200W Class D amplifier lives inside the enclosure. One cable in, sound out. No rack, no matching, no separate power supply.', angle:{y:Math.PI*0.3,x:0}, mode:'normal' },
@@ -84,7 +98,7 @@ const CONSTRAINTS_DEFAULT: Constraint[] = [
   { cross:'→', text:'Engineered to disappear.',  desc:'When there is nothing to remove, design is complete.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
 ]
 
-const FLAGSHIP_IDS = ['prod-bonsai', 'prod-cane', 'prod-quadcane', 'prod-cedar', 'prod-ghost2', 'prod-acacia6-pw', 'prod-acacia10-pw', 'prod-xylem2', 'prod-xylem3', 'prod-xylem4']
+const FLAGSHIP_IDS = ['prod-bonsai', 'prod-cane', 'prod-quadcane', 'prod-cedar', 'prod-ghost2', 'prod-aspen6', 'prod-aspen8', 'prod-acacia6-pw', 'prod-acacia10-pw', 'prod-xylem2', 'prod-xylem3', 'prod-xylem4']
 
 interface Props {
   modelUrl?: string
@@ -259,6 +273,8 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
         'prod-bonsai':    { cam:[0.18,2.00,3],      rot:[0.158,-0.582,-1.572], fov:60, exposure:0.25,  ambient:0,   key:0.0, fill:3.7 },
     'prod-cane':      { cam:[-0.08,0.56,3.03], rot:[0.138,-0.792,-1.502], fov:49, exposure:0.25, ambient:0,   key:2.0, fill:0.7 },
     'prod-ghost2':    { cam:[-0.01,0,3],          rot:[0.318,-0.012,0.000],  fov:69, exposure:0.9,  ambient:0,   key:0.8, fill:0   },
+    'prod-aspen6':    { cam:[0,0,3],              rot:[0.000,-0.702,0.000],  fov:72, exposure:0.85, ambient:0,   key:2.5, fill:0.5 },
+    'prod-aspen8':    { cam:[0,0,3],              rot:[0.000,-0.702,0.000],  fov:72, exposure:0.85, ambient:0,   key:2.5, fill:0.5 },
     'prod-acacia6-pw':{ cam:[0,0,3],              rot:[0.000,-0.702,0.000],  fov:78, exposure:0.15, ambient:0,   key:5.0, fill:0.8 },
     'prod-acacia10-pw':{ cam:[0,0,3],             rot:[0.000,-0.702,0.000],  fov:78, exposure:0.15, ambient:0,   key:5.0, fill:0.8 },
     'prod-xylem2':    { cam:[-0.01,-0.67,3],      rot:[-3.622,2.818,-0.002], fov:78, exposure:0.6,  ambient:0,   key:0.0, fill:1.6 },
