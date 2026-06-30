@@ -15,6 +15,7 @@ const MODELS = [
   { id: 'prod-aspen8',    name: 'Aspen 8',          file: 'aspen-8-in-ceiling-speaker.glb' },
   { id: 'prod-xylem3',     name: 'Xylem 3',          file: 'xylem-3-dsp-amplifier.glb' },
   { id: 'prod-oak',        name: 'Oak',              file: 'oak-in-wall-home-cinema-speaker.glb' },
+  { id: 'prod-willow',     name: 'Willow',           file: 'willow-in-wall-home-cinema-speaker.glb' },
 ]
 
 // Current baked settings — pre-loaded so you can see the exact production view
@@ -32,6 +33,7 @@ const CURRENT: Record<string, any> = {
   'prod-aspen8':    { cam:[0,0,3],             rot:[0,-0.702,0],          fov:72, exposure:0.85, ambient:0,   key:2.5, fill:0.5 },
   'prod-xylem3':    { cam:[-0.01,-0.67,3],     rot:[-2.512,0,0],          fov:78, exposure:0.6,  ambient:0,   key:0,   fill:1.6 },
   'prod-oak':       { cam:[0,0,3],             rot:[0,-0.502,0],          fov:65, exposure:0.85, ambient:0,   key:2.0, fill:0.5 },
+  'prod-willow':    { cam:[0,0,3],             rot:[0,-0.502,0],          fov:65, exposure:0.85, ambient:0,   key:2.0, fill:0.5 },
 }
 
 function buildHDR(THREE: any) {
