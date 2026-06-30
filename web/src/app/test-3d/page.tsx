@@ -433,7 +433,7 @@ function ModelTest({ id, name, file }: { id: string; name: string; file: string 
   )
 }
 
-const AR_MODELS = MODELS.filter(m => m.id === 'prod-xylem3')
+const AR_MODELS = MODELS.filter(m => ['prod-xylem3', 'prod-cedar'].includes(m.id))
 
 export default function Test3DPage() {
   return (
