@@ -254,9 +254,9 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
     'prod-ghost2':    { cam:[-0.01,0,3],          rot:[0.318,-0.012,0.000],  fov:69, exposure:0.9,  ambient:0,   key:0.8, fill:0   },
     'prod-acacia6-pw':{ cam:[0,0,3],              rot:[0.000,-0.702,0.000],  fov:78, exposure:0.15, ambient:0,   key:5.0, fill:0.8 },
     'prod-acacia10-pw':{ cam:[0,0,3],             rot:[0.000,-0.702,0.000],  fov:78, exposure:0.15, ambient:0,   key:5.0, fill:0.8 },
-    'prod-xylem2':    { cam:[-0.01,-0.67,3],      rot:[-2.512,0.000,0.000],  fov:78, exposure:0.6,  ambient:0,   key:0.0, fill:1.6 },
-    'prod-xylem3':    { cam:[-0.01,-0.67,3],      rot:[-2.512,0.000,0.000],  fov:78, exposure:0.6,  ambient:0,   key:0.0, fill:1.6 },
-    'prod-xylem4':    { cam:[-0.01,-0.67,3],      rot:[-2.512,0.000,0.000],  fov:78, exposure:0.6,  ambient:0,   key:0.0, fill:1.6 },
+    'prod-xylem2':    { cam:[-0.01,-0.67,3],      rot:[-3.622,2.818,-0.002], fov:78, exposure:0.6,  ambient:0,   key:0.0, fill:1.6 },
+    'prod-xylem3':    { cam:[-0.01,-0.67,3],      rot:[-3.622,2.818,-0.002], fov:78, exposure:0.6,  ambient:0,   key:0.0, fill:1.6 },
+    'prod-xylem4':    { cam:[-0.01,-0.67,3],      rot:[-3.622,2.818,-0.002], fov:78, exposure:0.6,  ambient:0,   key:0.0, fill:1.6 },
     'prod-quadcane':  { cam:[0.18,-0.14,2.43],    rot:[2.308,1.588,-0.702],  fov:45, exposure:0.65, ambient:0,   key:0.0, fill:0.8 },
   }
   const s = (productId && MODEL_SETTINGS[productId]) ? MODEL_SETTINGS[productId]
