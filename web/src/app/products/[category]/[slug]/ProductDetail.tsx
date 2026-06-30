@@ -3302,16 +3302,18 @@ function DimensionDrawing({ product }: { product: any }) {
   const CT = 'rgba(201,169,110,0.5)'
   const CF = 'rgba(201,169,110,0.06)'
 
-  // ── Ghost 2.0: custom portrait rendering ──
-  // Generic logic rotates H=172.72 × W=28.5 into a 280×46px flat bar which
-  // looks nothing like the product. Render it as a tall slim column instead.
+  // ── Ghost 2.0: horizontal layout, depth shown proportionally ──
+  // H=172.72 drawn left-to-right, W=28.5 drawn top-to-bottom.
+  // Standard cap of 28px hides the true D=187.96mm depth; use pH-relative
+  // sizing so the depth looks as substantial as it physically is.
   if (product._id === 'prod-ghost2') {
-    const scale = Math.min(44 / W, 230 / H)   // ensure visible width ≥ 40px
-    const pW = W * scale
-    const pH = H * scale
-    const pD = Math.min(D * scale * 0.6, 26)
+    const scale = Math.min(300 / H, 62 / W)   // pW ≤ 300, pH ≤ 62
+    const pW = H * scale                        // horizontal = speaker height
+    const pH = W * scale                        // vertical   = speaker width
+    // D≈6.6×W → show iso depth as ~2× pH so it reads as clearly deeper than wide
+    const pD = pH * 2.2
     const iso = pD * 0.5
-    const svgW = pW + iso + 100
+    const svgW = pW + iso + 90
     const svgH = pH + iso + 64
     const ox = 48, oy = svgH - 36
 
@@ -3322,7 +3324,7 @@ function DimensionDrawing({ product }: { product: any }) {
             <svg viewBox={`0 0 ${svgW} ${svgH}`} className="dd-svg" xmlns="http://www.w3.org/2000/svg">
               {/* Front face */}
               <rect x={ox} y={oy - pH} width={pW} height={pH} fill={CF} stroke={C} strokeWidth="0.8"/>
-              {/* Micro-perf dots */}
+              {/* Grille dots */}
               {Array.from({length: Math.floor(pH / 5)}, (_, ri) =>
                 Array.from({length: Math.floor(pW / 5)}, (_, ci) => (
                   <circle key={`${ri}-${ci}`}
@@ -3331,37 +3333,38 @@ function DimensionDrawing({ product }: { product: any }) {
                 ))
               )}
               {/* Top face */}
-              {pD > 0 && <polygon
+              <polygon
                 points={`${ox},${oy-pH} ${ox+iso},${oy-pH-iso} ${ox+pW+iso},${oy-pH-iso} ${ox+pW},${oy-pH}`}
-                fill={CF} stroke={C} strokeWidth="0.8"/>}
+                fill={CF} stroke={C} strokeWidth="0.8"/>
               {/* Right face */}
-              {pD > 0 && <polygon
+              <polygon
                 points={`${ox+pW},${oy-pH} ${ox+pW+iso},${oy-pH-iso} ${ox+pW+iso},${oy-iso} ${ox+pW},${oy}`}
-                fill="rgba(201,169,110,0.03)" stroke={C} strokeWidth="0.8"/>}
-              {/* Width (bottom) */}
+                fill="rgba(201,169,110,0.04)" stroke={C} strokeWidth="0.8"/>
+              {/* H dimension (bottom) */}
               <line x1={ox} y1={oy+10} x2={ox+pW} y2={oy+10} stroke={CA} strokeWidth="0.5"/>
               <line x1={ox} y1={oy+5} x2={ox} y2={oy+15} stroke={CA} strokeWidth="0.5"/>
               <line x1={ox+pW} y1={oy+5} x2={ox+pW} y2={oy+15} stroke={CA} strokeWidth="0.5"/>
               <text x={ox+pW/2} y={oy+26} fill={CT} fontSize="8"
-                fontFamily="DM Mono,monospace" textAnchor="middle">W {W}mm</text>
-              {/* Height (left) */}
+                fontFamily="DM Mono,monospace" textAnchor="middle">H {H}mm</text>
+              {/* W dimension (left) */}
               <line x1={ox-10} y1={oy} x2={ox-10} y2={oy-pH} stroke={CA} strokeWidth="0.5"/>
               <line x1={ox-15} y1={oy} x2={ox-5} y2={oy} stroke={CA} strokeWidth="0.5"/>
               <line x1={ox-15} y1={oy-pH} x2={ox-5} y2={oy-pH} stroke={CA} strokeWidth="0.5"/>
               <text x={ox-22} y={oy-pH/2} fill={CT} fontSize="8"
                 fontFamily="DM Mono,monospace" textAnchor="middle"
-                transform={`rotate(-90,${ox-22},${oy-pH/2})`}>H {H}mm</text>
-              {/* Depth */}
-              {pD > 0 && <>
-                <line x1={ox+pW+3} y1={oy-3} x2={ox+pW+iso+3} y2={oy-iso-3} stroke={CA} strokeWidth="0.5"/>
-                <text x={ox+pW+iso/2+10} y={oy-iso/2} fill={CT} fontSize="8"
-                  fontFamily="DM Mono,monospace">D {D}mm</text>
-              </>}
-              {/* Mounting point markers */}
-              <circle cx={ox+pW/2} cy={oy-pH*0.25} r="2" fill="none" stroke={CA}
+                transform={`rotate(-90,${ox-22},${oy-pH/2})`}>W {W}mm</text>
+              {/* D dimension (diagonal) */}
+              <line x1={ox+pW+3} y1={oy-3} x2={ox+pW+iso+3} y2={oy-iso-3} stroke={CA} strokeWidth="0.5"/>
+              <text x={ox+pW+iso/2+8} y={oy-iso/2} fill={CT} fontSize="8"
+                fontFamily="DM Mono,monospace">D {D}mm</text>
+              {/* Mounting markers */}
+              <circle cx={ox+pW*0.25} cy={oy-pH/2} r="2" fill="none" stroke={CA}
                 strokeWidth="0.5" strokeDasharray="2 1.5"/>
-              <circle cx={ox+pW/2} cy={oy-pH*0.75} r="2" fill="none" stroke={CA}
+              <circle cx={ox+pW*0.75} cy={oy-pH/2} r="2" fill="none" stroke={CA}
                 strokeWidth="0.5" strokeDasharray="2 1.5"/>
+              {/* Rotation note */}
+              <text x={ox} y={svgH - 6} fill={CA} fontSize="7"
+                fontFamily="DM Mono,monospace" opacity="0.6">rotated 90° for display</text>
             </svg>
           </div>
           <div className="dd-actions">
