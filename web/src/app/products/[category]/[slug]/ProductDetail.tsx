@@ -2081,6 +2081,124 @@ export default function ProductDetail({ product }: { product: Product }) {
         </section>
       ) : null}
 
+      {/* Ghost 2.0 — form factor world-first section */}
+      {product._id === 'prod-ghost2' && (
+        <section style={{background:'#000', borderTop:'0.5px solid #111'}}>
+          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:0}}>
+            {/* Copy */}
+            <div style={{padding:'72px 56px', borderRight:'0.5px solid #111'}}>
+              <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.22em',textTransform:'uppercase',color:'rgba(201,169,110,0.55)',marginBottom:20}}>Form Factor · World First</div>
+              <h2 style={{fontFamily:"'Cormorant Garamond',serif",fontWeight:300,fontSize:'clamp(28px,3vw,52px)',color:'#eeebe5',lineHeight:1.08,marginBottom:24}}>
+                No ceiling speaker<br/>on Earth is built<br/><em style={{color:'#c9a96e',fontStyle:'italic'}}>like this.</em>
+              </h2>
+              <p style={{fontFamily:"'Barlow',sans-serif",fontWeight:300,fontSize:14,color:'rgba(200,196,188,0.5)',lineHeight:1.8,marginBottom:36}}>
+                Every conventional in-ceiling speaker sits below its cutout. The bezel, the mounting
+                ring, the driver surround — all visible below the ceiling plane you designed. The
+                Ghost 2.0 is the only in-ceiling speaker in the world that doesn&apos;t. Its face sits
+                within 0.3mm of the architectural surface. Not recessed. Not protruding. Flush.
+              </p>
+              <div style={{display:'flex',flexDirection:'column',gap:14}}>
+                {[
+                  '0.3mm flush to the architectural plane',
+                  'No visible bezel below the ceiling surface',
+                  'Paintable grille — disappears with one coat',
+                  'Magnetic install — no screws after the bracket',
+                ].map((f,i) => (
+                  <div key={i} style={{display:'flex',gap:12,alignItems:'flex-start'}}>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:'rgba(201,169,110,0.5)',marginTop:2,flexShrink:0}}>×</span>
+                    <span style={{fontFamily:"'Barlow',sans-serif",fontWeight:300,fontSize:13,color:'rgba(200,196,188,0.55)',lineHeight:1.5}}>{f}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Cross-section diagram */}
+            <div style={{padding:'72px 48px',display:'flex',flexDirection:'column',justifyContent:'center'}}>
+              <svg viewBox="0 0 420 340" xmlns="http://www.w3.org/2000/svg" style={{width:'100%',height:'auto',display:'block'}}>
+                <defs>
+                  <pattern id="gh-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                    <line x1="0" y1="0" x2="0" y2="8" stroke="#191919" strokeWidth="1.5"/>
+                  </pattern>
+                </defs>
+
+                {/* ── LEFT: Conventional in-ceiling ── */}
+                <rect x="0" y="0" width="190" height="100" fill="url(#gh-hatch)"/>
+                <line x1="0" y1="100" x2="190" y2="100" stroke="rgba(200,196,188,0.18)" strokeWidth="0.8"/>
+                <text x="95" y="16" textAnchor="middle" fill="rgba(200,196,188,0.18)" fontFamily="DM Mono,monospace" fontSize="7" letterSpacing="1.5">CONVENTIONAL</text>
+                {/* Cutout */}
+                <rect x="50" y="0" width="90" height="100" fill="#050505"/>
+                {/* Backbox inside ceiling */}
+                <rect x="55" y="5" width="80" height="92" rx="1" fill="#0d0d0d" stroke="#1a1a1a" strokeWidth="0.5"/>
+                {/* Mounting ring — BELOW ceiling plane */}
+                <rect x="38" y="100" width="114" height="11" rx="0.5" fill="#1a1a1a" stroke="#272727" strokeWidth="0.5"/>
+                {/* Speaker grille face — hangs below */}
+                <rect x="46" y="111" width="98" height="78" rx="0.5" fill="#101010" stroke="#1c1c1c" strokeWidth="0.5"/>
+                {/* Grille dots */}
+                {Array.from({length: 35}, (_,i) => {
+                  const row = Math.floor(i/7), col = i%7
+                  return <circle key={i} cx={57+col*13} cy={126+row*14} r="1.2" fill="#1d1d1d"/>
+                })}
+                {/* Protrusion depth arrow */}
+                <line x1="157" y1="100" x2="157" y2="189" stroke="rgba(201,169,110,0.3)" strokeWidth="0.6"/>
+                <line x1="152" y1="100" x2="162" y2="100" stroke="rgba(201,169,110,0.3)" strokeWidth="0.6"/>
+                <line x1="152" y1="189" x2="162" y2="189" stroke="rgba(201,169,110,0.3)" strokeWidth="0.6"/>
+                <text x="166" y="148" fill="rgba(201,169,110,0.35)" fontFamily="DM Mono,monospace" fontSize="8">25–35</text>
+                <text x="166" y="160" fill="rgba(201,169,110,0.35)" fontFamily="DM Mono,monospace" fontSize="8">mm</text>
+
+                {/* VS divider */}
+                <line x1="210" y1="10" x2="210" y2="330" stroke="#161616" strokeWidth="0.8"/>
+                <text x="210" y="178" textAnchor="middle" fill="#1e1e1e" fontFamily="DM Mono,monospace" fontSize="11" letterSpacing="2">VS</text>
+
+                {/* ── RIGHT: Ghost 2.0 ── */}
+                <rect x="230" y="0" width="190" height="100" fill="url(#gh-hatch)"/>
+                <text x="325" y="16" textAnchor="middle" fill="rgba(201,169,110,0.3)" fontFamily="DM Mono,monospace" fontSize="7" letterSpacing="1.5">GHOST 2.0</text>
+                {/* Thin cutout */}
+                <rect x="268" y="0" width="114" height="100" fill="#050505"/>
+                {/* Shallower backbox */}
+                <rect x="273" y="22" width="104" height="76" rx="1" fill="#080808" stroke="#111" strokeWidth="0.5"/>
+                {/* Ceiling plane line — champagne tint */}
+                <line x1="230" y1="100" x2="420" y2="100" stroke="rgba(201,169,110,0.35)" strokeWidth="0.8"/>
+                {/* Ghost face — virtually AT the ceiling plane */}
+                <rect x="260" y="98" width="130" height="4" rx="0.5" fill="rgba(201,169,110,0.08)" stroke="rgba(201,169,110,0.55)" strokeWidth="0.5"/>
+                {/* Micro-perforations */}
+                {Array.from({length: 11}, (_,i) => (
+                  <circle key={i} cx={267+i*12} cy={100} r="0.8" fill="rgba(201,169,110,0.55)"/>
+                ))}
+                {/* 0.3mm bracket callout */}
+                <line x1="398" y1="98" x2="398" y2="102" stroke="rgba(201,169,110,0.6)" strokeWidth="0.7"/>
+                <line x1="394" y1="98" x2="402" y2="98" stroke="rgba(201,169,110,0.6)" strokeWidth="0.7"/>
+                <line x1="394" y1="102" x2="402" y2="102" stroke="rgba(201,169,110,0.6)" strokeWidth="0.7"/>
+                <line x1="398" y1="102" x2="378" y2="136" stroke="rgba(201,169,110,0.35)" strokeWidth="0.5" strokeDasharray="2,2"/>
+                <text x="325" y="148" textAnchor="middle" fill="rgba(201,169,110,0.85)" fontFamily="DM Mono,monospace" fontSize="14">0.3mm</text>
+                <text x="325" y="163" textAnchor="middle" fill="rgba(201,169,110,0.4)" fontFamily="DM Mono,monospace" fontSize="8">flush to plane</text>
+
+                {/* CEILING PLANE label */}
+                <text x="2" y="96" fill="rgba(200,196,188,0.1)" fontFamily="DM Mono,monospace" fontSize="6" letterSpacing="0.5">CEILING PLANE</text>
+
+                {/* Room labels */}
+                <text x="95" y="295" textAnchor="middle" fill="rgba(200,196,188,0.04)" fontFamily="DM Mono,monospace" fontSize="8" letterSpacing="3">ROOM</text>
+                <text x="325" y="295" textAnchor="middle" fill="rgba(200,196,188,0.04)" fontFamily="DM Mono,monospace" fontSize="8" letterSpacing="3">ROOM</text>
+              </svg>
+            </div>
+          </div>
+
+          {/* Stats row */}
+          <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',borderTop:'0.5px solid #111'}}>
+            {([
+              {val:'0.3mm', label:'Flush to ceiling plane'},
+              {val:'80Hz',  label:'Low frequency limit'},
+              {val:'×4',   label:'Driver array'},
+              {val:'Magnetic', label:'Tool-free after bracket'},
+            ] as {val:string;label:string}[]).map((s,i) => (
+              <div key={i} style={{padding:'32px 40px',borderRight:i<3?'0.5px solid #111':'none'}}>
+                <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:36,color:'#c9a96e',lineHeight:1,marginBottom:8}}>{s.val}</div>
+                <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.14em',color:'rgba(200,196,188,0.3)',textTransform:'uppercase'}}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
 
 
       {/* wave divider */}
