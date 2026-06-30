@@ -18,6 +18,7 @@ const MODELS = [
   { id: 'prod-willow',     name: 'Willow',           file: 'willow-in-wall-home-cinema-speaker.glb' },
   { id: 'prod-sage',       name: 'Sage',             file: 'sage-in-wall-speaker.glb' },
   { id: 'prod-bergenia',   name: 'Bergenia',         file: 'bergenia-in-wall-speaker.glb' },
+  { id: 'prod-quadcane-ic', name: 'QuadCane IC/IW', file: 'quadcane-in-ceiling-in-wall-speaker.glb' },
 ]
 
 // Current baked settings — pre-loaded so you can see the exact production view
@@ -38,6 +39,7 @@ const CURRENT: Record<string, any> = {
   'prod-willow':    { cam:[0,0,3],             rot:[0,-0.502,0],          fov:65, exposure:0.85, ambient:0,   key:2.0, fill:0.5 },
   'prod-sage':      { cam:[0,0,3],             rot:[0,-0.502,0],          fov:65, exposure:0.85, ambient:0,   key:2.0, fill:0.5 },
   'prod-bergenia':  { cam:[0,0,3],             rot:[0,-0.502,0],          fov:72, exposure:0.85, ambient:0,   key:2.0, fill:0.5 },
+  'prod-quadcane-ic': { cam:[-0.08,0.56,3.03], rot:[0.138,-0.792,-1.502], fov:49, exposure:0.25, ambient:0,  key:2.0, fill:0.7 },
 }
 
 function buildHDR(THREE: any) {

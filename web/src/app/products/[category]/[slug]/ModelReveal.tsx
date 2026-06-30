@@ -19,6 +19,13 @@ const CONSTRAINTS_MAP: Record<string, Constraint[]> = {
     { cross:'×', text:'No compromise on finish',   desc:'Anodised 6061 aerospace aluminium. The finish is applied under electrical current — it becomes part of the metal itself. Available in any RAL.', angle:{y:-Math.PI*0.28,x:0}, mode:'fingerprint' },
     { cross:'→', text:'Just material. Just line.', desc:'When there is nothing to remove, design is complete. The Cane exists at the point where engineering and restraint arrive at the same answer.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
   ],
+  'prod-quadcane-ic': [
+    { cross:'×', text:'No surface constraint',      desc:'The QuadCane IC installs flush into any flat surface — wall or ceiling — with the same bracket, the same cutout, the same result. Four drivers. One form factor. Zero compromises based on orientation.', angle:{y:0,x:0}, mode:'normal' },
+    { cross:'×', text:'No draft angle',              desc:'CNC machined, not cast. Zero draft on every edge — geometrically perfect and flush to any surface finish, any panel thickness, any wall or ceiling material.', angle:{y:Math.PI*0.38,x:0}, mode:'normal' },
+    { cross:'×', text:'No unnecessary pattern',      desc:'The only perforations are acoustic. Each aperture exists because sound requires it — not for decoration. The visual rhythm is a direct consequence of four-driver geometry.', angle:{y:0,x:0.18}, mode:'normal' },
+    { cross:'×', text:'No compromise on finish',     desc:'Anodised 6061 aerospace aluminium. Applied under electrical current — the finish becomes part of the metal itself. Available in any RAL. Matches any interior, every time.', angle:{y:-Math.PI*0.28,x:0}, mode:'fingerprint' },
+    { cross:'→', text:'Four drivers. Any surface.',  desc:'The QuadCane IC arrays four drivers flush into wall or ceiling — the same line, the same output, regardless of which plane the surface happens to be.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
+  ],
   'prod-quadcane': [
     { cross:'×', text:'No visible fixings',        desc:'Every fastener is concealed. The grille, baffle and chassis unite as a single uninterrupted surface — nothing to catch the eye, nothing to break the plane.', angle:{y:0,x:0}, mode:'normal' },
     { cross:'×', text:'No draft angle',            desc:'CNC machined, not cast. Zero draft — every edge is geometrically perfect and flush. No taper, no step, no visible gap against the wall.', angle:{y:Math.PI*0.38,x:0}, mode:'normal' },
@@ -147,7 +154,7 @@ const CONSTRAINTS_DEFAULT: Constraint[] = [
   { cross:'→', text:'Engineered to disappear.',  desc:'When there is nothing to remove, design is complete.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
 ]
 
-const FLAGSHIP_IDS = ['prod-bonsai', 'prod-bonsai-ic', 'prod-cane', 'prod-cane-ic', 'prod-quadcane', 'prod-cedar', 'prod-ghost2', 'prod-aspen6', 'prod-aspen8', 'prod-aster6', 'prod-acacia6-pw', 'prod-acacia10-pw', 'prod-xylem2', 'prod-xylem3', 'prod-xylem4', 'prod-oak', 'prod-willow', 'prod-sage', 'prod-bergenia']
+const FLAGSHIP_IDS = ['prod-bonsai', 'prod-bonsai-ic', 'prod-cane', 'prod-cane-ic', 'prod-quadcane', 'prod-quadcane-ic', 'prod-cedar', 'prod-ghost2', 'prod-aspen6', 'prod-aspen8', 'prod-aster6', 'prod-acacia6-pw', 'prod-acacia10-pw', 'prod-xylem2', 'prod-xylem3', 'prod-xylem4', 'prod-oak', 'prod-willow', 'prod-sage', 'prod-bergenia']
 
 interface Props {
   modelUrl?: string
@@ -335,6 +342,7 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
     'prod-quadcane':  { cam:[0.18,-0.14,2.43],    rot:[2.308,1.588,-0.702],  fov:45, exposure:0.65, ambient:0,   key:0.0, fill:0.8 },
   'prod-cedar':     { cam:[0.14,0.12,2.75],      rot:[-3.362,-0.892,-3.142], fov:57, exposure:1.35, ambient:0,  key:2.3, fill:0.0 },
   'prod-oak':       { cam:[0,0,3],              rot:[0.000,-0.502,0.000],  fov:65, exposure:0.85, ambient:0,   key:2.0, fill:0.5 },
+  'prod-quadcane-ic': { cam:[-0.08,0.56,3.03], rot:[0.138,-0.792,-1.502], fov:49, exposure:0.25, ambient:0,   key:2.0, fill:0.7 },
   'prod-willow':    { cam:[0,0,3],              rot:[0.000,-0.502,0.000],  fov:65, exposure:0.85, ambient:0,   key:2.0, fill:0.5 },
   'prod-sage':      { cam:[0,0,3],              rot:[0.000,-0.502,0.000],  fov:65, exposure:0.85, ambient:0,   key:2.0, fill:0.5 },
   'prod-bergenia':  { cam:[0,0,3],              rot:[0.000,-0.502,0.000],  fov:72, exposure:0.85, ambient:0,   key:2.0, fill:0.5 },
@@ -475,9 +483,10 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
             currentXRef.current = s.rot[0]
             currentYRef.current = s.rot[1]
 
-            const isAster    = productId === 'prod-aster6'
-            const isCaneIc   = productId === 'prod-cane-ic'
-            const isBonsaiIc = productId === 'prod-bonsai-ic'
+            const isAster      = productId === 'prod-aster6'
+            const isCaneIc     = productId === 'prod-cane-ic'
+            const isBonsaiIc   = productId === 'prod-bonsai-ic'
+            const isQuadCaneIc = productId === 'prod-quadcane-ic'
             model.traverse((child: any) => {
               if (!child.isMesh) return
               if (isAster) {
@@ -498,7 +507,7 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
                 })
                 child.material = mat
                 origMatsRef.current.set(child, mat)
-              } else if (isBonsaiIc) {
+              } else if (isBonsaiIc || isQuadCaneIc) {
                 const mat = new THREE.MeshStandardMaterial({
                   color: new THREE.Color(0xf2f0ed),
                   roughness: 0.78,

@@ -2165,7 +2165,7 @@ export default function ProductDetail({ product }: { product: Product }) {
           productName={product.productName}
           getImageUrl={getImageUrl}
         />
-      ) : ['prod-cedar', 'prod-ghost2', 'prod-bonsai-ic', 'prod-cane-ic', 'prod-oak', 'prod-willow', 'prod-sage', 'prod-bergenia', 'prod-quadcane'].includes(product._id) && (product.lifestyleImages?.length ?? 0) > 0 ? (
+      ) : ['prod-cedar', 'prod-ghost2', 'prod-bonsai-ic', 'prod-cane-ic', 'prod-oak', 'prod-willow', 'prod-sage', 'prod-bergenia', 'prod-quadcane', 'prod-quadcane-ic'].includes(product._id) && (product.lifestyleImages?.length ?? 0) > 0 ? (
         <section className="vg-section">
           <div className="vg-videos">
             <div className="vg-panel">
