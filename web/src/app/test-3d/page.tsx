@@ -91,6 +91,141 @@ function Slider({ label, value, min, max, step, onChange }: {
   )
 }
 
+function loadModelViewer(): Promise<void> {
+  if ((window as any).__mvLoaded) return Promise.resolve()
+  return new Promise((res) => {
+    if (document.querySelector('script[data-mv]')) {
+      const check = setInterval(() => {
+        if (customElements.get('model-viewer')) { clearInterval(check); res() }
+      }, 50)
+      return
+    }
+    const s = document.createElement('script')
+    s.type = 'module'
+    s.src = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js'
+    s.dataset.mv = '1'
+    s.onload = () => {
+      const check = setInterval(() => {
+        if (customElements.get('model-viewer')) { clearInterval(check); (window as any).__mvLoaded = true; res() }
+      }, 50)
+    }
+    document.head.appendChild(s)
+  })
+}
+
+// AR orientation panel — uses <model-viewer>'s native orientation attribute directly.
+// This is a DIFFERENT coordinate system from the three.js panel above (different axis
+// convention + rotation order), so values from one panel do NOT transfer to the other.
+// Always read the AR config from THIS panel when setting up AR placement.
+function ARTest({ id, name, file }: { id: string; name: string; file: string }) {
+  const [ready, setReady] = useState(false)
+  const [roll, setRoll] = useState(0)
+  const [pitch, setPitch] = useState(0)
+  const [yaw, setYaw] = useState(0)
+  const [placement, setPlacement] = useState<'floor' | 'wall'>('floor')
+  const [scale, setScale] = useState(1)
+  const mvElRef = useRef<any>(null)
+  const wrapRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    loadModelViewer().then(() => { if (!cancelled) setReady(true) })
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    if (!ready || !wrapRef.current) return
+    wrapRef.current.innerHTML = ''
+    const mv = document.createElement('model-viewer') as any
+    mv.src = `/api/glb/${file}`
+    mv.setAttribute('ar', '')
+    mv.setAttribute('ar-modes', 'webxr scene-viewer quick-look')
+    mv.setAttribute('ar-placement', placement)
+    mv.setAttribute('ar-scale', 'fixed')
+    mv.setAttribute('camera-controls', '')
+    mv.setAttribute('shadow-intensity', '0')
+    mv.setAttribute('exposure', '0.8')
+    mv.style.cssText = 'width:100%;height:100%;display:block;background:#000;'
+    mv.orientation = `${roll}deg ${pitch}deg ${yaw}deg`
+    mv.scale = `${scale} ${scale} ${scale}`
+    wrapRef.current.appendChild(mv)
+    mvElRef.current = mv
+  }, [ready, file, placement])
+
+  useEffect(() => {
+    if (mvElRef.current) {
+      mvElRef.current.orientation = `${roll}deg ${pitch}deg ${yaw}deg`
+    }
+  }, [roll, pitch, yaw])
+
+  useEffect(() => {
+    if (mvElRef.current) {
+      mvElRef.current.scale = `${scale} ${scale} ${scale}`
+    }
+  }, [scale])
+
+  const handleAR = () => { if (mvElRef.current) mvElRef.current.activateAR() }
+
+  const copyARConfig = () => {
+    const txt = `${name} — AR orientation:\n  ar-placement: '${placement}'\n  orientation: '${roll}deg ${pitch}deg ${yaw}deg'\n  scale: ${scale}`
+    navigator.clipboard.writeText(txt).then(() => alert(`Copied!\n\n${txt}`))
+  }
+
+  const resetAR = () => { setRoll(0); setPitch(0); setYaw(0); setScale(1) }
+
+  return (
+    <div style={{ marginBottom: 56, border: '1px solid #c9a96e' }}>
+      <div style={{ padding: '10px 16px', background: '#1a1606', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+        <span style={{ fontFamily: 'monospace', color: '#c9a96e', fontSize: 14, fontWeight: 'bold' }}>{name} — AR ORIENTATION (model-viewer)</span>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <span style={{ fontFamily: 'monospace', fontSize: 10, color: '#888' }}>{ready ? '✓ ready' : 'loading model-viewer...'}</span>
+          <button onClick={resetAR} style={{ fontFamily: 'monospace', fontSize: 10, background: '#222', border: '1px solid #444', color: '#888', padding: '3px 10px', cursor: 'pointer' }}>Reset</button>
+          <button onClick={copyARConfig} style={{ fontFamily: 'monospace', fontSize: 10, background: '#c9a96e', border: 'none', color: '#000', padding: '3px 10px', cursor: 'pointer', fontWeight: 'bold' }}>Copy AR Config ↗</button>
+        </div>
+      </div>
+      <div style={{ padding: '4px 16px', background: '#0a0a0a', fontFamily: 'monospace', fontSize: 10, color: '#a08850' }}>
+        This is model-viewer&apos;s own orientation system — degrees, different axis convention from the panel above. Drag in the preview to orbit the CAMERA (not the model); use the sliders below to rotate the MODEL itself, and &quot;View in AR&quot; on a phone to confirm in real AR.
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', minHeight: 440 }}>
+        <div ref={wrapRef} style={{ background: '#000' }} />
+
+        <div style={{ padding: '16px 14px', background: '#0d0d0d', borderLeft: '1px solid #1a1a1a', overflowY: 'auto' }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+            <button onClick={() => setPlacement('floor')} style={{
+              flex: 1, padding: '6px 0', fontSize: 10, fontFamily: 'monospace',
+              background: placement === 'floor' ? '#c9a96e' : '#222',
+              color: placement === 'floor' ? '#000' : '#aaa', border: 'none', cursor: 'pointer',
+            }}>floor</button>
+            <button onClick={() => setPlacement('wall')} style={{
+              flex: 1, padding: '6px 0', fontSize: 10, fontFamily: 'monospace',
+              background: placement === 'wall' ? '#c9a96e' : '#222',
+              color: placement === 'wall' ? '#000' : '#aaa', border: 'none', cursor: 'pointer',
+            }}>wall</button>
+          </div>
+
+          <div style={{ fontFamily: 'monospace', fontSize: 9, color: '#c9a96e', letterSpacing: '0.15em', marginBottom: 10, textTransform: 'uppercase' }}>AR Orientation (deg)</div>
+          <Slider label="roll" value={roll} min={-180} max={180} step={0.5} onChange={setRoll} />
+          <Slider label="pitch" value={pitch} min={-180} max={180} step={0.5} onChange={setPitch} />
+          <Slider label="yaw" value={yaw} min={-180} max={180} step={0.5} onChange={setYaw} />
+          <Slider label="scale" value={scale} min={0.1} max={3} step={0.05} onChange={setScale} />
+
+          <button onClick={handleAR} style={{
+            marginTop: 14, width: '100%', padding: '10px 0', fontFamily: 'monospace', fontSize: 11,
+            background: '#c9a96e', border: 'none', color: '#000', cursor: 'pointer', fontWeight: 'bold',
+          }}>View in AR (phone only)</button>
+
+          <div style={{ marginTop: 18, padding: 12, background: '#000', border: '1px solid #222', fontFamily: 'monospace', fontSize: 10, color: '#c9a96e', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+{`placement: '${placement}'
+orientation: '${roll}deg ${pitch}deg ${yaw}deg'
+scale: ${scale}`}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ModelTest({ id, name, file }: { id: string; name: string; file: string }) {
   const mountRef = useRef<HTMLDivElement>(null)
   const [status, setStatus] = useState('loading...')
@@ -296,13 +431,27 @@ function ModelTest({ id, name, file }: { id: string; name: string; file: string 
   )
 }
 
+const AR_MODELS = MODELS.filter(m => m.id === 'prod-xylem3')
+
 export default function Test3DPage() {
   return (
     <div style={{ background: '#000', minHeight: '100vh', padding: '80px 32px 40px' }}>
       <div style={{ fontFamily: 'monospace', fontSize: 11, color: '#444', marginBottom: 32 }}>
         /test-3d — same layout &amp; HDR as product detail page · pre-loaded with current settings · drag to rotate
       </div>
-      {MODELS.map(m => <ModelTest key={m.file} {...m} />)}
+      {MODELS.map(m => (
+        <div key={m.file}>
+          <ModelTest {...m} />
+          {AR_MODELS.some(am => am.file === m.file) && (
+            <>
+              <div style={{ fontFamily: 'monospace', fontSize: 10, color: '#c9a96e', margin: '-32px 0 32px', letterSpacing: '0.1em' }}>
+                ↓ AR-SPECIFIC ORIENTATION PANEL FOR {m.name.toUpperCase()} — separate coordinate system, see note below ↓
+              </div>
+              <ARTest {...m} />
+            </>
+          )}
+        </div>
+      ))}
     </div>
   )
 }
