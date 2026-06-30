@@ -265,7 +265,7 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
     'prod-xylem3':    { cam:[-0.01,-0.67,3],      rot:[-3.622,2.818,-0.002], fov:78, exposure:0.6,  ambient:0,   key:0.0, fill:1.6 },
     'prod-xylem4':    { cam:[-0.01,-0.67,3],      rot:[-3.622,2.818,-0.002], fov:78, exposure:0.6,  ambient:0,   key:0.0, fill:1.6 },
     'prod-quadcane':  { cam:[0.18,-0.14,2.43],    rot:[2.308,1.588,-0.702],  fov:45, exposure:0.65, ambient:0,   key:0.0, fill:0.8 },
-  'prod-cedar':     { cam:[-0.08,0.56,3.03],    rot:[0.138,-0.792,-1.502], fov:49, exposure:0.25, ambient:0,   key:2.0, fill:0.7 },
+  'prod-cedar':     { cam:[0.14,0.12,2.75],      rot:[-3.362,-0.892,-3.142], fov:57, exposure:1.35, ambient:0,  key:2.3, fill:0.0 },
   }
   const s = (productId && MODEL_SETTINGS[productId]) ? MODEL_SETTINGS[productId]
     : { cam:[0,0,0.82] as [number,number,number], rot:[0,0,0] as [number,number,number], fov:28, exposure:0.75, ambient:0.04, key:0.08, fill:0.2 }
