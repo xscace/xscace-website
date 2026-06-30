@@ -428,9 +428,22 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
             currentYRef.current = s.rot[1]
 
             // Use original GLB materials for all products (colours set by 3D designer)
+            // Exception: prod-aster6 overrides to matte black plastic regardless of GLB material
+            const isAster = productId === 'prod-aster6'
             model.traverse((child: any) => {
               if (!child.isMesh) return
-              origMatsRef.current.set(child, child.material)
+              if (isAster) {
+                const mat = new THREE.MeshStandardMaterial({
+                  color: new THREE.Color(0x0d0d0d),
+                  roughness: 0.82,
+                  metalness: 0.0,
+                  envMapIntensity: 0.05,
+                })
+                child.material = mat
+                origMatsRef.current.set(child, mat)
+              } else {
+                origMatsRef.current.set(child, child.material)
+              }
               wireMatsRef.current.set(child, new THREE.MeshBasicMaterial({
                 color: new THREE.Color(0xc9a96e), wireframe: true, transparent: true, opacity: 0.3,
               }))
