@@ -1454,6 +1454,125 @@ function VideoGallery({ images, videos, productName, getImageUrl }: {
 }
 
 
+// ── FABRIC PILL ──────────────────────────────────────────────────────────────
+function FabricPill() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const pillRef   = useRef<HTMLSpanElement>(null)
+  const rafRef    = useRef<number>(0)
+
+  useEffect(() => {
+    const canvas = canvasRef.current!
+    const pill   = pillRef.current!
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    const W = pill.offsetWidth || 140
+    const H = pill.offsetHeight || 28
+    canvas.width  = W * dpr
+    canvas.height = H * dpr
+    const ctx = canvas.getContext('2d')!
+    ctx.scale(dpr, dpr)
+
+    let offset = 0
+
+    const draw = () => {
+      ctx.clearRect(0, 0, W, H)
+      const spacing = 5
+      // Warp threads — vertical, slowly drifting left
+      for (let x = (offset % spacing) - spacing; x < W + spacing; x += spacing) {
+        const a = 0.055 + Math.abs(Math.sin((x + offset * 0.3) * 0.18)) * 0.06
+        ctx.strokeStyle = `rgba(220,200,170,${a})`
+        ctx.lineWidth = 0.8
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke()
+      }
+      // Weft threads — horizontal, alternating slightly lighter/darker
+      for (let y = 0; y < H; y += spacing) {
+        const a = 0.045 + Math.abs(Math.sin(y * 0.35 + offset * 0.08)) * 0.055
+        ctx.strokeStyle = `rgba(200,180,148,${a})`
+        ctx.lineWidth = 0.8
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke()
+      }
+      // Slow diagonal sheen sweep
+      const sweepX = ((offset * 0.6) % (W + 80)) - 40
+      const sg = ctx.createLinearGradient(sweepX - 20, 0, sweepX + 20, H)
+      sg.addColorStop(0,   'rgba(240,220,185,0)')
+      sg.addColorStop(0.5, 'rgba(240,220,185,0.09)')
+      sg.addColorStop(1,   'rgba(240,220,185,0)')
+      ctx.fillStyle = sg
+      ctx.fillRect(0, 0, W, H)
+
+      offset += 0.35
+      rafRef.current = requestAnimationFrame(draw)
+    }
+    draw()
+    return () => cancelAnimationFrame(rafRef.current)
+  }, [])
+
+  return (
+    <span className="pd-pill-fabric" ref={pillRef}>
+      <span className="pd-fabric-border" aria-hidden="true"/>
+      <span className="pd-fabric-inner" aria-hidden="true"/>
+      <canvas ref={canvasRef} className="pd-fabric-canvas" aria-hidden="true"/>
+      <span className="pd-fabric-text">Custom Fabric</span>
+    </span>
+  )
+}
+
+// ── CHAMPAGNE FRAME PILL ──────────────────────────────────────────────────────
+function ChampagnePill() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const pillRef   = useRef<HTMLSpanElement>(null)
+  const rafRef    = useRef<number>(0)
+
+  useEffect(() => {
+    const canvas = canvasRef.current!
+    const pill   = pillRef.current!
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    const W = pill.offsetWidth || 220
+    const H = pill.offsetHeight || 28
+    canvas.width  = W * dpr
+    canvas.height = H * dpr
+    const ctx = canvas.getContext('2d')!
+    ctx.scale(dpr, dpr)
+
+    let offset = 0
+
+    const draw = () => {
+      ctx.clearRect(0, 0, W, H)
+      // Brushed metal lines — fine horizontal strokes at varying opacity
+      for (let y = 0; y < H; y++) {
+        const grain = Math.sin(y * 3.7 + offset * 0.04) * 0.5 + Math.sin(y * 7.3) * 0.3
+        const a = 0.025 + (grain + 1) * 0.022
+        ctx.strokeStyle = `rgba(215,185,120,${Math.max(0, Math.min(0.12, a))})`
+        ctx.lineWidth = 0.6
+        ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(W, y + 0.5); ctx.stroke()
+      }
+      // Champagne light sweep — slow diagonal band
+      const sweepX = ((offset * 0.45) % (W + 120)) - 60
+      const lg = ctx.createLinearGradient(sweepX - 30, 0, sweepX + 50, H)
+      lg.addColorStop(0,    'rgba(255,235,170,0)')
+      lg.addColorStop(0.3,  'rgba(255,235,170,0.07)')
+      lg.addColorStop(0.5,  'rgba(245,220,140,0.18)')
+      lg.addColorStop(0.7,  'rgba(255,235,170,0.07)')
+      lg.addColorStop(1,    'rgba(255,235,170,0)')
+      ctx.fillStyle = lg
+      ctx.fillRect(0, 0, W, H)
+
+      offset += 0.3
+      rafRef.current = requestAnimationFrame(draw)
+    }
+    draw()
+    return () => cancelAnimationFrame(rafRef.current)
+  }, [])
+
+  return (
+    <span className="pd-pill-champagne" ref={pillRef}>
+      <span className="pd-champagne-border" aria-hidden="true"/>
+      <span className="pd-champagne-inner" aria-hidden="true"/>
+      <canvas ref={canvasRef} className="pd-champagne-canvas" aria-hidden="true"/>
+      <span className="pd-champagne-text">Stainless Steel Champagne Frame</span>
+    </span>
+  )
+}
+
 // ── RAINBOW PILL ─────────────────────────────────────────────────────────────
 function RainbowPill() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -1944,8 +2063,8 @@ export default function ProductDetail({ product }: { product: Product }) {
 
               {/* Sage / Bergenia — fabric + frame finish tags */}
               {['prod-sage', 'prod-bergenia'].includes(product._id) && (<>
-                <span className="pd-pill">Custom Fabric</span>
-                <span className="pd-pill">Stainless Steel Champagne Frame</span>
+                <FabricPill/>
+                <ChampagnePill/>
               </>)}
 
             </div>
