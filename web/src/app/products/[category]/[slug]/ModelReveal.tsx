@@ -75,6 +75,13 @@ const CONSTRAINTS_MAP: Record<string, Constraint[]> = {
     { cross:'×', text:'No paint masking',           desc:'The grille accepts emulsion directly. One coat and the Aspen 8 disappears entirely into the ceiling. Available pre-painted or ready to accept any finish.', angle:{y:-Math.PI*0.28,x:0}, mode:'fingerprint' },
     { cross:'→', text:'40Hz to 22kHz. One cutout.', desc:'The Aspen 8 returns a full-range acoustic window — down to 40Hz — from a single 285mm cutout. One speaker. One hole. Nothing visible.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
   ],
+  'prod-oak': [
+    { cross:'×', text:'No passive compromise',      desc:'Three dedicated drivers — two 8.5″ woofers, a 5″ midrange, and a 1″ ceramic dome tweeter — each optimised for its band alone. No driver asked to do what it was not designed for.', angle:{y:0,x:0}, mode:'normal' },
+    { cross:'×', text:'No cabinet resonance',       desc:'The birch enclosure is braced and damped to produce no audible colouration. The structure exists to eliminate its own contribution — what you hear is only the programme material.', angle:{y:Math.PI*0.38,x:0}, mode:'normal' },
+    { cross:'×', text:'No off-axis degradation',    desc:'The PrecisionXover Array crossover maintains phase coherence and flat off-axis response across the listening room. Every seat hears the same speaker.', angle:{y:0,x:0.18}, mode:'normal' },
+    { cross:'×', text:'No visible hardware',        desc:'Flush-mounted within the wall plane. Grille forward of no surface. The room is the room — the speaker does not exist in the visual field, only the acoustic one.', angle:{y:-Math.PI*0.28,x:0}, mode:'fingerprint' },
+    { cross:'→', text:'40Hz to 22kHz. In the wall.', desc:'The Oak returns full cinema-grade bandwidth from inside the wall surface. 350W RMS, 3-way, 4Ω — built for the listening room that takes sound seriously.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
+  ],
   'prod-acacia6-pw': [
     { cross:'×', text:'No port noise',             desc:'XS-Flow port geometry eliminates turbulence at the vent exit. Full bass output at reference levels — no chuffing, no compression, no audible artefact.', angle:{y:0,x:0.1}, mode:'normal' },
     { cross:'×', text:'No external amplifier',     desc:'A 200W Class D amplifier lives inside the enclosure. One cable in, sound out. No rack, no matching, no separate power supply.', angle:{y:Math.PI*0.3,x:0}, mode:'normal' },
@@ -119,7 +126,7 @@ const CONSTRAINTS_DEFAULT: Constraint[] = [
   { cross:'→', text:'Engineered to disappear.',  desc:'When there is nothing to remove, design is complete.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
 ]
 
-const FLAGSHIP_IDS = ['prod-bonsai', 'prod-bonsai-ic', 'prod-cane', 'prod-cane-ic', 'prod-quadcane', 'prod-cedar', 'prod-ghost2', 'prod-aspen6', 'prod-aspen8', 'prod-aster6', 'prod-acacia6-pw', 'prod-acacia10-pw', 'prod-xylem2', 'prod-xylem3', 'prod-xylem4']
+const FLAGSHIP_IDS = ['prod-bonsai', 'prod-bonsai-ic', 'prod-cane', 'prod-cane-ic', 'prod-quadcane', 'prod-cedar', 'prod-ghost2', 'prod-aspen6', 'prod-aspen8', 'prod-aster6', 'prod-acacia6-pw', 'prod-acacia10-pw', 'prod-xylem2', 'prod-xylem3', 'prod-xylem4', 'prod-oak']
 
 interface Props {
   modelUrl?: string
@@ -306,6 +313,7 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
     'prod-xylem4':    { cam:[-0.01,-0.67,3],      rot:[-3.622,2.818,-0.002], fov:78, exposure:0.6,  ambient:0,   key:0.0, fill:1.6 },
     'prod-quadcane':  { cam:[0.18,-0.14,2.43],    rot:[2.308,1.588,-0.702],  fov:45, exposure:0.65, ambient:0,   key:0.0, fill:0.8 },
   'prod-cedar':     { cam:[0.14,0.12,2.75],      rot:[-3.362,-0.892,-3.142], fov:57, exposure:1.35, ambient:0,  key:2.3, fill:0.0 },
+  'prod-oak':       { cam:[0,0,3],              rot:[0.000,-0.502,0.000],  fov:65, exposure:0.85, ambient:0,   key:2.0, fill:0.5 },
   }
   const s = (productId && MODEL_SETTINGS[productId]) ? MODEL_SETTINGS[productId]
     : { cam:[0,0,0.82] as [number,number,number], rot:[0,0,0] as [number,number,number], fov:28, exposure:0.75, ambient:0.04, key:0.08, fill:0.2 }

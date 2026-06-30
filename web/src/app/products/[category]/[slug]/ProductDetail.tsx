@@ -2040,7 +2040,7 @@ export default function ProductDetail({ product }: { product: Product }) {
           productName={product.productName}
           getImageUrl={getImageUrl}
         />
-      ) : ['prod-cedar', 'prod-ghost2', 'prod-bonsai-ic', 'prod-cane-ic'].includes(product._id) && (product.lifestyleImages?.length ?? 0) > 0 ? (
+      ) : ['prod-cedar', 'prod-ghost2', 'prod-bonsai-ic', 'prod-cane-ic', 'prod-oak'].includes(product._id) && (product.lifestyleImages?.length ?? 0) > 0 ? (
         <section className="vg-section">
           <div className="vg-videos">
             <div className="vg-panel">
@@ -2789,7 +2789,7 @@ export default function ProductDetail({ product }: { product: Product }) {
       </section>
       </>)}
       {/* ── DOWNLOADS ── */}
-      {hasDownloads && (
+      {hasDownloads && product._id !== 'prod-oak' && (
         <section className="pd-section pd-downloads-section">
           <div className="pd-section-inner">
             <div className="pd-section-ey">Technical Documents</div>
