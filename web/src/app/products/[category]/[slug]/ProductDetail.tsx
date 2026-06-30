@@ -506,7 +506,7 @@ function ModelViewer({ modelUrl, productName, arUrl }: { modelUrl: string; produ
 // ── AR WALL BUTTON ────────────────────────────────────────────────────────────
 // Mobile: model-viewer hidden element → activateAR() (requires user gesture ✓)
 // Desktop: QR code pointing to this page → user taps button on phone
-function ARWallBtn({ modelUrl, productName }: { modelUrl: string; productName: string }) {
+function ARWallBtn({ modelUrl, productName, productId }: { modelUrl: string; productName: string; productId?: string }) {
   const [open, setOpen]       = useState(false)
   const [mvLoaded, setMvLoaded] = useState(false)
   const qrMountRef            = useRef<HTMLDivElement>(null)
@@ -532,8 +532,9 @@ function ARWallBtn({ modelUrl, productName }: { modelUrl: string; productName: s
       mv.setAttribute('ar', '')
       mv.setAttribute('ar-modes', 'webxr scene-viewer quick-look')
       mv.setAttribute('ar-scale', 'fixed')
-      mv.setAttribute('ar-placement', 'wall')
-      mv.setAttribute('orientation', '-90deg 0deg -90deg')
+      const isXylem = ['prod-xylem2','prod-xylem3','prod-xylem4'].includes(productId || '')
+      mv.setAttribute('ar-placement', isXylem ? 'floor' : 'wall')
+      mv.setAttribute('orientation', isXylem ? '-207.525deg 161.460deg -0.115deg' : '-90deg 0deg -90deg')
       mv.setAttribute('exposure', '0.05')
       mv.setAttribute('shadow-intensity', '0')
       mv.style.cssText = 'position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;top:0;left:0;'
@@ -1947,7 +1948,7 @@ export default function ProductDetail({ product }: { product: Product }) {
                 className="btn-prim" style={{color:'#000'}}>
                 Add to System →
               </a>
-              {product.model3dUrl && <ARWallBtn modelUrl={product.model3dUrl} productName={product.productName}/>}
+              {product.model3dUrl && <ARWallBtn modelUrl={product.model3dUrl} productName={product.productName} productId={product._id}/>}
               <a href={`/api/brochure/${product.slug?.current}`}
                 target="_blank" rel="noopener noreferrer"
                 className="pd-brochure-btn" aria-label="Download product brochure PDF">
