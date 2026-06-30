@@ -3297,6 +3297,87 @@ function DimensionDrawing({ product }: { product: any }) {
   const D = product.depthMm || 0
   if (!H && !W) return null
 
+  const C = '#c9a96e'
+  const CA = 'rgba(201,169,110,0.3)'
+  const CT = 'rgba(201,169,110,0.5)'
+  const CF = 'rgba(201,169,110,0.06)'
+
+  // ── Ghost 2.0: custom portrait rendering ──
+  // Generic logic rotates H=172.72 × W=28.5 into a 280×46px flat bar which
+  // looks nothing like the product. Render it as a tall slim column instead.
+  if (product._id === 'prod-ghost2') {
+    const scale = Math.min(44 / W, 230 / H)   // ensure visible width ≥ 40px
+    const pW = W * scale
+    const pH = H * scale
+    const pD = Math.min(D * scale * 0.6, 26)
+    const iso = pD * 0.5
+    const svgW = pW + iso + 100
+    const svgH = pH + iso + 64
+    const ox = 48, oy = svgH - 36
+
+    return (
+      <section className="dd-section">
+        <div className="dd-body">
+          <div className="dd-svg-wrap">
+            <svg viewBox={`0 0 ${svgW} ${svgH}`} className="dd-svg" xmlns="http://www.w3.org/2000/svg">
+              {/* Front face */}
+              <rect x={ox} y={oy - pH} width={pW} height={pH} fill={CF} stroke={C} strokeWidth="0.8"/>
+              {/* Micro-perf dots */}
+              {Array.from({length: Math.floor(pH / 5)}, (_, ri) =>
+                Array.from({length: Math.floor(pW / 5)}, (_, ci) => (
+                  <circle key={`${ri}-${ci}`}
+                    cx={ox + 3 + ci * 5} cy={oy - pH + 4 + ri * 5}
+                    r="0.55" fill={C} opacity="0.28"/>
+                ))
+              )}
+              {/* Top face */}
+              {pD > 0 && <polygon
+                points={`${ox},${oy-pH} ${ox+iso},${oy-pH-iso} ${ox+pW+iso},${oy-pH-iso} ${ox+pW},${oy-pH}`}
+                fill={CF} stroke={C} strokeWidth="0.8"/>}
+              {/* Right face */}
+              {pD > 0 && <polygon
+                points={`${ox+pW},${oy-pH} ${ox+pW+iso},${oy-pH-iso} ${ox+pW+iso},${oy-iso} ${ox+pW},${oy}`}
+                fill="rgba(201,169,110,0.03)" stroke={C} strokeWidth="0.8"/>}
+              {/* Width (bottom) */}
+              <line x1={ox} y1={oy+10} x2={ox+pW} y2={oy+10} stroke={CA} strokeWidth="0.5"/>
+              <line x1={ox} y1={oy+5} x2={ox} y2={oy+15} stroke={CA} strokeWidth="0.5"/>
+              <line x1={ox+pW} y1={oy+5} x2={ox+pW} y2={oy+15} stroke={CA} strokeWidth="0.5"/>
+              <text x={ox+pW/2} y={oy+26} fill={CT} fontSize="8"
+                fontFamily="DM Mono,monospace" textAnchor="middle">W {W}mm</text>
+              {/* Height (left) */}
+              <line x1={ox-10} y1={oy} x2={ox-10} y2={oy-pH} stroke={CA} strokeWidth="0.5"/>
+              <line x1={ox-15} y1={oy} x2={ox-5} y2={oy} stroke={CA} strokeWidth="0.5"/>
+              <line x1={ox-15} y1={oy-pH} x2={ox-5} y2={oy-pH} stroke={CA} strokeWidth="0.5"/>
+              <text x={ox-22} y={oy-pH/2} fill={CT} fontSize="8"
+                fontFamily="DM Mono,monospace" textAnchor="middle"
+                transform={`rotate(-90,${ox-22},${oy-pH/2})`}>H {H}mm</text>
+              {/* Depth */}
+              {pD > 0 && <>
+                <line x1={ox+pW+3} y1={oy-3} x2={ox+pW+iso+3} y2={oy-iso-3} stroke={CA} strokeWidth="0.5"/>
+                <text x={ox+pW+iso/2+10} y={oy-iso/2} fill={CT} fontSize="8"
+                  fontFamily="DM Mono,monospace">D {D}mm</text>
+              </>}
+              {/* Mounting point markers */}
+              <circle cx={ox+pW/2} cy={oy-pH*0.25} r="2" fill="none" stroke={CA}
+                strokeWidth="0.5" strokeDasharray="2 1.5"/>
+              <circle cx={ox+pW/2} cy={oy-pH*0.75} r="2" fill="none" stroke={CA}
+                strokeWidth="0.5" strokeDasharray="2 1.5"/>
+            </svg>
+          </div>
+          <div className="dd-actions">
+            <a href={`/api/specsheet/${product.slug?.current || product.productName}`}
+              target="_blank" rel="noopener noreferrer" className="dd-download-btn">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
+              </svg>
+              Spec Sheet
+            </a>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
   // Rotate so the longest physical dimension is always drawn horizontally
   // For tall speakers (H > W): rotate 90° so height runs left-right
   const isPortrait = H > W
@@ -3312,11 +3393,6 @@ function DimensionDrawing({ product }: { product: any }) {
   const pH = drawH * scale   // pixel height (vertical in drawing)
   const pD = D ? Math.min(D * scale * 0.6, 28) : 0
   const iso = pD * 0.5
-
-  const C = '#c9a96e'
-  const CA = 'rgba(201,169,110,0.3)'
-  const CT = 'rgba(201,169,110,0.5)'
-  const CF = 'rgba(201,169,110,0.06)'
 
   const svgW = pW + iso + 80
   const svgH = pH + iso + 64
