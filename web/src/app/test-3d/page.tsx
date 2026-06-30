@@ -16,6 +16,8 @@ const MODELS = [
   { id: 'prod-xylem3',     name: 'Xylem 3',          file: 'xylem-3-dsp-amplifier.glb' },
   { id: 'prod-oak',        name: 'Oak',              file: 'oak-in-wall-home-cinema-speaker.glb' },
   { id: 'prod-willow',     name: 'Willow',           file: 'willow-in-wall-home-cinema-speaker.glb' },
+  { id: 'prod-sage',       name: 'Sage',             file: 'sage-in-wall-speaker.glb' },
+  { id: 'prod-bergenia',   name: 'Bergenia',         file: 'bergenia-in-wall-speaker.glb' },
 ]
 
 // Current baked settings — pre-loaded so you can see the exact production view
@@ -34,6 +36,8 @@ const CURRENT: Record<string, any> = {
   'prod-xylem3':    { cam:[-0.01,-0.67,3],     rot:[-2.512,0,0],          fov:78, exposure:0.6,  ambient:0,   key:0,   fill:1.6 },
   'prod-oak':       { cam:[0,0,3],             rot:[0,-0.502,0],          fov:65, exposure:0.85, ambient:0,   key:2.0, fill:0.5 },
   'prod-willow':    { cam:[0,0,3],             rot:[0,-0.502,0],          fov:65, exposure:0.85, ambient:0,   key:2.0, fill:0.5 },
+  'prod-sage':      { cam:[0,0,3],             rot:[0,-0.502,0],          fov:65, exposure:0.85, ambient:0,   key:2.0, fill:0.5 },
+  'prod-bergenia':  { cam:[0,0,3],             rot:[0,-0.502,0],          fov:72, exposure:0.85, ambient:0,   key:2.0, fill:0.5 },
 }
 
 function buildHDR(THREE: any) {

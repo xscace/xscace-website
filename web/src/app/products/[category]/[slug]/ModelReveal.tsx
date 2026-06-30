@@ -75,6 +75,20 @@ const CONSTRAINTS_MAP: Record<string, Constraint[]> = {
     { cross:'×', text:'No paint masking',           desc:'The grille accepts emulsion directly. One coat and the Aspen 8 disappears entirely into the ceiling. Available pre-painted or ready to accept any finish.', angle:{y:-Math.PI*0.28,x:0}, mode:'fingerprint' },
     { cross:'→', text:'40Hz to 22kHz. One cutout.', desc:'The Aspen 8 returns a full-range acoustic window — down to 40Hz — from a single 285mm cutout. One speaker. One hole. Nothing visible.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
   ],
+  'prod-sage': [
+    { cross:'×', text:'No timbre mismatch',        desc:'The Sage is voice-matched across its 2-way crossover for a flat, consistent response from 50Hz to 22kHz. What the recording engineer heard is what reaches the listener — no colouration, no upper-mid push.', angle:{y:0,x:0}, mode:'normal' },
+    { cross:'×', text:'No cabinet resonance',       desc:'Internal bracing and damping ensure the enclosure makes no acoustic contribution. The Sage produces only what the driver produces — nothing added, nothing coloured.', angle:{y:Math.PI*0.38,x:0}, mode:'normal' },
+    { cross:'×', text:'No off-axis degradation',    desc:'Consistent imaging and tonality across the listening room. Every seat receives the same performance from the front stage — no sweet spot, no drop-off at the edges.', angle:{y:0,x:0.18}, mode:'normal' },
+    { cross:'×', text:'No visible hardware',        desc:'Flush-mounted into the wall plane. The Sage does not protrude, does not shadow, does not exist in the room visually — only acoustically.', angle:{y:-Math.PI*0.28,x:0}, mode:'fingerprint' },
+    { cross:'→', text:'50Hz to 22kHz. In the wall.', desc:'The Sage returns full-range performance from inside the wall surface — passive, precise, and completely invisible to the eye.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
+  ],
+  'prod-bergenia': [
+    { cross:'×', text:'No timbre shift',            desc:'The Bergenia is voice-matched to the Sage LCR. As sound moves from the front stage to the surround field, the tonal character remains identical — no colouration, no sense of leaving one speaker and entering another.', angle:{y:0,x:0}, mode:'normal' },
+    { cross:'×', text:'No cabinet resonance',       desc:'The enclosure is internally braced and acoustically damped. The structure produces no audible signature — only the programme material reaches the listener.', angle:{y:Math.PI*0.38,x:0}, mode:'normal' },
+    { cross:'×', text:'No pointing required',       desc:'Flat off-axis response ensures consistent imaging across the listening room. Every seat receives the same performance from the surround field.', angle:{y:0,x:0.18}, mode:'normal' },
+    { cross:'×', text:'No visible hardware',        desc:'Flush-mounted within the wall plane. The Bergenia does not exist in the visual field — only in the acoustic one.', angle:{y:-Math.PI*0.28,x:0}, mode:'fingerprint' },
+    { cross:'→', text:'The surround field, complete.', desc:'The Bergenia closes the loop on a Sage-based cinema system. Front, surround, height — one consistent acoustic signature across every channel.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
+  ],
   'prod-willow': [
     { cross:'×', text:'No timbre shift',           desc:'The Willow is voice-matched to the Oak LCR. As sound moves from the front stage to the surround field, the tonal character remains identical — no colouration, no sense of leaving one speaker system and entering another.', angle:{y:0,x:0}, mode:'normal' },
     { cross:'×', text:'No cabinet resonance',       desc:'The birch enclosure is internally braced and acoustically damped. The structure produces no audible signature — only the programme material reaches the listener.', angle:{y:Math.PI*0.38,x:0}, mode:'normal' },
@@ -133,7 +147,7 @@ const CONSTRAINTS_DEFAULT: Constraint[] = [
   { cross:'→', text:'Engineered to disappear.',  desc:'When there is nothing to remove, design is complete.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
 ]
 
-const FLAGSHIP_IDS = ['prod-bonsai', 'prod-bonsai-ic', 'prod-cane', 'prod-cane-ic', 'prod-quadcane', 'prod-cedar', 'prod-ghost2', 'prod-aspen6', 'prod-aspen8', 'prod-aster6', 'prod-acacia6-pw', 'prod-acacia10-pw', 'prod-xylem2', 'prod-xylem3', 'prod-xylem4', 'prod-oak', 'prod-willow']
+const FLAGSHIP_IDS = ['prod-bonsai', 'prod-bonsai-ic', 'prod-cane', 'prod-cane-ic', 'prod-quadcane', 'prod-cedar', 'prod-ghost2', 'prod-aspen6', 'prod-aspen8', 'prod-aster6', 'prod-acacia6-pw', 'prod-acacia10-pw', 'prod-xylem2', 'prod-xylem3', 'prod-xylem4', 'prod-oak', 'prod-willow', 'prod-sage', 'prod-bergenia']
 
 interface Props {
   modelUrl?: string
@@ -322,6 +336,8 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
   'prod-cedar':     { cam:[0.14,0.12,2.75],      rot:[-3.362,-0.892,-3.142], fov:57, exposure:1.35, ambient:0,  key:2.3, fill:0.0 },
   'prod-oak':       { cam:[0,0,3],              rot:[0.000,-0.502,0.000],  fov:65, exposure:0.85, ambient:0,   key:2.0, fill:0.5 },
   'prod-willow':    { cam:[0,0,3],              rot:[0.000,-0.502,0.000],  fov:65, exposure:0.85, ambient:0,   key:2.0, fill:0.5 },
+  'prod-sage':      { cam:[0,0,3],              rot:[0.000,-0.502,0.000],  fov:65, exposure:0.85, ambient:0,   key:2.0, fill:0.5 },
+  'prod-bergenia':  { cam:[0,0,3],              rot:[0.000,-0.502,0.000],  fov:72, exposure:0.85, ambient:0,   key:2.0, fill:0.5 },
   }
   const s = (productId && MODEL_SETTINGS[productId]) ? MODEL_SETTINGS[productId]
     : { cam:[0,0,0.82] as [number,number,number], rot:[0,0,0] as [number,number,number], fov:28, exposure:0.75, ambient:0.04, key:0.08, fill:0.2 }
