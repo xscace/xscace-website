@@ -532,9 +532,11 @@ function ARWallBtn({ modelUrl, productName, productId }: { modelUrl: string; pro
       mv.setAttribute('ar', '')
       mv.setAttribute('ar-modes', 'webxr scene-viewer quick-look')
       mv.setAttribute('ar-scale', 'fixed')
-      const isXylem = ['prod-xylem2','prod-xylem3','prod-xylem4'].includes(productId || '')
+      const isXylem  = ['prod-xylem2','prod-xylem3','prod-xylem4'].includes(productId || '')
+      const isCedar  = productId === 'prod-cedar'
       mv.setAttribute('ar-placement', isXylem ? 'floor' : 'wall')
       mv.setAttribute('orientation', isXylem ? '0deg 0deg 0deg' : '-90deg 0deg -90deg')
+      if (isCedar) mv.scale = '0.01 0.01 0.01'
       mv.setAttribute('exposure', '0.05')
       mv.setAttribute('shadow-intensity', '0')
       mv.style.cssText = 'position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;top:0;left:0;'
