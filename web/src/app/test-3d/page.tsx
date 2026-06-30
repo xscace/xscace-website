@@ -7,6 +7,7 @@ const MODELS = [
   { id: 'prod-ghost2',     name: 'Ghost 2.0',        file: 'ghost-2-0-slim-in-ceiling-speaker.glb' },
   { id: 'prod-acacia6-pw', name: 'Acacia 6 Powered', file: 'acacia-6-powered-subwoofer.glb' },
   { id: 'prod-quadcane',   name: 'QuadCane',         file: 'quadcane-slim-array-speaker.glb' },
+  { id: 'prod-cedar',     name: 'Cedar',            file: 'cedar-slim-array-speaker.glb' },
   { id: 'prod-xylem3',     name: 'Xylem 3',          file: 'xylem-3-dsp-amplifier.glb' },
 ]
 
@@ -17,6 +18,7 @@ const CURRENT: Record<string, any> = {
   'prod-ghost2':    { cam:[-0.01,0,3],         rot:[0.318,-0.012,0],      fov:69, exposure:0.9,  ambient:0,   key:0.8, fill:0   },
   'prod-acacia6-pw':{ cam:[0,0,3],             rot:[0,-0.702,0],          fov:78, exposure:0.15, ambient:0,   key:5.0, fill:0.8 },
   'prod-quadcane':  { cam:[0.18,-0.14,2.43],   rot:[2.308,1.588,-0.702],  fov:45, exposure:1.05, ambient:0,   key:0,   fill:0.7 },
+  'prod-cedar':     { cam:[-0.08,0.56,3.03],   rot:[0.138,-0.792,-1.502], fov:49, exposure:0.25, ambient:0,   key:2.0, fill:0.7 },
   'prod-xylem3':    { cam:[-0.01,-0.67,3],     rot:[-2.512,0,0],          fov:78, exposure:0.6,  ambient:0,   key:0,   fill:1.6 },
 }
 
