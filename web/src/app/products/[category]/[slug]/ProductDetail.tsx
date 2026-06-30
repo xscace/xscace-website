@@ -2038,6 +2038,28 @@ export default function ProductDetail({ product }: { product: Product }) {
           productName={product.productName}
           getImageUrl={getImageUrl}
         />
+      ) : product._id === 'prod-cedar' && (product.lifestyleImages?.length ?? 0) > 0 ? (
+        <section className="vg-section">
+          <div className="vg-videos">
+            <div className="vg-panel">
+              {(() => {
+                const url = getImageUrl(product.lifestyleImages[0], 1600)
+                return url ? <img src={url} alt={product.productName} className="vg-video-el" style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/> : null
+              })()}
+              <div className="vg-vignette"/>
+              <div className="vg-bottom-fade"/>
+            </div>
+            <div className="vg-divider"/>
+            <div className="vg-panel">
+              {(() => {
+                const url = product.lifestyleImages[1] ? getImageUrl(product.lifestyleImages[1], 1600) : null
+                return url ? <img src={url} alt={product.productName} className="vg-video-el" style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/> : null
+              })()}
+              <div className="vg-vignette"/>
+              <div className="vg-bottom-fade"/>
+            </div>
+          </div>
+        </section>
       ) : ['prod-acacia6-pw','prod-acacia10-pw'].includes(product._id) && product.galleryImages?.length > 0 ? (
         <section style={{background:'#000'}}>
           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:1}}>

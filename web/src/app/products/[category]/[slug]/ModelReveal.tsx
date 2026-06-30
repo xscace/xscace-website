@@ -26,6 +26,13 @@ const CONSTRAINTS_MAP: Record<string, Constraint[]> = {
     { cross:'×', text:'No compromise on finish',   desc:'Anodised 6061 aerospace aluminium. The finish is applied under electrical current — it becomes part of the metal itself. Available in any RAL.', angle:{y:-Math.PI*0.28,x:0}, mode:'fingerprint' },
     { cross:'→', text:'Four drivers. One voice.',  desc:'The QuadCane array is tuned as a single acoustic unit — four drivers time-aligned and phase-matched so the room hears one speaker, not four.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
   ],
+  'prod-cedar': [
+    { cross:'×', text:'No visible fixings',        desc:'Every fastener is concealed. The grille, baffle and chassis unite as a single uninterrupted surface — nothing to catch the eye, nothing to break the plane.', angle:{y:0,x:0}, mode:'normal' },
+    { cross:'×', text:'No draft angle',            desc:'CNC machined, not cast. Zero draft — every edge is geometrically perfect and flush. No taper, no step, no visible gap against the wall.', angle:{y:Math.PI*0.38,x:0}, mode:'normal' },
+    { cross:'×', text:'No unnecessary pattern',    desc:'The only perforations are acoustic. Each 0.7mm aperture exists because sound requires it — not for decoration.', angle:{y:0,x:0.18}, mode:'normal' },
+    { cross:'×', text:'No compromise on finish',   desc:'Anodised 6061 aerospace aluminium. The finish is applied under electrical current — it becomes part of the metal itself. Available in any RAL.', angle:{y:-Math.PI*0.28,x:0}, mode:'fingerprint' },
+    { cross:'→', text:'Just cedar. Just sound.',   desc:'When there is nothing to remove, design is complete. The Cedar exists at the point where engineering and restraint arrive at the same answer.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
+  ],
   'prod-ghost2': [
     { cross:'×', text:'Flush to 0.3mm',            desc:'The bezel sits within a 0.3mm tolerance of your ceiling plane. No lip, no shadow line, no visual interruption. The ceiling you designed remains exactly as drawn.', angle:{y:0,x:0}, mode:'normal' },
     { cross:'×', text:'No baffle diffraction',     desc:'The driver is recessed behind the micro-perforated grille. Sound exits before the baffle edge exists — eliminating the diffraction that colours conventional in-ceiling sound.', angle:{y:Math.PI*0.3,x:0.2}, mode:'normal' },
@@ -77,7 +84,7 @@ const CONSTRAINTS_DEFAULT: Constraint[] = [
   { cross:'→', text:'Engineered to disappear.',  desc:'When there is nothing to remove, design is complete.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
 ]
 
-const FLAGSHIP_IDS = ['prod-bonsai', 'prod-cane', 'prod-quadcane', 'prod-ghost2', 'prod-acacia6-pw', 'prod-acacia10-pw', 'prod-xylem2', 'prod-xylem3', 'prod-xylem4']
+const FLAGSHIP_IDS = ['prod-bonsai', 'prod-cane', 'prod-quadcane', 'prod-cedar', 'prod-ghost2', 'prod-acacia6-pw', 'prod-acacia10-pw', 'prod-xylem2', 'prod-xylem3', 'prod-xylem4']
 
 interface Props {
   modelUrl?: string
@@ -258,6 +265,7 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
     'prod-xylem3':    { cam:[-0.01,-0.67,3],      rot:[-3.622,2.818,-0.002], fov:78, exposure:0.6,  ambient:0,   key:0.0, fill:1.6 },
     'prod-xylem4':    { cam:[-0.01,-0.67,3],      rot:[-3.622,2.818,-0.002], fov:78, exposure:0.6,  ambient:0,   key:0.0, fill:1.6 },
     'prod-quadcane':  { cam:[0.18,-0.14,2.43],    rot:[2.308,1.588,-0.702],  fov:45, exposure:0.65, ambient:0,   key:0.0, fill:0.8 },
+  'prod-cedar':     { cam:[-0.08,0.56,3.03],    rot:[0.138,-0.792,-1.502], fov:49, exposure:0.25, ambient:0,   key:2.0, fill:0.7 },
   }
   const s = (productId && MODEL_SETTINGS[productId]) ? MODEL_SETTINGS[productId]
     : { cam:[0,0,0.82] as [number,number,number], rot:[0,0,0] as [number,number,number], fov:28, exposure:0.75, ambient:0.04, key:0.08, fill:0.2 }
