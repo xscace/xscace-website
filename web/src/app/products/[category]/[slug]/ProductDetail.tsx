@@ -2083,10 +2083,10 @@ export default function ProductDetail({ product }: { product: Product }) {
 
       {/* Ghost 2.0 — form factor world-first section */}
       {product._id === 'prod-ghost2' && (
-        <section style={{background:'#000', borderTop:'0.5px solid #111'}}>
+        <section style={{background:'#000'}}>
           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:0}}>
             {/* Copy */}
-            <div style={{padding:'72px 56px', borderRight:'0.5px solid #111'}}>
+            <div style={{padding:'72px 56px'}}>
               <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.22em',textTransform:'uppercase',color:'rgba(201,169,110,0.55)',marginBottom:20}}>Form Factor · World First</div>
               <h2 style={{fontFamily:"'Cormorant Garamond',serif",fontWeight:300,fontSize:'clamp(28px,3vw,52px)',color:'#eeebe5',lineHeight:1.08,marginBottom:24}}>
                 No ceiling speaker<br/>on Earth is built<br/><em style={{color:'#c9a96e',fontStyle:'italic'}}>like this.</em>
@@ -2183,14 +2183,14 @@ export default function ProductDetail({ product }: { product: Product }) {
           </div>
 
           {/* Stats row */}
-          <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',borderTop:'0.5px solid #111'}}>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)'}}>
             {([
               {val:'0.3mm', label:'Flush to ceiling plane'},
               {val:'80Hz',  label:'Low frequency limit'},
               {val:'×4',   label:'Driver array'},
               {val:'Magnetic', label:'Tool-free after bracket'},
             ] as {val:string;label:string}[]).map((s,i) => (
-              <div key={i} style={{padding:'32px 40px',borderRight:i<3?'0.5px solid #111':'none'}}>
+              <div key={i} style={{padding:'32px 40px'}}>
                 <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:36,color:'#c9a96e',lineHeight:1,marginBottom:8}}>{s.val}</div>
                 <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.14em',color:'rgba(200,196,188,0.3)',textTransform:'uppercase'}}>{s.label}</div>
               </div>
