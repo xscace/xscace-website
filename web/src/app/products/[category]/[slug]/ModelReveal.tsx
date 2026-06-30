@@ -27,11 +27,11 @@ const CONSTRAINTS_MAP: Record<string, Constraint[]> = {
     { cross:'→', text:'Four drivers. One voice.',  desc:'The QuadCane array is tuned as a single acoustic unit — four drivers time-aligned and phase-matched so the room hears one speaker, not four.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
   ],
   'prod-cedar': [
-    { cross:'×', text:'No visible fixings',        desc:'Every fastener is concealed. The grille, baffle and chassis unite as a single uninterrupted surface — nothing to catch the eye, nothing to break the plane.', angle:{y:0,x:0}, mode:'normal' },
-    { cross:'×', text:'No draft angle',            desc:'CNC machined, not cast. Zero draft — every edge is geometrically perfect and flush. No taper, no step, no visible gap against the wall.', angle:{y:Math.PI*0.38,x:0}, mode:'normal' },
-    { cross:'×', text:'No unnecessary pattern',    desc:'The only perforations are acoustic. Each 0.7mm aperture exists because sound requires it — not for decoration.', angle:{y:0,x:0.18}, mode:'normal' },
-    { cross:'×', text:'No compromise on finish',   desc:'Anodised 6061 aerospace aluminium. The finish is applied under electrical current — it becomes part of the metal itself. Available in any RAL.', angle:{y:-Math.PI*0.28,x:0}, mode:'fingerprint' },
-    { cross:'→', text:'Just cedar. Just sound.',   desc:'When there is nothing to remove, design is complete. The Cedar exists at the point where engineering and restraint arrive at the same answer.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
+    { cross:'×', text:'No wasted section',         desc:'75 × 75mm. The Cedar\'s entire cross-section is acoustic volume — no dead space, no decorative mass. Every cubic millimetre behind the grille face is load-bearing output.', angle:{y:0,x:0}, mode:'normal' },
+    { cross:'×', text:'No visible fixings',        desc:'Every fastener is concealed behind the grille plane. Wall, bracket, driver, baffle — resolved into a single vertical line. Nothing interrupts it from mounting point to top cap.', angle:{y:Math.PI*0.38,x:0}, mode:'normal' },
+    { cross:'×', text:'No arbitrary aperture',     desc:'The grille perforation pattern is derived from driver geometry, not imposed on it. Each opening is acoustically justified. The visual rhythm is a consequence of engineering.', angle:{y:0,x:0.18}, mode:'normal' },
+    { cross:'×', text:'No compromise on finish',   desc:'Anodised 6061 aerospace aluminium. Applied under electrical current — the finish becomes part of the metal itself. Consistent across every face, every angle. Available in any RAL.', angle:{y:-Math.PI*0.28,x:0}, mode:'fingerprint' },
+    { cross:'→', text:'75mm of wall. Full range.', desc:'The Cedar occupies 75mm of wall depth and returns a full-range array that scales from intimate rooms to large architectural spaces. It disappears — technically and visually — into the surface it serves.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
   ],
   'prod-ghost2': [
     { cross:'×', text:'Flush to 0.3mm',            desc:'The bezel sits within a 0.3mm tolerance of your ceiling plane. No lip, no shadow line, no visual interruption. The ceiling you designed remains exactly as drawn.', angle:{y:0,x:0}, mode:'normal' },
