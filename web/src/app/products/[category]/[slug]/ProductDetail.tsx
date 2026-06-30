@@ -1942,6 +1942,12 @@ export default function ProductDetail({ product }: { product: Product }) {
               {/* Custom RAL — spinning prism border + liquid drops */}
               {product.customRalAvailable && <RainbowPill/>}
 
+              {/* Sage / Bergenia — fabric + frame finish tags */}
+              {['prod-sage', 'prod-bergenia'].includes(product._id) && (<>
+                <span className="pd-pill">Custom Fabric</span>
+                <span className="pd-pill">Stainless Steel Champagne Frame</span>
+              </>)}
+
             </div>
 
             {/* CTAs */}
