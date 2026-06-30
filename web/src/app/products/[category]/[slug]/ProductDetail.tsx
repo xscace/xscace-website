@@ -2495,7 +2495,6 @@ export default function ProductDetail({ product }: { product: Product }) {
 
           return (
             <div key={setup._key} className="ci-setup">
-              {si > 0 && <div className="ci-divider-line" />}
               {/* Single flex row — each item is a fixed-width column */}
               <div className="ci-chain">
                 {items.map((item: any, idx: number) => (
