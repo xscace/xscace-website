@@ -40,6 +40,13 @@ const CONSTRAINTS_MAP: Record<string, Constraint[]> = {
     { cross:'×', text:'No asymmetric dispersion',  desc:'Dual coincident drivers deliver identical coverage at every listening position. No sweet spot. No dead zone. The room performs uniformly from every seat.', angle:{y:-Math.PI*0.25,x:0}, mode:'normal' },
     { cross:'→', text:'The ceiling you designed, exactly.', desc:'When there is nothing to see, the room speaks for itself. The Ghost 2.0 is the point where acoustic engineering becomes invisible.', angle:{y:Math.PI*0.15,x:-0.15}, mode:'normal', last:true },
   ],
+  'prod-cane-ic': [
+    { cross:'×', text:'No surface constraint',      desc:'The Cane IC installs flush into any flat surface — wall or ceiling — with the same bracket, the same cutout, the same result. One slim-array form factor. Zero compromises based on orientation.', angle:{y:0,x:0}, mode:'normal' },
+    { cross:'×', text:'No draft angle',              desc:'CNC machined, not cast. Zero draft on every edge — geometrically perfect and flush to any surface finish, any panel thickness, any wall material.', angle:{y:Math.PI*0.38,x:0}, mode:'normal' },
+    { cross:'×', text:'No unnecessary pattern',      desc:'The only perforations are acoustic. Each aperture exists because sound requires it — not for decoration. The visual rhythm is a direct consequence of driver geometry.', angle:{y:0,x:0.18}, mode:'normal' },
+    { cross:'×', text:'No compromise on finish',     desc:'Anodised 6061 aerospace aluminium. Applied under electrical current — the finish becomes part of the metal itself. Available in any RAL. Matches any interior, every time.', angle:{y:-Math.PI*0.28,x:0}, mode:'fingerprint' },
+    { cross:'→', text:'Wall or ceiling. One line.',  desc:'The Cane IC is the same slim vertical line whether it disappears into a wall or a ceiling. The room decides the orientation. The speaker does not.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
+  ],
   'prod-bonsai-ic': [
     { cross:'×', text:'No surface constraint',      desc:'The Bonsai IC installs flush into any flat surface — wall or ceiling — with the same bracket, the same cutout, the same result. One form factor. Zero compromises based on where the surface happens to be.', angle:{y:0,x:0}, mode:'normal' },
     { cross:'×', text:'No visible fixings',          desc:'Every fastener is concealed behind the grille plane. Nothing to catch the eye, nothing to interrupt the surface. The wall and the speaker become the same plane.', angle:{y:Math.PI*0.38,x:0}, mode:'normal' },
@@ -112,7 +119,7 @@ const CONSTRAINTS_DEFAULT: Constraint[] = [
   { cross:'→', text:'Engineered to disappear.',  desc:'When there is nothing to remove, design is complete.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
 ]
 
-const FLAGSHIP_IDS = ['prod-bonsai', 'prod-bonsai-ic', 'prod-cane', 'prod-quadcane', 'prod-cedar', 'prod-ghost2', 'prod-aspen6', 'prod-aspen8', 'prod-aster6', 'prod-acacia6-pw', 'prod-acacia10-pw', 'prod-xylem2', 'prod-xylem3', 'prod-xylem4']
+const FLAGSHIP_IDS = ['prod-bonsai', 'prod-bonsai-ic', 'prod-cane', 'prod-cane-ic', 'prod-quadcane', 'prod-cedar', 'prod-ghost2', 'prod-aspen6', 'prod-aspen8', 'prod-aster6', 'prod-acacia6-pw', 'prod-acacia10-pw', 'prod-xylem2', 'prod-xylem3', 'prod-xylem4']
 
 interface Props {
   modelUrl?: string
@@ -287,6 +294,7 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
         'prod-bonsai':    { cam:[0.18,2.00,3],      rot:[0.158,-0.582,-1.572], fov:60, exposure:0.25,  ambient:0,   key:0.0, fill:3.7 },
     'prod-bonsai-ic': { cam:[0.18,2.00,3],      rot:[0.158,-0.582,-1.572], fov:60, exposure:0.25,  ambient:0,   key:0.0, fill:3.7 },
     'prod-cane':      { cam:[-0.08,0.56,3.03], rot:[0.138,-0.792,-1.502], fov:49, exposure:0.25, ambient:0,   key:2.0, fill:0.7 },
+    'prod-cane-ic':   { cam:[-0.08,0.56,3.03], rot:[0.138,-0.792,-1.502], fov:49, exposure:0.25, ambient:0,   key:2.0, fill:0.7 },
     'prod-ghost2':    { cam:[-0.01,0,3],          rot:[0.318,-0.012,0.000],  fov:69, exposure:0.9,  ambient:0,   key:0.8, fill:0   },
     'prod-aster6':    { cam:[0,0,3],              rot:[0.000,-0.702,0.000],  fov:72, exposure:0.85, ambient:0,   key:2.5, fill:0.5 },
     'prod-aspen6':    { cam:[0,0,3],              rot:[0.000,-0.702,0.000],  fov:72, exposure:0.85, ambient:0,   key:2.5, fill:0.5 },
