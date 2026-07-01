@@ -2405,12 +2405,12 @@ export default function ProductDetail({ product }: { product: Product }) {
               <div style={{background:'#060606',border:'0.5px solid rgba(255,255,255,0.05)',padding:'40px 36px'}}>
                 <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.2em',textTransform:'uppercase',color:'rgba(201,169,110,0.45)',marginBottom:20}}>Banyan Canopy · Full Range</div>
                 <div style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(20px,2.2vw,28px)',color:'rgba(238,235,229,0.88)',marginBottom:28,lineHeight:1.1}}>
-                  2× 6.5″ Woofer<br/>1× 1.4″ Compression Driver<br/><span style={{color:'rgba(201,169,110,0.7)',fontSize:'0.72em'}}>+ Waveguide</span>
+                  6× 5″ Woofer<br/>3× 1.5″ Compression Driver<br/><span style={{color:'rgba(201,169,110,0.7)',fontSize:'0.72em'}}>+ Waveguide</span>
                 </div>
                 <div style={{width:'100%',height:'0.5px',background:'rgba(255,255,255,0.06)',marginBottom:28}}/>
                 {[
                   ['Power','600W RMS'],
-                  ['Dispersion','110° H · 15° V'],
+                  ['Dispersion','100° H · 12° V'],
                   ['Waveguide','Controlled HF coverage'],
                   ['Range','80Hz – 20kHz'],
                 ].map(([l,v]) => (
@@ -2429,9 +2429,9 @@ export default function ProductDetail({ product }: { product: Product }) {
                 <div style={{width:'100%',height:'0.5px',background:'rgba(255,255,255,0.06)',marginBottom:28}}/>
                 {[
                   ['Power','1200W RMS'],
-                  ['Drivers','Dual 12″ Long-Throw'],
-                  ['DSP','Built-in · Network Control'],
-                  ['Range','35Hz – 120Hz'],
+                  ['Drivers','2× 12″ Long-Throw'],
+                  ['DSP','2000W Built-in · Class D'],
+                  ['Range','27Hz – 120Hz'],
                 ].map(([l,v]) => (
                   <div key={l} style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:10}}>
                     <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.1em',color:'rgba(238,235,229,0.28)',textTransform:'uppercase'}}>{l}</span>
@@ -2446,11 +2446,19 @@ export default function ProductDetail({ product }: { product: Product }) {
             {/* Combined system callout */}
             <div style={{marginTop:1,background:'#060606',border:'0.5px solid rgba(201,169,110,0.1)',padding:'28px 36px',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:20}}>
               <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.14em',textTransform:'uppercase',color:'rgba(238,235,229,0.32)'}}>
-                Complete System · 3× Woofer · 2× 12″ Sub · 1× Compression Driver with Waveguide
+                Complete System · 6× 5″ Woofer · 2× 12″ Sub · 3× 1.5″ Compression Driver with Waveguide
               </div>
               <div style={{fontFamily:"'DM Serif Display',serif",fontSize:22,color:'rgba(201,169,110,0.85)',letterSpacing:'-.01em'}}>
                 1800W Combined
               </div>
+            </div>
+            {/* 3D Set model */}
+            <div style={{marginTop:1}}>
+              <ModelReveal
+                modelUrl="/models/banyan-set-line-array-system.glb"
+                productName="Banyan Set"
+                productId="prod-banyan-canopy"
+              />
             </div>
           </div>
         </section>
@@ -2466,10 +2474,10 @@ export default function ProductDetail({ product }: { product: Product }) {
             </h2>
             <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:1}}>
               {[
-                { label:'In Banyan Pith', desc:'Cabinet-integrated. Slots directly into the Banyan Pith enclosure for a combined sub-bass + full-range column.', idx:1 },
-                { label:'Wall Mount',     desc:'Fixed surface mount. Bracket-mounted directly to any wall or architectural surface, angled for coverage.', idx:2 },
-                { label:'Hanging Mount',  desc:'Suspended from overhead structure. Rigging points accept standard M10 hardware.', idx:3 },
-                { label:'Fly Mount',      desc:'Array configuration. Stack multiple Canopy units vertically for line array behaviour in large outdoor venues.', idx:4 },
+                { label:'Baseplate',      desc:'Ground or plinth-mounted. The Canopy stands upright on a weighted baseplate — no wall or ceiling fixing required.', idx:1 },
+                { label:'Wall Mount',     desc:'Fixed surface mount. Bracket-mounted directly to any wall or architectural surface, angled for optimal coverage.', idx:2 },
+                { label:'Hanging Mount',  desc:'Suspended from overhead structure. Rigging points accept standard M10 hardware for truss or beam suspension.', idx:3 },
+                { label:'Pole Mount',     desc:'Pole-mounted above the Banyan Pith enclosure for a self-contained full-range column system.', idx:4 },
               ].map((m) => {
                 const img = product.galleryImages?.[m.idx] ? getImageUrl(product.galleryImages[m.idx], 700) : null
                 return (
