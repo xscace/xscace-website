@@ -2629,9 +2629,6 @@ export default function ProductDetail({ product }: { product: Product }) {
                 )
               })}
             </div>
-            <p style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:'rgba(238,235,229,0.18)',letterSpacing:'.08em',marginTop:16}}>
-              Upload mounting position images to Banyan Canopy gallery slots 2–5 in Sanity Studio to populate the image cells above.
-            </p>
           </div>
         </section>
       )}
