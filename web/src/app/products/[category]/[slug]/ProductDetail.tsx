@@ -2008,24 +2008,30 @@ export default function ProductDetail({ product }: { product: Product }) {
     style.id = 'power-shake-styles'
     style.textContent = `
       @keyframes _ps_shake {
-        0%  { transform:translate(0,0); }
-        8%  { transform:translate(-3px,-2px); }
-        16% { transform:translate(3px,2px); }
-        24% { transform:translate(-2px,3px); }
-        32% { transform:translate(2px,-1px); }
-        40% { transform:translate(-1px,2px); }
-        50% { transform:translate(3px,-3px); }
-        60% { transform:translate(-2px,1px); }
-        70% { transform:translate(1px,-2px); }
-        80% { transform:translate(-3px,3px); }
-        90% { transform:translate(1px,-1px); }
-        100%{ transform:translate(0,0); }
+        0%   { transform:translate(0,0); }
+        5%   { transform:translate(-3px,-2px); }
+        10%  { transform:translate(3px,2px); }
+        15%  { transform:translate(-3px,3px); }
+        20%  { transform:translate(2px,-2px); }
+        28%  { transform:translate(-2px,1.5px); }
+        36%  { transform:translate(1.5px,-1.5px); }
+        46%  { transform:translate(-1px,1px); }
+        56%  { transform:translate(0.8px,-0.8px); }
+        66%  { transform:translate(-0.5px,0.5px); }
+        78%  { transform:translate(0.3px,-0.3px); }
+        90%  { transform:translate(-0.2px,0.2px); }
+        100% { transform:translate(0,0); }
       }
-      body._ps_shaking { animation: _ps_shake 0.42s ease-in-out; }
+      @keyframes _ps_vfade {
+        0%   { opacity:1; }
+        30%  { opacity:0.6; }
+        100% { opacity:0; }
+      }
+      body._ps_shaking { animation: _ps_shake 1.4s cubic-bezier(0.25,0,0.1,1) forwards; }
       #_ps_vignette { position:fixed;inset:0;pointer-events:none;z-index:9999;
         background:radial-gradient(ellipse at center,transparent 45%,rgba(0,0,0,0.95) 100%);
         opacity:0;transition:opacity 0.06s; }
-      body._ps_shaking #_ps_vignette { opacity:1; }
+      body._ps_shaking #_ps_vignette { animation: _ps_vfade 1.4s ease-out forwards; }
     `
     document.head.appendChild(style)
 
