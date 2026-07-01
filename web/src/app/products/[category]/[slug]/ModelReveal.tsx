@@ -103,6 +103,13 @@ const CONSTRAINTS_MAP: Record<string, Constraint[]> = {
     { cross:'×', text:'No visible hardware',        desc:'Flush-mounted within the wall plane. Grille forward of no surface. The room is the room — the Willow does not exist in the visual field, only the acoustic one.', angle:{y:-Math.PI*0.28,x:0}, mode:'fingerprint' },
     { cross:'→', text:'The surround field, complete.', desc:'The Willow closes the loop on an Oak-based cinema system. Front, surround, height — one consistent acoustic signature across every channel.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
   ],
+  'prod-banyan-canopy': [
+    { cross:'×', text:'No passive compromise',      desc:'Two 6.5″ aluminium-cone woofers and a 1.4″ compression driver with waveguide — each driver optimised for its band. No single driver stretched beyond its design envelope.', angle:{y:0,x:0}, mode:'normal' },
+    { cross:'×', text:'No narrowing off-axis',      desc:'The waveguide-loaded compression driver maintains controlled 110° horizontal dispersion across the full high-frequency band. Every seat in the venue receives the same tonal character.', angle:{y:Math.PI*0.38,x:0}, mode:'normal' },
+    { cross:'×', text:'No separate amplifier rack', desc:'Pairs natively with the Banyan Pith — a powered sub-bass enclosure with built-in DSP amplification. The full system ships, connects, and calibrates as a single unit.', angle:{y:0,x:0.18}, mode:'normal' },
+    { cross:'×', text:'No weather concession',      desc:'IP-rated housing, UV-stabilised finish, marine-grade fixings. The Canopy is designed to stay outside permanently — not just survive the occasional shower.', angle:{y:-Math.PI*0.28,x:0}, mode:'fingerprint' },
+    { cross:'→', text:'600W. Outdoors. Architectural.', desc:'Professional-grade SPL from a form factor that respects the space it occupies. The Banyan Canopy is PA performance without PA aesthetics.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
+  ],
   'prod-oak': [
     { cross:'×', text:'No passive compromise',      desc:'Three dedicated drivers — two 8.5″ woofers, a 5″ midrange, and a 1″ ceramic dome tweeter — each optimised for its band alone. No driver asked to do what it was not designed for.', angle:{y:0,x:0}, mode:'normal' },
     { cross:'×', text:'No cabinet resonance',       desc:'The birch enclosure is braced and damped to produce no audible colouration. The structure exists to eliminate its own contribution — what you hear is only the programme material.', angle:{y:Math.PI*0.38,x:0}, mode:'normal' },
@@ -154,7 +161,7 @@ const CONSTRAINTS_DEFAULT: Constraint[] = [
   { cross:'→', text:'Engineered to disappear.',  desc:'When there is nothing to remove, design is complete.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
 ]
 
-const FLAGSHIP_IDS = ['prod-bonsai', 'prod-bonsai-ic', 'prod-cane', 'prod-cane-ic', 'prod-quadcane', 'prod-quadcane-ic', 'prod-cedar', 'prod-ghost2', 'prod-aspen6', 'prod-aspen8', 'prod-aster6', 'prod-acacia6-pw', 'prod-acacia10-pw', 'prod-xylem2', 'prod-xylem3', 'prod-xylem4', 'prod-oak', 'prod-willow', 'prod-sage', 'prod-bergenia']
+const FLAGSHIP_IDS = ['prod-bonsai', 'prod-bonsai-ic', 'prod-cane', 'prod-cane-ic', 'prod-quadcane', 'prod-quadcane-ic', 'prod-cedar', 'prod-ghost2', 'prod-aspen6', 'prod-aspen8', 'prod-aster6', 'prod-acacia6-pw', 'prod-acacia10-pw', 'prod-xylem2', 'prod-xylem3', 'prod-xylem4', 'prod-oak', 'prod-willow', 'prod-sage', 'prod-bergenia', 'prod-banyan-canopy']
 
 interface Props {
   modelUrl?: string
@@ -345,7 +352,8 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
   'prod-quadcane-ic': { cam:[-0.08,0.56,3.03], rot:[0.138,-0.792,-1.502], fov:49, exposure:0.25, ambient:0,   key:2.0, fill:0.7 },
   'prod-willow':    { cam:[0,0,3],              rot:[0.000,-0.502,0.000],  fov:65, exposure:0.85, ambient:0,   key:2.0, fill:0.5 },
   'prod-sage':      { cam:[0,0,3],              rot:[0.000,-0.502,0.000],  fov:65, exposure:0.85, ambient:0,   key:2.0, fill:0.5 },
-  'prod-bergenia':  { cam:[0,0,3],              rot:[0.000,-0.502,0.000],  fov:72, exposure:0.85, ambient:0,   key:2.0, fill:0.5 },
+  'prod-bergenia':    { cam:[0,0,3],              rot:[0.000,-0.502,0.000],  fov:72, exposure:0.85, ambient:0,   key:2.0, fill:0.5 },
+  'prod-banyan-canopy':{ cam:[0,0,3.2],          rot:[0.000,-0.45,0.000],   fov:62, exposure:1.0,  ambient:0,   key:2.2, fill:0.4 },
   }
   const s = (productId && MODEL_SETTINGS[productId]) ? MODEL_SETTINGS[productId]
     : { cam:[0,0,0.82] as [number,number,number], rot:[0,0,0] as [number,number,number], fov:28, exposure:0.75, ambient:0.04, key:0.08, fill:0.2 }

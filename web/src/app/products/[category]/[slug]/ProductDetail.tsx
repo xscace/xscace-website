@@ -2273,7 +2273,7 @@ export default function ProductDetail({ product }: { product: Product }) {
       {/* wave divider */}
       <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
       {/* ── MODEL REVEAL + CONSTRAINTS ── */}
-      {isOutdoor && !product.model3dUrl ? (() => {
+      {['prod-camphor6','prod-camphor8'].includes(product._id) ? (() => {
         const life0 = product.lifestyleImages?.[0] ? getImageUrl(product.lifestyleImages[0], 1200) : null
         const life1 = product.lifestyleImages?.[1] ? getImageUrl(product.lifestyleImages[1], 1200) : null
         const gal2  = product.galleryImages?.[2]   ? getImageUrl(product.galleryImages[2],   1200) : null
@@ -2387,6 +2387,121 @@ export default function ProductDetail({ product }: { product: Product }) {
 
             
 
+
+      {/* ── BANYAN SET SECTION ── */}
+      {product._id === 'prod-banyan-canopy' && (
+        <section style={{background:'#000',borderTop:'0.5px solid rgba(255,255,255,0.05)',padding:'72px 0'}}>
+          <div style={{maxWidth:900,margin:'0 auto',padding:'0 60px'}}>
+            <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.22em',textTransform:'uppercase',color:'rgba(201,169,110,0.5)',marginBottom:12}}>The Banyan Set</div>
+            <h2 style={{fontFamily:"'DM Serif Display',serif",fontWeight:400,fontSize:'clamp(28px,3.5vw,48px)',color:'rgba(238,235,229,0.9)',lineHeight:1.06,marginBottom:16}}>
+              Two cabinets.<br/><em style={{fontStyle:'italic'}}>One complete system.</em>
+            </h2>
+            <p style={{fontFamily:"'DM Mono',monospace",fontSize:12,lineHeight:1.75,color:'rgba(238,235,229,0.38)',maxWidth:480,marginBottom:56}}>
+              The Banyan Canopy and Banyan Pith are engineered as a pair. Every crossover point, every SPL alignment, every DSP preset is calibrated for this combination.
+            </p>
+            {/* Two-cabinet layout */}
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:1}}>
+              {/* Canopy card */}
+              <div style={{background:'#060606',border:'0.5px solid rgba(255,255,255,0.05)',padding:'40px 36px'}}>
+                <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.2em',textTransform:'uppercase',color:'rgba(201,169,110,0.45)',marginBottom:20}}>Banyan Canopy · Full Range</div>
+                <div style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(20px,2.2vw,28px)',color:'rgba(238,235,229,0.88)',marginBottom:28,lineHeight:1.1}}>
+                  2× 6.5″ Woofer<br/>1× 1.4″ Compression Driver<br/><span style={{color:'rgba(201,169,110,0.7)',fontSize:'0.72em'}}>+ Waveguide</span>
+                </div>
+                <div style={{width:'100%',height:'0.5px',background:'rgba(255,255,255,0.06)',marginBottom:28}}/>
+                {[
+                  ['Power','600W RMS'],
+                  ['Dispersion','110° H · 15° V'],
+                  ['Waveguide','Controlled HF coverage'],
+                  ['Range','80Hz – 20kHz'],
+                ].map(([l,v]) => (
+                  <div key={l} style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:10}}>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.1em',color:'rgba(238,235,229,0.28)',textTransform:'uppercase'}}>{l}</span>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:'rgba(238,235,229,0.65)'}}>{v}</span>
+                  </div>
+                ))}
+              </div>
+              {/* Pith card */}
+              <div style={{background:'#060606',border:'0.5px solid rgba(255,255,255,0.05)',padding:'40px 36px'}}>
+                <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.2em',textTransform:'uppercase',color:'rgba(201,169,110,0.45)',marginBottom:20}}>Banyan Pith · Powered Sub-Bass</div>
+                <div style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(20px,2.2vw,28px)',color:'rgba(238,235,229,0.88)',marginBottom:28,lineHeight:1.1}}>
+                  2× 12″ Subwoofer<br/><span style={{color:'rgba(201,169,110,0.7)',fontSize:'0.72em'}}>Built-in DSP Amplifier</span>
+                </div>
+                <div style={{width:'100%',height:'0.5px',background:'rgba(255,255,255,0.06)',marginBottom:28}}/>
+                {[
+                  ['Power','1200W RMS'],
+                  ['Drivers','Dual 12″ Long-Throw'],
+                  ['DSP','Built-in · Network Control'],
+                  ['Range','35Hz – 120Hz'],
+                ].map(([l,v]) => (
+                  <div key={l} style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:10}}>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.1em',color:'rgba(238,235,229,0.28)',textTransform:'uppercase'}}>{l}</span>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:'rgba(238,235,229,0.65)'}}>{v}</span>
+                  </div>
+                ))}
+                <a href="/products/outdoor-series/banyan-pith-dual-12-inch-powered-subwoofer" style={{display:'inline-flex',alignItems:'center',gap:8,marginTop:20,fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.12em',textTransform:'uppercase',color:'rgba(201,169,110,0.8)',textDecoration:'none',borderBottom:'0.5px solid rgba(201,169,110,0.3)',paddingBottom:2}}>
+                  View Banyan Pith →
+                </a>
+              </div>
+            </div>
+            {/* Combined system callout */}
+            <div style={{marginTop:1,background:'#060606',border:'0.5px solid rgba(201,169,110,0.1)',padding:'28px 36px',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:20}}>
+              <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.14em',textTransform:'uppercase',color:'rgba(238,235,229,0.32)'}}>
+                Complete System · 3× Woofer · 2× 12″ Sub · 1× Compression Driver with Waveguide
+              </div>
+              <div style={{fontFamily:"'DM Serif Display',serif",fontSize:22,color:'rgba(201,169,110,0.85)',letterSpacing:'-.01em'}}>
+                1800W Combined
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── BANYAN MOUNT YOUR WAY ── */}
+      {product._id === 'prod-banyan-canopy' && (
+        <section style={{background:'#000',borderTop:'0.5px solid rgba(255,255,255,0.05)',padding:'72px 0 80px'}}>
+          <div style={{maxWidth:900,margin:'0 auto',padding:'0 60px'}}>
+            <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.22em',textTransform:'uppercase',color:'rgba(201,169,110,0.5)',marginBottom:12}}>Installation</div>
+            <h2 style={{fontFamily:"'DM Serif Display',serif",fontWeight:400,fontSize:'clamp(28px,3.5vw,48px)',color:'rgba(238,235,229,0.9)',lineHeight:1.06,marginBottom:48}}>
+              Mount it <em style={{fontStyle:'italic'}}>your way.</em>
+            </h2>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:1}}>
+              {[
+                { label:'In Banyan Pith', desc:'Cabinet-integrated. Slots directly into the Banyan Pith enclosure for a combined sub-bass + full-range column.', idx:1 },
+                { label:'Wall Mount',     desc:'Fixed surface mount. Bracket-mounted directly to any wall or architectural surface, angled for coverage.', idx:2 },
+                { label:'Hanging Mount',  desc:'Suspended from overhead structure. Rigging points accept standard M10 hardware.', idx:3 },
+                { label:'Fly Mount',      desc:'Array configuration. Stack multiple Canopy units vertically for line array behaviour in large outdoor venues.', idx:4 },
+              ].map((m) => {
+                const img = product.galleryImages?.[m.idx] ? getImageUrl(product.galleryImages[m.idx], 700) : null
+                return (
+                  <div key={m.label} style={{background:'#060606',border:'0.5px solid rgba(255,255,255,0.05)',display:'flex',flexDirection:'column'}}>
+                    {/* Image slot */}
+                    <div style={{aspectRatio:'1',background:'#080808',overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center',borderBottom:'0.5px solid rgba(255,255,255,0.04)'}}>
+                      {img
+                        ? <img src={img} alt={m.label} style={{width:'100%',height:'100%',objectFit:'cover',display:'block',filter:'brightness(0.85)'}}/>
+                        : (
+                          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" opacity="0.12">
+                            <rect x="1" y="1" width="30" height="30" rx="2" stroke="rgba(201,169,110,1)" strokeWidth="0.8"/>
+                            <line x1="1" y1="1" x2="31" y2="31" stroke="rgba(201,169,110,1)" strokeWidth="0.5"/>
+                            <line x1="31" y1="1" x2="1" y2="31" stroke="rgba(201,169,110,1)" strokeWidth="0.5"/>
+                          </svg>
+                        )
+                      }
+                    </div>
+                    {/* Text */}
+                    <div style={{padding:'20px 18px 24px'}}>
+                      <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.18em',textTransform:'uppercase',color:'rgba(201,169,110,0.6)',marginBottom:8}}>{m.label}</div>
+                      <div style={{fontFamily:"'DM Mono',monospace",fontSize:10,lineHeight:1.65,color:'rgba(238,235,229,0.32)'}}>{m.desc}</div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <p style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:'rgba(238,235,229,0.18)',letterSpacing:'.08em',marginTop:16}}>
+              Upload mounting position images to Banyan Canopy gallery slots 2–5 in Sanity Studio to populate the image cells above.
+            </p>
+          </div>
+        </section>
+      )}
 
       {/* wave divider */}
       <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
