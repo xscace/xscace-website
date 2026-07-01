@@ -1792,8 +1792,9 @@ export default function ProductDetail({ product }: { product: Product }) {
 
   const heroImgUrl = getImageUrl(product.heroImage, 1600)
   const badges = product.proprietaryTechBadges?.split(',').map(s => s.trim().replace(/\s+/g, ' ').replace(/™/g, '')).filter(Boolean) || []
-  const isAmp = product.category?.slug?.current === 'amplifier-series'
-  const isSub = product.category?.slug?.current === 'subwoofer-series'
+  const isAmp     = product.category?.slug?.current === 'amplifier-series'
+  const isSub     = product.category?.slug?.current === 'subwoofer-series'
+  const isOutdoor = product.category?.slug?.current === 'outdoor-series'
   const mountingMethodsList = product.mountingMethods
     ? (Array.isArray(product.mountingMethods)
         ? product.mountingMethods
@@ -1867,6 +1868,133 @@ export default function ProductDetail({ product }: { product: Product }) {
     waveRafsRef.current = rafs
     return () => rafs.forEach(id => cancelAnimationFrame(id))
   }, [])
+
+  // Outdoor theme — leaf veins + breathing mist + still dew beads
+  useEffect(() => {
+    if (!isOutdoor) return
+
+    const leafC = document.createElement('canvas')
+    const mistC = document.createElement('canvas')
+    const dewC  = document.createElement('canvas')
+    ;[leafC, mistC, dewC].forEach((c, i) => {
+      c.style.cssText = `position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:${i};`
+      document.body.appendChild(c)
+    })
+
+    function sz(c: HTMLCanvasElement) { c.width = window.innerWidth; c.height = window.innerHeight }
+    ;[leafC, mistC, dewC].forEach(sz)
+    const onResize = () => { [leafC, mistC, dewC].forEach(sz); renderDew() }
+    window.addEventListener('resize', onResize)
+
+    // leaf veins
+    const lx = leafC.getContext('2d')!
+    const leafNodes = Array.from({length: 8}, () => ({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight * 2.5,
+      scale: 0.7 + Math.random() * 1.0,
+      speed: 0.025 + Math.random() * 0.04,
+      alpha: 0.018 + Math.random() * 0.022,
+      phase: Math.random() * Math.PI * 2,
+    }))
+    function drawVein(ctx: CanvasRenderingContext2D, cx: number, cy: number, ang: number, len: number, depth: number, a: number) {
+      if (depth <= 0 || len < 10) return
+      const ex = cx + Math.cos(ang) * len, ey = cy + Math.sin(ang) * len
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(ex, ey)
+      ctx.strokeStyle = `rgba(40,80,25,${a})`; ctx.lineWidth = depth * 0.4; ctx.stroke()
+      drawVein(ctx, ex, ey, ang - 0.42, len * 0.58, depth - 1, a * 0.7)
+      drawVein(ctx, ex, ey, ang + 0.42, len * 0.58, depth - 1, a * 0.7)
+    }
+    let bgT = 0, leafRaf = 0
+    const animLeaf = () => {
+      const W = leafC.width, H = leafC.height
+      lx.clearRect(0, 0, W, H)
+      leafNodes.forEach(n => {
+        const drift = Math.sin(bgT * 0.15 + n.phase) * 12
+        const y = ((n.y + bgT * n.speed * 20) % (H * 2.5)) - H * 0.3
+        drawVein(lx, n.x + drift, y, -Math.PI / 2, 50 * n.scale, 4, n.alpha)
+      })
+      bgT += 0.016; leafRaf = requestAnimationFrame(animLeaf)
+    }
+    animLeaf()
+
+    // mist
+    const mx = mistC.getContext('2d')!
+    const mistPatches = [
+      { cx:0.06, cy:0.18, rx:0.26, ry:0.17, phase:0,   speed:420, base:0.055 },
+      { cx:0.82, cy:0.42, rx:0.22, ry:0.24, phase:160, speed:500, base:0.048 },
+      { cx:0.48, cy:0.78, rx:0.32, ry:0.15, phase:310, speed:370, base:0.042 },
+      { cx:0.03, cy:0.68, rx:0.20, ry:0.22, phase:230, speed:460, base:0.035 },
+      { cx:0.78, cy:0.06, rx:0.24, ry:0.14, phase:440, speed:430, base:0.030 },
+    ]
+    let mistT = 0, mistRaf = 0
+    const animMist = () => {
+      const W = mistC.width, H = mistC.height
+      mx.clearRect(0, 0, W, H)
+      mistPatches.forEach(p => {
+        const breathe = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin((mistT + p.phase) / p.speed))
+        const a = p.base * breathe
+        const rx = p.rx * W, ry = p.ry * H
+        mx.save(); mx.translate(p.cx * W, p.cy * H); mx.scale(1, ry / rx)
+        const g = mx.createRadialGradient(0, 0, 0, 0, 0, rx)
+        g.addColorStop(0,    `rgba(215,210,202,${a})`)
+        g.addColorStop(0.45, `rgba(215,210,202,${a * 0.3})`)
+        g.addColorStop(1,    `rgba(215,210,202,0)`)
+        mx.beginPath(); mx.arc(0, 0, rx, 0, Math.PI * 2)
+        mx.fillStyle = g; mx.fill(); mx.restore()
+      })
+      mistT++; mistRaf = requestAnimationFrame(animMist)
+    }
+    animMist()
+
+    // dew beads — static, drawn once
+    const dx = dewC.getContext('2d')!
+    const beadDefs = [
+      { fx:0.08, fy:0.22, rx:7,   ry:9   },
+      { fx:0.31, fy:0.09, rx:5,   ry:6.5 },
+      { fx:0.67, fy:0.15, rx:8,   ry:11  },
+      { fx:0.88, fy:0.31, rx:4,   ry:5.5 },
+      { fx:0.14, fy:0.55, rx:6,   ry:8   },
+      { fx:0.52, fy:0.48, rx:3.5, ry:4.5 },
+      { fx:0.76, fy:0.62, rx:7,   ry:9.5 },
+      { fx:0.93, fy:0.71, rx:4,   ry:5   },
+      { fx:0.22, fy:0.82, rx:5.5, ry:7   },
+      { fx:0.58, fy:0.88, rx:6,   ry:8   },
+    ]
+    function drawBead(ctx: CanvasRenderingContext2D, bx: number, by: number, rx: number, ry: number) {
+      ctx.save(); ctx.translate(bx, by)
+      const halo = ctx.createRadialGradient(0, 0, ry * 0.6, 0, 0, ry * 1.15)
+      halo.addColorStop(0, `rgba(201,169,110,0)`); halo.addColorStop(1, `rgba(201,169,110,0.06)`)
+      ctx.beginPath(); ctx.ellipse(0, 0, rx * 1.15, ry * 1.15, 0, 0, Math.PI * 2)
+      ctx.fillStyle = halo; ctx.fill()
+      ctx.beginPath(); ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2)
+      const body = ctx.createRadialGradient(-rx * 0.28, -ry * 0.3, 0, rx * 0.1, ry * 0.1, Math.max(rx, ry) * 1.1)
+      body.addColorStop(0,    `rgba(245,242,235,0.22)`)
+      body.addColorStop(0.35, `rgba(220,215,205,0.09)`)
+      body.addColorStop(0.75, `rgba(180,170,150,0.04)`)
+      body.addColorStop(1,    `rgba(140,130,110,0.01)`)
+      ctx.fillStyle = body; ctx.fill()
+      ctx.beginPath(); ctx.ellipse(-rx * 0.26, -ry * 0.3, rx * 0.28, ry * 0.18, -0.35, 0, Math.PI * 2)
+      ctx.fillStyle = `rgba(255,252,244,0.55)`; ctx.fill()
+      ctx.beginPath(); ctx.ellipse(rx * 0.28, ry * 0.35, rx * 0.1, ry * 0.07, 0.4, 0, Math.PI * 2)
+      ctx.fillStyle = `rgba(255,245,210,0.2)`; ctx.fill()
+      ctx.beginPath(); ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2)
+      ctx.strokeStyle = `rgba(220,210,190,0.12)`; ctx.lineWidth = 0.6; ctx.stroke()
+      ctx.restore()
+    }
+    function renderDew() {
+      const W = dewC.width, H = dewC.height
+      dx.clearRect(0, 0, W, H)
+      beadDefs.forEach(b => drawBead(dx, b.fx * W, b.fy * H, b.rx, b.ry))
+    }
+    renderDew()
+
+    return () => {
+      cancelAnimationFrame(leafRaf)
+      cancelAnimationFrame(mistRaf)
+      window.removeEventListener('resize', onResize)
+      ;[leafC, mistC, dewC].forEach(c => c.remove())
+    }
+  }, [isOutdoor])
 
   // Spec rows helper
   const specRow = (label: string, value: any, unit = '') =>
@@ -2145,11 +2273,29 @@ export default function ProductDetail({ product }: { product: Product }) {
       {/* wave divider */}
       <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
       {/* ── MODEL REVEAL + CONSTRAINTS ── */}
-      <ModelReveal
-        modelUrl={product.model3dUrl || `/models/${product.slug?.current}.glb`}
-        productName={product.productName}
-        productId={product._id}
-      />
+      {isOutdoor && !product.model3dUrl && product.galleryImages?.length > 0 ? (
+        <section style={{background:'#000',padding:'72px 0 0'}}>
+          <div style={{maxWidth:900,margin:'0 auto',padding:'0 60px'}}>
+            <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.22em',textTransform:'uppercase',color:'rgba(201,169,110,0.5)',marginBottom:20}}>Design · All Angles</div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:2}}>
+              {product.galleryImages.slice(0,3).map((img: any, i: number) => {
+                const url = getImageUrl(img, 900)
+                return url ? (
+                  <div key={i} style={{background:'#080808',overflow:'hidden',aspectRatio:'1',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px'}}>
+                    <img src={url} alt={img.alt || product.productName} style={{width:'100%',height:'100%',objectFit:'contain',display:'block'}}/>
+                  </div>
+                ) : null
+              })}
+            </div>
+          </div>
+        </section>
+      ) : (
+        <ModelReveal
+          modelUrl={product.model3dUrl || `/models/${product.slug?.current}.glb`}
+          productName={product.productName}
+          productId={product._id}
+        />
+      )}
 
 
             
@@ -2165,7 +2311,7 @@ export default function ProductDetail({ product }: { product: Product }) {
           productName={product.productName}
           getImageUrl={getImageUrl}
         />
-      ) : ['prod-cedar', 'prod-ghost2', 'prod-bonsai-ic', 'prod-cane-ic', 'prod-oak', 'prod-willow', 'prod-sage', 'prod-bergenia', 'prod-quadcane', 'prod-quadcane-ic'].includes(product._id) && (product.lifestyleImages?.length ?? 0) > 0 ? (
+      ) : ['prod-cedar', 'prod-ghost2', 'prod-bonsai-ic', 'prod-cane-ic', 'prod-oak', 'prod-willow', 'prod-sage', 'prod-bergenia', 'prod-quadcane', 'prod-quadcane-ic', 'prod-camphor6', 'prod-camphor8'].includes(product._id) && (product.lifestyleImages?.length ?? 0) > 0 ? (
         <section className="vg-section">
           <div className="vg-videos">
             <div className="vg-panel">

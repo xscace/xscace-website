@@ -7,140 +7,58 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400&family=DM+Serif+Display:ital@0;1&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #000; color: rgba(238,235,229,0.88); font-family: 'DM Mono', monospace; min-height: 100vh; overflow-x: hidden; }
 
-  body {
-    background: #000;
-    color: rgba(238,235,229,0.88);
-    font-family: 'DM Mono', monospace;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+  #bg-canvas   { position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0; }
+  #mist-canvas { position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:1; }
+  #dew-canvas  { position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2; }
+  .page        { position:relative;z-index:5;max-width:900px;margin:0 auto; }
 
-  /* ── LEAF VEIN BG ── */
-  #bg-canvas {
-    position: fixed; inset: 0;
-    width: 100%; height: 100%;
-    pointer-events: none; z-index: 0;
-  }
-  .page { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; }
+  .hero { padding:80px 60px 48px; position:relative; }
+  .hero-ey { font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:rgba(201,169,110,0.5);margin-bottom:16px; }
+  .hero-title { font-family:'DM Serif Display',serif;font-size:clamp(40px,6vw,68px);font-weight:400;line-height:1.05;letter-spacing:-.02em;color:rgba(238,235,229,0.92);margin-bottom:10px; }
+  .hero-title em { font-style:italic; }
+  .hero-tagline { font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(238,235,229,0.28);margin-bottom:32px; }
 
-  /* ── HERO ── */
-  .hero { padding: 80px 60px 48px; position: relative; }
-  .hero-ey {
-    font-size: 9px; letter-spacing: .22em; text-transform: uppercase;
-    color: rgba(201,169,110,0.5); margin-bottom: 16px;
-  }
-  .hero-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: clamp(40px, 6vw, 68px);
-    font-weight: 400; line-height: 1.05; letter-spacing: -.02em;
-    color: rgba(238,235,229,0.92); margin-bottom: 10px;
-  }
-  .hero-title em { font-style: italic; }
-  .hero-tagline {
-    font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
-    color: rgba(238,235,229,0.28); margin-bottom: 32px;
-  }
+  .pills { display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:32px; }
+  .pill { font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:rgba(238,235,229,0.4);border:1px solid rgba(255,255,255,0.07);padding:5px 12px; }
 
-  /* ── PILLS (existing style) ── */
-  .pills { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 32px; }
-  .pill {
-    font-size: 9px; letter-spacing: .14em; text-transform: uppercase;
-    color: rgba(238,235,229,0.4);
-    border: 1px solid rgba(255,255,255,0.07);
-    padding: 5px 12px;
-  }
-
-  /* ── IP RATING PILL — champagne border, dew drops ── */
-  .pill-ip {
-    position: relative; display: inline-flex; align-items: center;
-    font-size: 9px; letter-spacing: .14em; text-transform: uppercase;
-    color: rgba(238,235,229,0.88);
-    padding: 5px 14px; overflow: hidden; isolation: isolate;
-  }
-  .pill-ip-border {
-    position: absolute; inset: -1px;
-    background: linear-gradient(115deg,
-      rgba(180,145,70,0.5) 0%,
-      rgba(240,210,140,0.9) 30%,
-      rgba(200,170,95,0.6) 50%,
-      rgba(240,215,145,0.9) 70%,
-      rgba(180,145,70,0.5) 100%
-    );
-    background-size: 300% 100%;
-    animation: champSlide 3.8s ease-in-out infinite;
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor; mask-composite: exclude;
-    padding: 1px; pointer-events: none; z-index: 0;
-  }
+  .pill-ip { position:relative;display:inline-flex;align-items:center;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:rgba(238,235,229,0.88);padding:5px 14px;overflow:hidden;isolation:isolate; }
+  .pill-ip-border { position:absolute;inset:-1px;background:linear-gradient(115deg,rgba(180,145,70,0.5) 0%,rgba(240,210,140,0.9) 30%,rgba(200,170,95,0.6) 50%,rgba(240,215,145,0.9) 70%,rgba(180,145,70,0.5) 100%);background-size:300% 100%;animation:champSlide 3.8s ease-in-out infinite;-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;padding:1px;pointer-events:none;z-index:0; }
   @keyframes champSlide { 0%,100%{background-position:0% 0} 50%{background-position:100% 0} }
-  .pill-ip-inner { position: absolute; inset: 1px; background: #000; z-index: 1; pointer-events: none; }
-  .pill-ip-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; z-index: 2; }
-  .pill-ip-text { position: relative; z-index: 3; }
+  .pill-ip-inner { position:absolute;inset:1px;background:#000;z-index:1;pointer-events:none; }
+  .pill-ip-text { position:relative;z-index:3; }
 
-  /* ── WAVE DIVIDER (existing champagne) ── */
-  .divider { position: relative; width: 100%; height: 56px; }
-  .divider canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .divider { position:relative;width:100%;height:56px; }
+  .divider canvas { position:absolute;inset:0;width:100%;height:100%;display:block; }
 
-  /* ── SECTION ── */
-  .section { padding: 48px 60px; position: relative; }
-  .section-ey {
-    font-size: 9px; letter-spacing: .22em; text-transform: uppercase;
-    color: rgba(201,169,110,0.5); margin-bottom: 12px;
-  }
-  .section-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: clamp(26px, 4vw, 42px);
-    font-weight: 400; color: rgba(238,235,229,0.88); margin-bottom: 20px;
-  }
-  .section-title em { font-style: italic; }
-  .section-body {
-    font-size: 13px; line-height: 1.75;
-    color: rgba(238,235,229,0.42); max-width: 520px;
-  }
+  .section { padding:48px 60px;position:relative; }
+  .section-ey { font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:rgba(201,169,110,0.5);margin-bottom:12px; }
+  .section-title { font-family:'DM Serif Display',serif;font-size:clamp(26px,4vw,42px);font-weight:400;color:rgba(238,235,229,0.88);margin-bottom:20px; }
+  .section-title em { font-style:italic; }
+  .section-body { font-size:13px;line-height:1.75;color:rgba(238,235,229,0.42);max-width:520px; }
 
-  /* ── SPECS ── */
-  .specs {
-    display: flex; gap: 0;
-    border-top: 1px solid rgba(255,255,255,0.05); margin-top: 40px;
-  }
-  .spec { flex: 1; padding: 18px 22px; border-right: 1px solid rgba(255,255,255,0.05); }
-  .spec:last-child { border-right: none; }
-  .spec-label {
-    font-size: 8px; letter-spacing: .18em; text-transform: uppercase;
-    color: rgba(201,169,110,0.45); margin-bottom: 6px;
-  }
-  .spec-val { font-size: 18px; color: rgba(238,235,229,0.75); }
-  .spec-unit { font-size: 10px; color: rgba(238,235,229,0.28); }
+  .specs { display:flex;gap:0;border-top:1px solid rgba(255,255,255,0.05);margin-top:40px; }
+  .spec { flex:1;padding:18px 22px;border-right:1px solid rgba(255,255,255,0.05); }
+  .spec:last-child { border-right:none; }
+  .spec-label { font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:rgba(201,169,110,0.45);margin-bottom:6px; }
+  .spec-val { font-size:18px;color:rgba(238,235,229,0.75); }
+  .spec-unit { font-size:10px;color:rgba(238,235,229,0.28); }
 
-  /* ── LEAF CORNER — very subtle ── */
-  .leaf-corner {
-    position: absolute; opacity: 0.07; pointer-events: none;
-  }
-  .leaf-corner.tl { top: 14px; left: 14px; }
-  .leaf-corner.tr { top: 14px; right: 14px; transform: scaleX(-1); }
-
-  .preview-note {
-    position: fixed; bottom: 18px; right: 18px;
-    font-size: 8px; letter-spacing: .18em; text-transform: uppercase;
-    color: rgba(238,235,229,0.12); z-index: 999;
-  }
+  .leaf-corner { position:absolute;opacity:0.07;pointer-events:none; }
+  .leaf-corner.tl { top:14px;left:14px; }
+  .leaf-corner.tr { top:14px;right:14px;transform:scaleX(-1); }
+  .preview-note { position:fixed;bottom:18px;right:18px;font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:rgba(238,235,229,0.12);z-index:999; }
 </style>
 </head>
 <body>
 
-<!-- Drifting leaf veins — very faint, background only -->
 <canvas id="bg-canvas"></canvas>
-<!-- Rain streaks layer -->
-<canvas id="rain-canvas" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
-<!-- Wet surface beads layer — sits over content sections -->
-<canvas id="bead-canvas" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;"></canvas>
+<canvas id="mist-canvas"></canvas>
+<canvas id="dew-canvas"></canvas>
 
 <div class="page">
-
-  <!-- HERO -->
   <div class="hero">
-    <!-- Barely-there corner leaves -->
     <svg class="leaf-corner tl" width="44" height="44" viewBox="0 0 44 44" fill="none">
       <path d="M3 41 Q6 18 22 3 Q26 16 18 28 Q30 22 41 26 Q28 36 3 41Z" fill="rgba(60,120,35,1)"/>
       <line x1="3" y1="41" x2="16" y2="26" stroke="rgba(80,160,50,0.6)" stroke-width="0.7"/>
@@ -150,136 +68,195 @@
       <path d="M3 41 Q6 18 22 3 Q26 16 18 28 Q30 22 41 26 Q28 36 3 41Z" fill="rgba(60,120,35,1)"/>
       <line x1="3" y1="41" x2="16" y2="26" stroke="rgba(80,160,50,0.6)" stroke-width="0.7"/>
     </svg>
-
     <div class="hero-ey">Outdoor Series · All-Weather</div>
     <h1 class="hero-title">Cedar <em>Outdoor</em></h1>
     <div class="hero-tagline">All-Weather Slim Array · Surface Mount</div>
-
     <div class="pills">
       <span class="pill">100W RMS</span>
       <span class="pill">8Ω</span>
       <span class="pill">Passive</span>
-
-      <!-- IP pill — champagne border, clear dew drops inside -->
       <span class="pill-ip" id="ip-pill">
         <span class="pill-ip-border"></span>
         <span class="pill-ip-inner"></span>
-        <canvas class="pill-ip-canvas" id="dew-canvas"></canvas>
         <span class="pill-ip-text">IP65 Rated</span>
       </span>
-
       <span class="pill">Custom RAL</span>
     </div>
   </div>
 
-  <!-- WAVE DIVIDER — same champagne as rest of site -->
   <div class="divider"><canvas id="div1"></canvas></div>
 
-  <!-- SECTION 1 -->
-  <div class="section" style="position:relative;">
-    <svg class="leaf-corner tl" width="36" height="36" viewBox="0 0 44 44" fill="none" style="opacity:0.05;">
-      <path d="M3 41 Q6 18 22 3 Q26 16 18 28 Q30 22 41 26 Q28 36 3 41Z" fill="rgba(60,120,35,1)"/>
-    </svg>
+  <div class="section">
     <div class="section-ey">Engineering</div>
     <h2 class="section-title">Built for the <em>elements</em></h2>
-    <p class="section-body">
-      UV-stabilised aerospace aluminium. Marine-grade stainless fixings. Every aperture sealed against ingress — identical acoustic performance whether shaded or left in standing rain.
-    </p>
+    <p class="section-body">UV-stabilised aerospace aluminium. Marine-grade stainless fixings. Every aperture sealed against ingress — identical acoustic performance whether shaded or left in standing rain.</p>
     <div class="specs">
-      <div class="spec">
-        <div class="spec-label">IP Rating</div>
-        <div class="spec-val">IP65</div>
-      </div>
-      <div class="spec">
-        <div class="spec-label">Temp Range</div>
-        <div class="spec-val">−30 <span class="spec-unit">to</span> +70<span class="spec-unit">°C</span></div>
-      </div>
-      <div class="spec">
-        <div class="spec-label">Housing</div>
-        <div class="spec-val" style="font-size:13px">6061 Aluminium</div>
-      </div>
-      <div class="spec">
-        <div class="spec-label">Fixings</div>
-        <div class="spec-val" style="font-size:13px">316 Marine SS</div>
-      </div>
+      <div class="spec"><div class="spec-label">IP Rating</div><div class="spec-val">IP65</div></div>
+      <div class="spec"><div class="spec-label">Temp Range</div><div class="spec-val">−30 <span class="spec-unit">to</span> +70<span class="spec-unit">°C</span></div></div>
+      <div class="spec"><div class="spec-label">Housing</div><div class="spec-val" style="font-size:13px">6061 Aluminium</div></div>
+      <div class="spec"><div class="spec-label">Fixings</div><div class="spec-val" style="font-size:13px">316 Marine SS</div></div>
     </div>
   </div>
 
-  <!-- WAVE DIVIDER 2 -->
   <div class="divider"><canvas id="div2"></canvas></div>
 
-  <!-- SECTION 2 -->
   <div class="section">
     <div class="section-ey">Design</div>
     <h2 class="section-title">Nothing to <em>see</em></h2>
-    <p class="section-body">
-      Zero-draft CNC geometry. Concealed fixings. The same micro-perforated grille pattern as the indoor Cedar. Outdoors, the only difference is what it survives.
-    </p>
+    <p class="section-body">Zero-draft CNC geometry. Concealed fixings. The same micro-perforated grille as the indoor Cedar. Outdoors, the only difference is what it survives.</p>
   </div>
-
 </div>
 
 <div class="preview-note">Outdoor Theme Preview</div>
 
 <script>
-// ── BACKGROUND: Drifting leaf veins, extremely faint ─────────────────────────
-const bgC = document.getElementById('bg-canvas')
-const bgX = bgC.getContext('2d')
-let bgW = bgC.width = window.innerWidth
-let bgH = bgC.height = window.innerHeight
-window.addEventListener('resize', () => {
-  bgW = bgC.width = window.innerWidth
-  bgH = bgC.height = window.innerHeight
-})
+function resizeCanvas(c) { c.width = window.innerWidth; c.height = window.innerHeight }
+const bgC   = document.getElementById('bg-canvas')
+const mistC = document.getElementById('mist-canvas')
+const dewC  = document.getElementById('dew-canvas')
+;[bgC, mistC, dewC].forEach(resizeCanvas)
+window.addEventListener('resize', () => [bgC, mistC, dewC].forEach(resizeCanvas))
 
-// Sparse, slow leaf vein structures
-const leafNodes = Array.from({length: 12}, () => ({
+// ── 1. LEAF VEIN BACKGROUND — slow drifting, very faint ──────────────────────
+const bgX = bgC.getContext('2d')
+const leafNodes = Array.from({length: 8}, () => ({
   x: Math.random() * window.innerWidth,
   y: Math.random() * window.innerHeight * 2.5,
-  scale: 0.5 + Math.random() * 1.2,
-  speed: 0.04 + Math.random() * 0.06,
-  alpha: 0.025 + Math.random() * 0.035,
+  scale: 0.7 + Math.random() * 1.0,
+  speed: 0.025 + Math.random() * 0.04,
+  alpha: 0.018 + Math.random() * 0.022,
   phase: Math.random() * Math.PI * 2,
 }))
-
-function drawLeafVein(ctx, cx, cy, angle, len, depth, a) {
+function drawVein(ctx, cx, cy, ang, len, depth, a) {
   if (depth <= 0 || len < 10) return
-  const ex = cx + Math.cos(angle) * len
-  const ey = cy + Math.sin(angle) * len
+  const ex = cx + Math.cos(ang) * len, ey = cy + Math.sin(ang) * len
   ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(ex, ey)
-  ctx.strokeStyle = `rgba(45,90,30,${a})`
-  ctx.lineWidth = depth * 0.5
-  ctx.stroke()
-  drawLeafVein(ctx, ex, ey, angle - 0.42, len * 0.58, depth - 1, a * 0.72)
-  drawLeafVein(ctx, ex, ey, angle + 0.42, len * 0.58, depth - 1, a * 0.72)
+  ctx.strokeStyle = `rgba(40,80,25,${a})`; ctx.lineWidth = depth * 0.4; ctx.stroke()
+  drawVein(ctx, ex, ey, ang - 0.42, len * 0.58, depth - 1, a * 0.7)
+  drawVein(ctx, ex, ey, ang + 0.42, len * 0.58, depth - 1, a * 0.7)
 }
-
 let bgT = 0
-;(function animateBg() {
-  bgX.clearRect(0, 0, bgW, bgH)
+;(function animBg() {
+  const W = bgC.width, H = bgC.height
+  bgX.clearRect(0, 0, W, H)
   leafNodes.forEach(n => {
-    const drift = Math.sin(bgT * 0.2 + n.phase) * 18
-    const y = ((n.y + bgT * n.speed * 28) % (bgH * 2.5)) - bgH * 0.3
-    drawLeafVein(bgX, n.x + drift, y, -Math.PI / 2 + Math.sin(bgT * 0.1 + n.phase) * 0.2, 55 * n.scale, 4, n.alpha)
+    const drift = Math.sin(bgT * 0.15 + n.phase) * 12
+    const y = ((n.y + bgT * n.speed * 20) % (H * 2.5)) - H * 0.3
+    drawVein(bgX, n.x + drift, y, -Math.PI / 2, 50 * n.scale, 4, n.alpha)
   })
-  bgT += 0.016
-  requestAnimationFrame(animateBg)
+  bgT += 0.016; requestAnimationFrame(animBg)
 })()
 
-// ── CHAMPAGNE WAVE DIVIDERS (same as site, keeps gold) ────────────────────────
+// ── 2. MIST — gentle breathing patches, very subtle ──────────────────────────
+const mistX = mistC.getContext('2d')
+const mistPatches = [
+  { cx:0.06, cy:0.18, rx:0.26, ry:0.17, phase:0,    speed:420, base:0.055 },
+  { cx:0.82, cy:0.42, rx:0.22, ry:0.24, phase:160,  speed:500, base:0.048 },
+  { cx:0.48, cy:0.78, rx:0.32, ry:0.15, phase:310,  speed:370, base:0.042 },
+  { cx:0.03, cy:0.68, rx:0.20, ry:0.22, phase:230,  speed:460, base:0.035 },
+  { cx:0.78, cy:0.06, rx:0.24, ry:0.14, phase:440,  speed:430, base:0.030 },
+]
+let mistT = 0
+;(function animMist() {
+  const W = mistC.width, H = mistC.height
+  mistX.clearRect(0, 0, W, H)
+  mistPatches.forEach(p => {
+    const breathe = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin((mistT + p.phase) / p.speed))
+    const a = p.base * breathe
+    const rx = p.rx * W, ry = p.ry * H
+    mistX.save(); mistX.translate(p.cx * W, p.cy * H); mistX.scale(1, ry / rx)
+    const g = mistX.createRadialGradient(0, 0, 0, 0, 0, rx)
+    g.addColorStop(0,    `rgba(215,210,202,${a})`)
+    g.addColorStop(0.45, `rgba(215,210,202,${a * 0.3})`)
+    g.addColorStop(1,    `rgba(215,210,202,0)`)
+    mistX.beginPath(); mistX.arc(0, 0, rx, 0, Math.PI * 2)
+    mistX.fillStyle = g; mistX.fill(); mistX.restore()
+  })
+  mistT++; requestAnimationFrame(animMist)
+})()
+
+// ── 3. DEW BEADS — still, perfectly rendered, placed sparingly ───────────────
+// A small number of large, beautiful beads — like rain that settled on glass
+const dewX = dewC.getContext('2d')
+const W0 = dewC.width, H0 = dewC.height
+
+// Positions chosen to feel natural — not symmetric, not uniform
+const beadDefs = [
+  { fx:0.08, fy:0.22, rx:7,  ry:9  },
+  { fx:0.31, fy:0.09, rx:5,  ry:6.5},
+  { fx:0.67, fy:0.15, rx:8,  ry:11 },
+  { fx:0.88, fy:0.31, rx:4,  ry:5.5},
+  { fx:0.14, fy:0.55, rx:6,  ry:8  },
+  { fx:0.52, fy:0.48, rx:3.5,ry:4.5},
+  { fx:0.76, fy:0.62, rx:7,  ry:9.5},
+  { fx:0.93, fy:0.71, rx:4,  ry:5  },
+  { fx:0.22, fy:0.82, rx:5.5,ry:7  },
+  { fx:0.58, fy:0.88, rx:6,  ry:8  },
+]
+
+function drawBead(ctx, bx, by, rx, ry) {
+  ctx.save()
+  ctx.translate(bx, by)
+
+  // Outer rim — very faint champagne halo
+  const halo = ctx.createRadialGradient(0, 0, ry * 0.6, 0, 0, ry * 1.15)
+  halo.addColorStop(0, `rgba(201,169,110,0)`)
+  halo.addColorStop(1, `rgba(201,169,110,0.06)`)
+  ctx.beginPath(); ctx.ellipse(0, 0, rx * 1.15, ry * 1.15, 0, 0, Math.PI * 2)
+  ctx.fillStyle = halo; ctx.fill()
+
+  // Bead body — glass lens, lit from top-left
+  ctx.beginPath(); ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2)
+  const body = ctx.createRadialGradient(-rx * 0.28, -ry * 0.3, 0, rx * 0.1, ry * 0.1, Math.max(rx, ry) * 1.1)
+  body.addColorStop(0,    `rgba(245,242,235,0.22)`)
+  body.addColorStop(0.35, `rgba(220,215,205,0.09)`)
+  body.addColorStop(0.75, `rgba(180,170,150,0.04)`)
+  body.addColorStop(1,    `rgba(140,130,110,0.01)`)
+  ctx.fillStyle = body; ctx.fill()
+
+  // Inner shadow — bottom crescent, gives thickness
+  ctx.beginPath(); ctx.ellipse(rx * 0.05, ry * 0.25, rx * 0.72, ry * 0.52, 0, 0, Math.PI * 2)
+  const shadow = ctx.createRadialGradient(rx * 0.05, ry * 0.25, 0, rx * 0.05, ry * 0.25, ry * 0.55)
+  shadow.addColorStop(0, `rgba(0,0,0,0)`)
+  shadow.addColorStop(1, `rgba(0,0,0,0.055)`)
+  ctx.fillStyle = shadow; ctx.fill()
+
+  // Primary specular — top-left bright catch-light
+  ctx.beginPath(); ctx.ellipse(-rx * 0.26, -ry * 0.3, rx * 0.28, ry * 0.18, -0.35, 0, Math.PI * 2)
+  ctx.fillStyle = `rgba(255,252,244,0.55)`; ctx.fill()
+
+  // Secondary specular — tiny bottom-right refraction
+  ctx.beginPath(); ctx.ellipse(rx * 0.28, ry * 0.35, rx * 0.1, ry * 0.07, 0.4, 0, Math.PI * 2)
+  ctx.fillStyle = `rgba(255,245,210,0.2)`; ctx.fill()
+
+  // Rim edge — thin outline to define shape against dark background
+  ctx.beginPath(); ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2)
+  ctx.strokeStyle = `rgba(220,210,190,0.12)`; ctx.lineWidth = 0.6; ctx.stroke()
+
+  ctx.restore()
+}
+
+// Draw once — static, no animation needed
+function renderDew() {
+  const W = dewC.width, H = dewC.height
+  dewX.clearRect(0, 0, W, H)
+  beadDefs.forEach(b => drawBead(dewX, b.fx * W, b.fy * H, b.rx, b.ry))
+}
+renderDew()
+window.addEventListener('resize', () => { resizeCanvas(dewC); renderDew() })
+
+// ── WAVE DIVIDERS (champagne) ─────────────────────────────────────────────────
 function initWave(id) {
-  const canvas = document.getElementById(id)
-  if (!canvas) return
+  const c = document.getElementById(id); if (!c) return
   const dpr = Math.min(devicePixelRatio || 1, 2)
-  const W = canvas.parentElement.offsetWidth
-  const H = 56
-  canvas.width = W * dpr; canvas.height = H * dpr
-  const ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr)
+  const W = c.parentElement.offsetWidth, H = 56
+  c.width = W * dpr; c.height = H * dpr
+  const ctx = c.getContext('2d'); ctx.scale(dpr, dpr)
   let t = Math.random() * 10
   const layers = [
-    { amp: 3.5, freq: 2.1,  speed: 0.18, alpha: 0.10, width: 0.8 },
-    { amp: 5.0, freq: 1.4,  speed: 0.12, alpha: 0.16, width: 1.0 },
-    { amp: 2.5, freq: 3.8,  speed: 0.28, alpha: 0.07, width: 0.6 },
+    { amp:3.5, freq:2.1, speed:0.18, alpha:0.10, width:0.8 },
+    { amp:5.0, freq:1.4, speed:0.12, alpha:0.16, width:1.0 },
+    { amp:2.5, freq:3.8, speed:0.28, alpha:0.07, width:0.6 },
   ]
   ;(function draw() {
     ctx.clearRect(0, 0, W, H)
@@ -287,9 +264,8 @@ function initWave(id) {
       ctx.beginPath()
       for (let x = 0; x <= W; x += 2) {
         const nx = x / W
-        const y = H / 2
-          + Math.sin(nx * Math.PI * l.freq * 2 + t * l.speed * Math.PI * 2) * l.amp
-          + Math.sin(nx * Math.PI * l.freq * 3.3 + t * l.speed * 1.7 * Math.PI * 2) * l.amp * 0.4
+        const y = H / 2 + Math.sin(nx * Math.PI * l.freq * 2 + t * l.speed * Math.PI * 2) * l.amp
+                         + Math.sin(nx * Math.PI * l.freq * 3.3 + t * l.speed * 1.7 * Math.PI * 2) * l.amp * 0.4
         x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
       }
       const g = ctx.createLinearGradient(0, 0, W, 0)
@@ -299,206 +275,10 @@ function initWave(id) {
       g.addColorStop(1,    `rgba(201,169,110,0)`)
       ctx.strokeStyle = g; ctx.lineWidth = l.width; ctx.stroke()
     })
-    t += 0.016
-    requestAnimationFrame(draw)
+    t += 0.016; requestAnimationFrame(draw)
   })()
 }
-
-// ── DEW DROPS on IP pill — clear/silver drops, not green ─────────────────────
-function initDew() {
-  const pill = document.getElementById('ip-pill')
-  const canvas = document.getElementById('dew-canvas')
-  const dpr = Math.min(devicePixelRatio || 1, 2)
-  const W = pill.offsetWidth || 100
-  const H = pill.offsetHeight || 28
-  canvas.width = W * dpr; canvas.height = H * dpr
-  const ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr)
-
-  const drops = []; let frame = 0
-
-  function spawn() {
-    drops.push({
-      x: 8 + Math.random() * (W - 16), y: -4,
-      vy: 0.35 + Math.random() * 0.45,
-      vx: (Math.random() - 0.5) * 0.18,
-      r: 1.4 + Math.random() * 1.1,
-      alpha: 0.65 + Math.random() * 0.3,
-      tail: [], splat: false, splatLife: 1,
-    })
-  }
-
-  ;(function draw() {
-    ctx.clearRect(0, 0, W, H)
-    frame++
-    if (frame % 32 === 0) spawn()
-
-    for (let i = drops.length - 1; i >= 0; i--) {
-      const d = drops[i]
-      if (d.splat) {
-        d.splatLife -= 0.065
-        if (d.splatLife <= 0) { drops.splice(i, 1); continue }
-        const sp = (1 - d.splatLife) * d.r * 3.5
-        ctx.beginPath()
-        ctx.ellipse(d.x, H - 1, sp, sp * 0.28, 0, 0, Math.PI * 2)
-        ctx.strokeStyle = `rgba(220,200,160,${d.splatLife * 0.3})`
-        ctx.lineWidth = 0.6; ctx.stroke()
-        continue
-      }
-      d.tail.push({x: d.x, y: d.y, r: d.r})
-      if (d.tail.length > 10) d.tail.shift()
-      d.y += d.vy; d.x += d.vx; d.vy += 0.022
-      d.tail.forEach((pt, ti) => {
-        const p = ti / d.tail.length
-        ctx.beginPath()
-        ctx.ellipse(pt.x, pt.y, pt.r * 0.38, pt.r * (0.28 + p * 0.48), 0, 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(230,210,165,${p * d.alpha * 0.35})`
-        ctx.fill()
-      })
-      // Clear glass-like drop with champagne tint
-      ctx.save(); ctx.translate(d.x, d.y)
-      const g = ctx.createRadialGradient(-d.r * 0.3, -d.r * 0.3, 0, 0, 0, d.r * 1.2)
-      g.addColorStop(0,   `rgba(255,248,230,${d.alpha * 0.95})`)
-      g.addColorStop(0.4, `rgba(220,195,140,${d.alpha * 0.55})`)
-      g.addColorStop(1,   `rgba(180,145,70,${d.alpha * 0.08})`)
-      ctx.beginPath(); ctx.arc(0, 0, d.r, 0, Math.PI * 2)
-      ctx.fillStyle = g; ctx.fill()
-      ctx.beginPath()
-      ctx.ellipse(-d.r * 0.28, -d.r * 0.3, d.r * 0.24, d.r * 0.16, -0.3, 0, Math.PI * 2)
-      ctx.fillStyle = `rgba(255,255,255,${d.alpha * 0.75})`; ctx.fill()
-      ctx.restore()
-      if (d.y + d.r >= H) { d.splat = true; d.y = H - 1 }
-    }
-    requestAnimationFrame(draw)
-  })()
-}
-
-setTimeout(() => {
-  initWave('div1'); initWave('div2'); initDew()
-}, 80)
-
-// ── RAIN STREAKS — diagonal, very faint ──────────────────────────────────────
-;(function() {
-  const rc = document.getElementById('rain-canvas')
-  const rx = rc.getContext('2d')
-  let rW = rc.width = window.innerWidth
-  let rH = rc.height = window.innerHeight
-  window.addEventListener('resize', () => { rW = rc.width = window.innerWidth; rH = rc.height = window.innerHeight })
-
-  const STREAK_COUNT = 60
-  const streaks = Array.from({length: STREAK_COUNT}, () => ({
-    x: Math.random() * window.innerWidth * 1.4,
-    y: Math.random() * window.innerHeight * 2 - window.innerHeight,
-    len: 18 + Math.random() * 55,
-    speed: 4.5 + Math.random() * 5.5,
-    alpha: 0.025 + Math.random() * 0.055,
-    width: 0.4 + Math.random() * 0.5,
-  }))
-
-  const angle = Math.PI / 2 + 0.18 // slightly diagonal
-  const dx = Math.cos(angle)
-  const dy = Math.sin(angle)
-
-  ;(function draw() {
-    rx.clearRect(0, 0, rW, rH)
-    streaks.forEach(s => {
-      const x2 = s.x + dx * s.len
-      const y2 = s.y + dy * s.len
-      const g = rx.createLinearGradient(s.x, s.y, x2, y2)
-      g.addColorStop(0, `rgba(200,185,150,0)`)
-      g.addColorStop(0.3, `rgba(200,185,150,${s.alpha})`)
-      g.addColorStop(1, `rgba(200,185,150,0)`)
-      rx.beginPath()
-      rx.moveTo(s.x, s.y)
-      rx.lineTo(x2, y2)
-      rx.strokeStyle = g
-      rx.lineWidth = s.width
-      rx.stroke()
-
-      s.x += dx * s.speed
-      s.y += dy * s.speed
-      if (s.y > rH + 80) {
-        s.x = Math.random() * rW * 1.4 - rW * 0.2
-        s.y = -100 - Math.random() * 200
-        s.len = 18 + Math.random() * 55
-        s.speed = 4.5 + Math.random() * 5.5
-        s.alpha = 0.025 + Math.random() * 0.055
-      }
-    })
-    requestAnimationFrame(draw)
-  })()
-})()
-
-// ── SURFACE WATER BEADS — settle, wobble, slowly slide ───────────────────────
-;(function() {
-  const bc = document.getElementById('bead-canvas')
-  const bx = bc.getContext('2d')
-  let bW = bc.width = window.innerWidth
-  let bH = bc.height = window.innerHeight
-  window.addEventListener('resize', () => { bW = bc.width = window.innerWidth; bH = bc.height = window.innerHeight })
-
-  const BEAD_COUNT = 38
-  const beads = Array.from({length: BEAD_COUNT}, () => ({
-    x: Math.random() * window.innerWidth,
-    y: Math.random() * window.innerHeight,
-    r: 2 + Math.random() * 5,
-    vy: 0,
-    alpha: 0.06 + Math.random() * 0.1,
-    phase: Math.random() * Math.PI * 2,
-    slideSpeed: 0.015 + Math.random() * 0.03,
-    wobble: Math.random() * Math.PI * 2,
-  }))
-
-  ;(function draw() {
-    bx.clearRect(0, 0, bW, bH)
-    beads.forEach(b => {
-      // Slow gravity slide
-      b.vy += 0.008
-      b.y += b.vy * b.slideSpeed * 8
-      b.wobble += 0.018
-      const wx = Math.sin(b.wobble) * 0.3
-
-      if (b.y > bH + 20) {
-        b.x = Math.random() * bW
-        b.y = -10
-        b.vy = 0
-        b.r = 2 + Math.random() * 5
-        b.alpha = 0.06 + Math.random() * 0.1
-      }
-
-      // Bead — lens-like, clear with champagne highlight
-      bx.save()
-      bx.translate(b.x + wx, b.y)
-
-      // Outer rim
-      bx.beginPath()
-      bx.arc(0, 0, b.r, 0, Math.PI * 2)
-      const rim = bx.createRadialGradient(0, 0, b.r * 0.6, 0, 0, b.r)
-      rim.addColorStop(0, `rgba(201,169,110,0)`)
-      rim.addColorStop(1, `rgba(201,169,110,${b.alpha * 0.7})`)
-      bx.fillStyle = rim
-      bx.fill()
-
-      // Inner lens — catching light
-      bx.beginPath()
-      bx.arc(0, 0, b.r * 0.82, 0, Math.PI * 2)
-      const lens = bx.createRadialGradient(-b.r * 0.25, -b.r * 0.28, 0, 0, 0, b.r * 0.82)
-      lens.addColorStop(0,   `rgba(255,248,230,${b.alpha * 1.1})`)
-      lens.addColorStop(0.5, `rgba(180,160,110,${b.alpha * 0.3})`)
-      lens.addColorStop(1,   `rgba(100,85,55,${b.alpha * 0.05})`)
-      bx.fillStyle = lens
-      bx.fill()
-
-      // Specular dot
-      bx.beginPath()
-      bx.ellipse(-b.r * 0.3, -b.r * 0.32, b.r * 0.22, b.r * 0.15, -0.4, 0, Math.PI * 2)
-      bx.fillStyle = `rgba(255,255,255,${b.alpha * 1.4})`
-      bx.fill()
-
-      bx.restore()
-    })
-    requestAnimationFrame(draw)
-  })()
-})()
+setTimeout(() => { initWave('div1'); initWave('div2') }, 80)
 </script>
 </body>
 </html>
