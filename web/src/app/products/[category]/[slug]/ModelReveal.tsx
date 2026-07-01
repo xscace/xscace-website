@@ -110,6 +110,13 @@ const CONSTRAINTS_MAP: Record<string, Constraint[]> = {
     { cross:'×', text:'No weather concession',      desc:'IP-rated housing, UV-stabilised finish, marine-grade fixings. The Canopy is designed to stay outside permanently — not just survive the occasional shower.', angle:{y:-Math.PI*0.28,x:0}, mode:'fingerprint' },
     { cross:'→', text:'600W. Outdoors. Architectural.', desc:'Professional-grade SPL from a form factor that respects the space it occupies. The Banyan Canopy is PA performance without PA aesthetics.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
   ],
+  'prod-spirea': [
+    { cross:'×', text:'No weatherproofing compromise', desc:'IP65-rated housing, UV-stabilised finish, and corrosion-resistant hardware. The Spirea is designed to stay outdoors permanently — through rain, sun, and salt air.', angle:{y:0,x:0}, mode:'normal' },
+    { cross:'×', text:'No subwoofer required',        desc:'XSCACE Bass Radiator technology extends low-frequency output well beyond what the driver size suggests. A passive radiator tuned to the enclosure delivers bass that a compact cabinet has no right to produce.', angle:{y:Math.PI*0.38,x:0}, mode:'normal' },
+    { cross:'×', text:'No separate amplifier',        desc:'70V/100V line-level compatible for distributed audio over long cable runs. Connect directly to your PA or distributed system without a matching transformer.', angle:{y:0,x:0.18}, mode:'normal' },
+    { cross:'×', text:'No fixed position',            desc:'Ground spikes and pendant hanging mount included in the box. Landscape stake one day, pergola suspension the next — no additional brackets required.', angle:{y:-Math.PI*0.28,x:0}, mode:'fingerprint' },
+    { cross:'→', text:'Outdoor audio. Architectural.', desc:'The Spirea disappears into the landscape. Weatherproof, full-range, and PA-ready — a speaker that respects the space it occupies.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
+  ],
   'prod-banyan-pith': [
     { cross:'×', text:'No external amplifier',      desc:'2000W Class D amplification lives inside the Pith enclosure. No rack, no matching, no separate power supply — one cable in, full bass out.', angle:{y:0,x:0}, mode:'normal' },
     { cross:'×', text:'No guesswork crossover',     desc:'SigmaStudio DSP manages the crossover digitally. Every parameter — frequency, slope, delay, EQ — is set precisely in software and recalled on every power cycle.', angle:{y:Math.PI*0.38,x:0}, mode:'normal' },
@@ -168,7 +175,7 @@ const CONSTRAINTS_DEFAULT: Constraint[] = [
   { cross:'→', text:'Engineered to disappear.',  desc:'When there is nothing to remove, design is complete.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
 ]
 
-const FLAGSHIP_IDS = ['prod-bonsai', 'prod-bonsai-ic', 'prod-cane', 'prod-cane-ic', 'prod-quadcane', 'prod-quadcane-ic', 'prod-cedar', 'prod-ghost2', 'prod-aspen6', 'prod-aspen8', 'prod-aster6', 'prod-acacia6-pw', 'prod-acacia10-pw', 'prod-xylem2', 'prod-xylem3', 'prod-xylem4', 'prod-oak', 'prod-willow', 'prod-sage', 'prod-bergenia', 'prod-banyan-canopy', 'prod-banyan-pith']
+const FLAGSHIP_IDS = ['prod-bonsai', 'prod-bonsai-ic', 'prod-cane', 'prod-cane-ic', 'prod-quadcane', 'prod-quadcane-ic', 'prod-cedar', 'prod-ghost2', 'prod-aspen6', 'prod-aspen8', 'prod-aster6', 'prod-acacia6-pw', 'prod-acacia10-pw', 'prod-xylem2', 'prod-xylem3', 'prod-xylem4', 'prod-oak', 'prod-willow', 'prod-sage', 'prod-bergenia', 'prod-banyan-canopy', 'prod-banyan-pith', 'prod-spirea']
 
 interface Props {
   modelUrl?: string
@@ -363,6 +370,7 @@ export default function ModelReveal({ modelUrl, productName, productId, minimal 
   'prod-bergenia':    { cam:[0,0,3],              rot:[0.000,-0.502,0.000],  fov:72, exposure:0.85, ambient:0,   key:2.0, fill:0.5 },
   'prod-banyan-canopy':{ cam:[0,0,3.2],          rot:[0.000,-0.45,0.000],   fov:62, exposure:1.0,  ambient:0,   key:2.2, fill:0.4 },
   'prod-banyan-pith':  { cam:[0,0,3.2],          rot:[0.000,-0.40,0.000],   fov:65, exposure:1.0,  ambient:0,   key:2.2, fill:0.4 },
+  'prod-spirea':       { cam:[0,0,3.2],          rot:[0.000,-0.45,0.000],   fov:62, exposure:1.0,  ambient:0,   key:2.0, fill:0.4 },
   }
   const s = (productId && MODEL_SETTINGS[productId]) ? MODEL_SETTINGS[productId]
     : { cam:[0,0,0.82] as [number,number,number], rot:[0,0,0] as [number,number,number], fov:28, exposure:0.75, ambient:0.04, key:0.08, fill:0.2 }

@@ -2653,7 +2653,7 @@ export default function ProductDetail({ product }: { product: Product }) {
                   label: 'Spike Mount',
                   desc: 'Drive the included ground spikes into soil or lawn. Positions the Spirea at optimal height for outdoor landscape coverage — no fixing to structures required.',
                   included: true,
-                  idx: 1,
+                  src: product.lifestyleImages?.[3] ? getImageUrl(product.lifestyleImages[3], 900) : null,
                   icon: (
                     <svg width="28" height="36" viewBox="0 0 28 36" fill="none">
                       <rect x="9" y="0" width="10" height="20" rx="2" stroke="rgba(201,169,110,0.6)" strokeWidth="0.8" fill="none"/>
@@ -2666,7 +2666,7 @@ export default function ProductDetail({ product }: { product: Product }) {
                   label: 'Pendant Hanging Mount',
                   desc: 'Suspend the Spirea from a pergola, canopy, or overhead beam. Standard hanging bracket accepts 3–12mm cable or threaded rod for any ceiling height.',
                   included: true,
-                  idx: 2,
+                  src: product.lifestyleImages?.[2] ? getImageUrl(product.lifestyleImages[2], 900) : null,
                   icon: (
                     <svg width="24" height="36" viewBox="0 0 24 36" fill="none">
                       <line x1="12" y1="0" x2="12" y2="10" stroke="rgba(201,169,110,0.5)" strokeWidth="0.8"/>
@@ -2677,12 +2677,11 @@ export default function ProductDetail({ product }: { product: Product }) {
                   ),
                 },
               ].map((m) => {
-                const img = product.galleryImages?.[m.idx] ? getImageUrl(product.galleryImages[m.idx], 900) : null
                 return (
                   <div key={m.label} style={{background:'#060606',border:'0.5px solid rgba(255,255,255,0.05)',display:'flex',flexDirection:'column'}}>
                     <div style={{aspectRatio:'4/3',background:'#080808',overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center',borderBottom:'0.5px solid rgba(255,255,255,0.04)'}}>
-                      {img
-                        ? <img src={img} alt={m.label} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+                      {m.src
+                        ? <img src={m.src} alt={m.label} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
                         : <div style={{opacity:0.4}}>{m.icon}</div>
                       }
                     </div>
@@ -2890,7 +2889,7 @@ export default function ProductDetail({ product }: { product: Product }) {
           productName={product.productName}
           getImageUrl={getImageUrl}
         />
-      ) : ['prod-cedar', 'prod-ghost2', 'prod-bonsai-ic', 'prod-cane-ic', 'prod-oak', 'prod-willow', 'prod-sage', 'prod-bergenia', 'prod-quadcane', 'prod-quadcane-ic', 'prod-camphor6', 'prod-camphor8', 'prod-spirea'].includes(product._id) && (product.lifestyleImages?.length ?? 0) > 0 ? (
+      ) : ['prod-cedar', 'prod-ghost2', 'prod-bonsai-ic', 'prod-cane-ic', 'prod-oak', 'prod-willow', 'prod-sage', 'prod-bergenia', 'prod-quadcane', 'prod-quadcane-ic', 'prod-camphor6', 'prod-camphor8'].includes(product._id) && (product.lifestyleImages?.length ?? 0) > 0 ? (
         <section className="vg-section">
           <div className="vg-videos">
             <div className="vg-panel">
