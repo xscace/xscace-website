@@ -1996,6 +1996,117 @@ export default function ProductDetail({ product }: { product: Product }) {
     }
   }, [isOutdoor])
 
+  // Power shake — subwoofer series + Banyan Canopy + Banyan Pith
+  const SHAKE_IDS = ['prod-banyan-canopy', 'prod-banyan-pith']
+  const hasPowerShake = isSub || SHAKE_IDS.includes(product._id)
+
+  useEffect(() => {
+    if (!hasPowerShake) return
+
+    // Inject keyframes + vignette
+    const style = document.createElement('style')
+    style.id = 'power-shake-styles'
+    style.textContent = `
+      @keyframes _ps_shake {
+        0%  { transform:translate(0,0); }
+        8%  { transform:translate(-3px,-2px); }
+        16% { transform:translate(3px,2px); }
+        24% { transform:translate(-2px,3px); }
+        32% { transform:translate(2px,-1px); }
+        40% { transform:translate(-1px,2px); }
+        50% { transform:translate(3px,-3px); }
+        60% { transform:translate(-2px,1px); }
+        70% { transform:translate(1px,-2px); }
+        80% { transform:translate(-3px,3px); }
+        90% { transform:translate(1px,-1px); }
+        100%{ transform:translate(0,0); }
+      }
+      body._ps_shaking { animation: _ps_shake 0.42s ease-in-out; }
+      #_ps_vignette { position:fixed;inset:0;pointer-events:none;z-index:9999;
+        background:radial-gradient(ellipse at center,transparent 45%,rgba(0,0,0,0.95) 100%);
+        opacity:0;transition:opacity 0.06s; }
+      body._ps_shaking #_ps_vignette { opacity:1; }
+    `
+    document.head.appendChild(style)
+
+    const vignette = document.createElement('div')
+    vignette.id = '_ps_vignette'
+    document.body.appendChild(vignette)
+
+    // Web Audio rumble
+    let audioCtx: AudioContext | null = null
+    const unlockAudio = () => {
+      if (audioCtx) return
+      audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
+    }
+    document.addEventListener('click', unlockAudio, { once: true })
+
+    function playRumble() {
+      if (!audioCtx) return
+      if (audioCtx.state === 'suspended') audioCtx.resume()
+      const ctx = audioCtx
+      const now = ctx.currentTime
+      const dur = 1.4
+
+      const osc1 = ctx.createOscillator(); const g1 = ctx.createGain()
+      osc1.type = 'sine'
+      osc1.frequency.setValueAtTime(42, now)
+      osc1.frequency.exponentialRampToValueAtTime(26, now + dur)
+      g1.gain.setValueAtTime(0, now)
+      g1.gain.linearRampToValueAtTime(0.7, now + 0.03)
+      g1.gain.exponentialRampToValueAtTime(0.001, now + dur)
+      osc1.connect(g1); g1.connect(ctx.destination)
+      osc1.start(now); osc1.stop(now + dur)
+
+      const bufLen = Math.ceil(ctx.sampleRate * dur)
+      const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate)
+      const data = buf.getChannelData(0)
+      for (let i = 0; i < bufLen; i++) data[i] = Math.random() * 2 - 1
+      const noise = ctx.createBufferSource(); noise.buffer = buf
+      const bpf = ctx.createBiquadFilter(); bpf.type = 'bandpass'; bpf.frequency.value = 65; bpf.Q.value = 0.9
+      const g2 = ctx.createGain()
+      g2.gain.setValueAtTime(0, now)
+      g2.gain.linearRampToValueAtTime(0.18, now + 0.03)
+      g2.gain.exponentialRampToValueAtTime(0.001, now + dur * 0.6)
+      noise.connect(bpf); bpf.connect(g2); g2.connect(ctx.destination)
+      noise.start(now); noise.stop(now + dur)
+
+      const osc2 = ctx.createOscillator(); const g3 = ctx.createGain()
+      osc2.type = 'sine'; osc2.frequency.value = 55
+      g3.gain.setValueAtTime(0, now + 0.16)
+      g3.gain.linearRampToValueAtTime(0.35, now + 0.20)
+      g3.gain.exponentialRampToValueAtTime(0.001, now + dur)
+      osc2.connect(g3); g3.connect(ctx.destination)
+      osc2.start(now + 0.16); osc2.stop(now + dur)
+    }
+
+    function triggerHit() {
+      playRumble()
+      document.body.classList.remove('_ps_shaking')
+      void document.body.offsetWidth
+      document.body.classList.add('_ps_shaking')
+      const onEnd = () => document.body.classList.remove('_ps_shaking')
+      document.body.addEventListener('animationend', onEnd, { once: true })
+    }
+
+    let timer: ReturnType<typeof setTimeout>
+    function scheduleNext() {
+      const delay = (10 + Math.random() * 10) * 1000 // 10–20s
+      timer = setTimeout(() => { triggerHit(); scheduleNext() }, delay)
+    }
+    scheduleNext()
+
+    return () => {
+      clearTimeout(timer)
+      document.removeEventListener('click', unlockAudio)
+      document.body.classList.remove('_ps_shaking')
+      document.getElementById('power-shake-styles')?.remove()
+      document.getElementById('_ps_vignette')?.remove()
+      if (audioCtx) { audioCtx.close(); audioCtx = null }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasPowerShake])
+
   // Spec rows helper
   const specRow = (label: string, value: any, unit = '') =>
     value != null ? { label, value: `${value}${unit}` } : null
