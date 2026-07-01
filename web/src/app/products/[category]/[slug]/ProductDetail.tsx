@@ -2273,23 +2273,110 @@ export default function ProductDetail({ product }: { product: Product }) {
       {/* wave divider */}
       <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
       {/* ── MODEL REVEAL + CONSTRAINTS ── */}
-      {isOutdoor && !product.model3dUrl && product.galleryImages?.length > 0 ? (
-        <section style={{background:'#000',padding:'72px 0 0'}}>
-          <div style={{maxWidth:900,margin:'0 auto',padding:'0 60px'}}>
-            <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.22em',textTransform:'uppercase',color:'rgba(201,169,110,0.5)',marginBottom:20}}>Design · All Angles</div>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:2}}>
-              {product.galleryImages.slice(0,3).map((img: any, i: number) => {
-                const url = getImageUrl(img, 900)
-                return url ? (
-                  <div key={i} style={{background:'#080808',overflow:'hidden',aspectRatio:'1',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px'}}>
-                    <img src={url} alt={img.alt || product.productName} style={{width:'100%',height:'100%',objectFit:'contain',display:'block'}}/>
+      {isOutdoor && !product.model3dUrl ? (() => {
+        const life0 = product.lifestyleImages?.[0] ? getImageUrl(product.lifestyleImages[0], 1200) : null
+        const life1 = product.lifestyleImages?.[1] ? getImageUrl(product.lifestyleImages[1], 1200) : null
+        const gal2  = product.galleryImages?.[2]   ? getImageUrl(product.galleryImages[2],   1200) : null
+        const cards = [
+          {
+            img: life0,
+            eyebrow: 'Weatherproof',
+            headline: 'Built for\nthe elements.',
+            sub: product.ipRating ?? 'IP Rated',
+            accent: 'Water · UV · Dust · Corrosion',
+            icon: (
+              <svg width="18" height="22" viewBox="0 0 18 22" fill="none" style={{display:'block'}}>
+                <path d="M9 0C9 0 1 7.2 1 13a8 8 0 0016 0C17 7.2 9 0 9 0z"
+                  fill="rgba(120,200,240,0.15)" stroke="rgba(140,215,255,0.7)" strokeWidth="0.8"/>
+                <path d="M5.5 14.5a3.5 3.5 0 006 0" stroke="rgba(140,215,255,0.5)" strokeWidth="0.7" fill="none" strokeLinecap="round"/>
+              </svg>
+            ),
+          },
+          {
+            img: life1,
+            eyebrow: 'Multi-Mode',
+            headline: 'PA-ready.\nNo extra\ngear needed.',
+            sub: '70V / 100V Line Compatible',
+            accent: 'Distributed audio over long runs',
+            icon: (
+              <svg width="20" height="16" viewBox="0 0 20 16" fill="none" style={{display:'block'}}>
+                <rect x="1" y="1" width="18" height="14" rx="1.5" stroke="rgba(201,169,110,0.6)" strokeWidth="0.7" fill="none"/>
+                <line x1="5" y1="8" x2="15" y2="8" stroke="rgba(201,169,110,0.5)" strokeWidth="0.6"/>
+                <circle cx="5"  cy="8" r="1.2" fill="rgba(201,169,110,0.7)"/>
+                <circle cx="15" cy="8" r="1.2" fill="rgba(201,169,110,0.7)"/>
+                <line x1="10" y1="4" x2="10" y2="12" stroke="rgba(201,169,110,0.3)" strokeWidth="0.5" strokeDasharray="1.5 1.5"/>
+              </svg>
+            ),
+          },
+          {
+            img: gal2,
+            eyebrow: 'XBR Technology',
+            headline: 'Bass.\nNo subwoofer\nrequired.',
+            sub: 'XSCACE Bass Radiator',
+            accent: 'Passive radiator tuning · Extended low end',
+            icon: (
+              <svg width="22" height="14" viewBox="0 0 22 14" fill="none" style={{display:'block'}}>
+                <path d="M1 7 Q3 1 5 7 Q7 13 9 7 Q11 1 13 7 Q15 13 17 7 Q19 1 21 7"
+                  stroke="rgba(201,169,110,0.7)" strokeWidth="0.9" fill="none" strokeLinecap="round"/>
+                <path d="M1 7 Q3 3 5 7 Q7 11 9 7 Q11 3 13 7 Q15 11 17 7 Q19 3 21 7"
+                  stroke="rgba(201,169,110,0.25)" strokeWidth="2" fill="none" strokeLinecap="round"/>
+              </svg>
+            ),
+          },
+        ]
+        return (
+          <section style={{background:'#000',padding:'0'}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:1}}>
+              {cards.map((card, i) => (
+                <div key={i} style={{position:'relative',overflow:'hidden',minHeight:520,display:'flex',flexDirection:'column',justifyContent:'flex-end'}}>
+                  {/* Background image */}
+                  {card.img && (
+                    <img
+                      src={card.img}
+                      alt=""
+                      aria-hidden="true"
+                      style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',display:'block',filter:'brightness(0.38) saturate(0.7)'}}
+                    />
+                  )}
+                  {/* Gradient overlay — heavier at bottom for text legibility */}
+                  <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0.92) 100%)'}}/>
+                  {/* Top-left accent line */}
+                  <div style={{position:'absolute',top:28,left:28,width:24,height:1,background:'rgba(201,169,110,0.5)'}}/>
+                  {/* Card number */}
+                  <div style={{position:'absolute',top:24,right:28,fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.18em',color:'rgba(201,169,110,0.3)'}}>
+                    0{i + 1}
                   </div>
-                ) : null
-              })}
+                  {/* Content */}
+                  <div style={{position:'relative',padding:'0 28px 36px'}}>
+                    {/* Icon */}
+                    <div style={{marginBottom:16,opacity:0.9}}>
+                      {card.icon}
+                    </div>
+                    {/* Eyebrow */}
+                    <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.22em',textTransform:'uppercase',color:'rgba(201,169,110,0.7)',marginBottom:12}}>
+                      {card.eyebrow}
+                    </div>
+                    {/* Headline */}
+                    <div style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(22px,2.4vw,32px)',fontWeight:400,color:'rgba(238,235,229,0.92)',lineHeight:1.1,marginBottom:16,whiteSpace:'pre-line'}}>
+                      {card.headline}
+                    </div>
+                    {/* Divider */}
+                    <div style={{width:32,height:1,background:'rgba(201,169,110,0.35)',marginBottom:14}}/>
+                    {/* Sub */}
+                    <div style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:'rgba(238,235,229,0.65)',letterSpacing:'.04em',marginBottom:6}}>
+                      {card.sub}
+                    </div>
+                    {/* Accent */}
+                    <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.1em',color:'rgba(238,235,229,0.28)',textTransform:'uppercase'}}>
+                      {card.accent}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-        </section>
-      ) : (
+          </section>
+        )
+      })() : (
         <ModelReveal
           modelUrl={product.model3dUrl || `/models/${product.slug?.current}.glb`}
           productName={product.productName}
