@@ -2390,7 +2390,7 @@ export default function ProductDetail({ product }: { product: Product }) {
       {/* wave divider */}
       <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
       {/* ── MODEL REVEAL + CONSTRAINTS ── */}
-      {['prod-camphor6','prod-camphor8'].includes(product._id) ? (() => {
+      {['prod-camphor6','prod-camphor8','prod-spirea'].includes(product._id) ? (() => {
         const life0 = product.lifestyleImages?.[0] ? getImageUrl(product.lifestyleImages[0], 1200) : null
         const life1 = product.lifestyleImages?.[1] ? getImageUrl(product.lifestyleImages[1], 1200) : null
         const gal2  = product.galleryImages?.[2]   ? getImageUrl(product.galleryImages[2],   1200) : null
@@ -2639,6 +2639,70 @@ export default function ProductDetail({ product }: { product: Product }) {
         </section>
       )}
 
+      {/* ── SPIREA MOUNT YOUR WAY ── */}
+      {product._id === 'prod-spirea' && (
+        <section style={{background:'#000',borderTop:'0.5px solid rgba(255,255,255,0.05)',padding:'72px 0 80px'}}>
+          <div style={{maxWidth:900,margin:'0 auto',padding:'0 60px'}}>
+            <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.22em',textTransform:'uppercase',color:'rgba(201,169,110,0.5)',marginBottom:12}}>Installation</div>
+            <h2 style={{fontFamily:"'DM Serif Display',serif",fontWeight:400,fontSize:'clamp(28px,3.5vw,48px)',color:'rgba(238,235,229,0.9)',lineHeight:1.06,marginBottom:48}}>
+              Mount it <em style={{fontStyle:'italic'}}>your way.</em>
+            </h2>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:1}}>
+              {[
+                {
+                  label: 'Spike Mount',
+                  desc: 'Drive the included ground spikes into soil or lawn. Positions the Spirea at optimal height for outdoor landscape coverage — no fixing to structures required.',
+                  included: true,
+                  idx: 1,
+                  icon: (
+                    <svg width="28" height="36" viewBox="0 0 28 36" fill="none">
+                      <rect x="9" y="0" width="10" height="20" rx="2" stroke="rgba(201,169,110,0.6)" strokeWidth="0.8" fill="none"/>
+                      <path d="M11 20 L14 34 L17 20" stroke="rgba(201,169,110,0.5)" strokeWidth="0.8" fill="none" strokeLinejoin="round"/>
+                      <line x1="7" y1="10" x2="21" y2="10" stroke="rgba(201,169,110,0.25)" strokeWidth="0.5"/>
+                    </svg>
+                  ),
+                },
+                {
+                  label: 'Pendant Hanging Mount',
+                  desc: 'Suspend the Spirea from a pergola, canopy, or overhead beam. Standard hanging bracket accepts 3–12mm cable or threaded rod for any ceiling height.',
+                  included: true,
+                  idx: 2,
+                  icon: (
+                    <svg width="24" height="36" viewBox="0 0 24 36" fill="none">
+                      <line x1="12" y1="0" x2="12" y2="10" stroke="rgba(201,169,110,0.5)" strokeWidth="0.8"/>
+                      <circle cx="12" cy="12" r="3" stroke="rgba(201,169,110,0.6)" strokeWidth="0.8" fill="none"/>
+                      <rect x="4" y="16" width="16" height="18" rx="2" stroke="rgba(201,169,110,0.6)" strokeWidth="0.8" fill="none"/>
+                      <line x1="4" y1="22" x2="20" y2="22" stroke="rgba(201,169,110,0.2)" strokeWidth="0.5"/>
+                    </svg>
+                  ),
+                },
+              ].map((m) => {
+                const img = product.galleryImages?.[m.idx] ? getImageUrl(product.galleryImages[m.idx], 900) : null
+                return (
+                  <div key={m.label} style={{background:'#060606',border:'0.5px solid rgba(255,255,255,0.05)',display:'flex',flexDirection:'column'}}>
+                    <div style={{aspectRatio:'4/3',background:'#080808',overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center',borderBottom:'0.5px solid rgba(255,255,255,0.04)'}}>
+                      {img
+                        ? <img src={img} alt={m.label} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+                        : <div style={{opacity:0.4}}>{m.icon}</div>
+                      }
+                    </div>
+                    <div style={{padding:'28px 28px 32px'}}>
+                      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+                        <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.2em',textTransform:'uppercase',color:'rgba(201,169,110,0.7)'}}>{m.label}</div>
+                        {m.included && (
+                          <span style={{fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.12em',textTransform:'uppercase',color:'rgba(201,169,110,0.45)',border:'0.5px solid rgba(201,169,110,0.25)',padding:'2px 7px'}}>Included</span>
+                        )}
+                      </div>
+                      <div style={{fontFamily:"'DM Mono',monospace",fontSize:10,lineHeight:1.65,color:'rgba(238,235,229,0.32)'}}>{m.desc}</div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ── BANYAN PITH — BANYAN SET ── */}
       {product._id === 'prod-banyan-pith' && (
         <section style={{background:'#000',borderTop:'0.5px solid rgba(255,255,255,0.05)',padding:'72px 0'}}>
@@ -2826,7 +2890,7 @@ export default function ProductDetail({ product }: { product: Product }) {
           productName={product.productName}
           getImageUrl={getImageUrl}
         />
-      ) : ['prod-cedar', 'prod-ghost2', 'prod-bonsai-ic', 'prod-cane-ic', 'prod-oak', 'prod-willow', 'prod-sage', 'prod-bergenia', 'prod-quadcane', 'prod-quadcane-ic', 'prod-camphor6', 'prod-camphor8'].includes(product._id) && (product.lifestyleImages?.length ?? 0) > 0 ? (
+      ) : ['prod-cedar', 'prod-ghost2', 'prod-bonsai-ic', 'prod-cane-ic', 'prod-oak', 'prod-willow', 'prod-sage', 'prod-bergenia', 'prod-quadcane', 'prod-quadcane-ic', 'prod-camphor6', 'prod-camphor8', 'prod-spirea'].includes(product._id) && (product.lifestyleImages?.length ?? 0) > 0 ? (
         <section className="vg-section">
           <div className="vg-videos">
             <div className="vg-panel">
