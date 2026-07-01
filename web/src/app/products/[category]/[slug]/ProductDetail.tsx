@@ -2639,6 +2639,176 @@ export default function ProductDetail({ product }: { product: Product }) {
         </section>
       )}
 
+      {/* ── BANYAN PITH — BANYAN SET ── */}
+      {product._id === 'prod-banyan-pith' && (
+        <section style={{background:'#000',borderTop:'0.5px solid rgba(255,255,255,0.05)',padding:'72px 0'}}>
+          <div style={{maxWidth:900,margin:'0 auto',padding:'0 60px'}}>
+            <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.22em',textTransform:'uppercase',color:'rgba(201,169,110,0.5)',marginBottom:12}}>The Banyan Set</div>
+            <h2 style={{fontFamily:"'DM Serif Display',serif",fontWeight:400,fontSize:'clamp(28px,3.5vw,48px)',color:'rgba(238,235,229,0.9)',lineHeight:1.06,marginBottom:16}}>
+              Two cabinets.<br/><em style={{fontStyle:'italic'}}>One complete system.</em>
+            </h2>
+            <p style={{fontFamily:"'DM Mono',monospace",fontSize:12,lineHeight:1.75,color:'rgba(238,235,229,0.38)',maxWidth:480,marginBottom:56}}>
+              The Banyan Pith and Banyan Canopy are engineered as a pair. Every crossover point, every SPL alignment, every DSP preset is calibrated for this combination.
+            </p>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:1}}>
+              {/* Pith card */}
+              <div style={{background:'#060606',border:'0.5px solid rgba(255,255,255,0.05)',padding:'40px 36px'}}>
+                <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.2em',textTransform:'uppercase',color:'rgba(201,169,110,0.45)',marginBottom:20}}>Banyan Pith · Powered Sub-Bass</div>
+                <div style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(20px,2.2vw,28px)',color:'rgba(238,235,229,0.88)',marginBottom:28,lineHeight:1.1}}>
+                  2× 12″ Subwoofer<br/><span style={{color:'rgba(201,169,110,0.7)',fontSize:'0.72em'}}>Built-in DSP Amplifier</span>
+                </div>
+                <div style={{width:'100%',height:'0.5px',background:'rgba(255,255,255,0.06)',marginBottom:28}}/>
+                {[
+                  ['Power','1200W RMS'],
+                  ['Drivers','2× 12″ Long-Throw'],
+                  ['DSP','2000W Built-in · Class D'],
+                  ['Range','27Hz – 120Hz'],
+                ].map(([l,v]) => (
+                  <div key={l} style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:10}}>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.1em',color:'rgba(238,235,229,0.28)',textTransform:'uppercase'}}>{l}</span>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:'rgba(238,235,229,0.65)'}}>{v}</span>
+                  </div>
+                ))}
+              </div>
+              {/* Canopy card */}
+              <div style={{background:'#060606',border:'0.5px solid rgba(255,255,255,0.05)',padding:'40px 36px'}}>
+                <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.2em',textTransform:'uppercase',color:'rgba(201,169,110,0.45)',marginBottom:20}}>Banyan Canopy · Full Range</div>
+                <div style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(20px,2.2vw,28px)',color:'rgba(238,235,229,0.88)',marginBottom:28,lineHeight:1.1}}>
+                  6× 5″ Woofer<br/>3× 1.5″ Compression Driver<br/><span style={{color:'rgba(201,169,110,0.7)',fontSize:'0.72em'}}>+ Waveguide</span>
+                </div>
+                <div style={{width:'100%',height:'0.5px',background:'rgba(255,255,255,0.06)',marginBottom:28}}/>
+                {[
+                  ['Power','600W RMS'],
+                  ['Dispersion','100° H · 12° V'],
+                  ['Waveguide','Controlled HF coverage'],
+                  ['Range','80Hz – 20kHz'],
+                ].map(([l,v]) => (
+                  <div key={l} style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:10}}>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.1em',color:'rgba(238,235,229,0.28)',textTransform:'uppercase'}}>{l}</span>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:'rgba(238,235,229,0.65)'}}>{v}</span>
+                  </div>
+                ))}
+                <a href="/products/outdoor-series/banyan-canopy-line-array-speaker" style={{display:'inline-flex',alignItems:'center',gap:8,marginTop:20,fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.12em',textTransform:'uppercase',color:'rgba(201,169,110,0.8)',textDecoration:'none',borderBottom:'0.5px solid rgba(201,169,110,0.3)',paddingBottom:2}}>
+                  View Banyan Canopy →
+                </a>
+              </div>
+            </div>
+            {/* Combined system — specs left, 3D right */}
+            <div style={{marginTop:1,display:'grid',gridTemplateColumns:'1fr 1fr',gap:1,minHeight:520}}>
+              <div style={{background:'#060606',border:'0.5px solid rgba(201,169,110,0.1)',padding:'40px 36px',display:'flex',flexDirection:'column',justifyContent:'center'}}>
+                <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.2em',textTransform:'uppercase',color:'rgba(201,169,110,0.45)',marginBottom:16}}>Complete System</div>
+                <div style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(22px,2.4vw,32px)',color:'rgba(201,169,110,0.85)',marginBottom:32,lineHeight:1.08}}>1800W Combined</div>
+                <div style={{width:32,height:'0.5px',background:'rgba(201,169,110,0.3)',marginBottom:28}}/>
+                {[
+                  ['Full Range','6× 5″ Woofer'],
+                  ['HF','3× 1.5″ Compression Driver'],
+                  ['Waveguide','Controlled HF coverage'],
+                  ['Sub-Bass','2× 12″ Long-Throw'],
+                  ['DSP','2000W Built-in · Class D'],
+                  ['System Range','27Hz – 20kHz'],
+                ].map(([l, v]) => (
+                  <div key={l} style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:10,borderBottom:'0.5px solid rgba(255,255,255,0.03)',paddingBottom:10}}>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.1em',color:'rgba(238,235,229,0.28)',textTransform:'uppercase'}}>{l}</span>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:'rgba(238,235,229,0.65)'}}>{v}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{position:'relative',minHeight:520,overflow:'hidden'}}>
+                <ModelReveal
+                  modelUrl="/models/banyan-set-line-array-system.glb"
+                  productName="Banyan Set"
+                  productId="prod-banyan-pith"
+                  minimal
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── BANYAN PITH — DSP AMPLIFIER ── */}
+      {product._id === 'prod-banyan-pith' && (
+        <section style={{background:'#050505',borderTop:'0.5px solid rgba(255,255,255,0.05)',padding:'72px 0'}}>
+          <div style={{maxWidth:900,margin:'0 auto',padding:'0 60px'}}>
+            {/* Header */}
+            <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.22em',textTransform:'uppercase',color:'rgba(201,169,110,0.5)',marginBottom:12}}>Built-In DSP Amplifier</div>
+            <h2 style={{fontFamily:"'DM Serif Display',serif",fontWeight:400,fontSize:'clamp(28px,3.5vw,48px)',color:'rgba(238,235,229,0.9)',lineHeight:1.06,marginBottom:16}}>
+              The amplifier<br/><em style={{fontStyle:'italic'}}>is the subwoofer.</em>
+            </h2>
+            <p style={{fontFamily:"'DM Mono',monospace",fontSize:12,lineHeight:1.75,color:'rgba(238,235,229,0.38)',maxWidth:520,marginBottom:56}}>
+              A 2000W Class D power stage and a SigmaStudio-programmable DSP module live inside the Pith enclosure. No separate rack. No external processor. The full system is two cabinets and two cable runs.
+            </p>
+            {/* DSP image + spec grid */}
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:1,alignItems:'stretch'}}>
+              {/* DSP image */}
+              <div style={{background:'#080808',border:'0.5px solid rgba(255,255,255,0.05)',overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center',minHeight:280}}>
+                {(() => {
+                  const img = product.galleryImages?.[1] ? getImageUrl(product.galleryImages[1], 900) : null
+                  return img
+                    ? <img src={img} alt="Banyan Pith DSP Amplifier Module" style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+                    : <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:'rgba(238,235,229,0.15)',letterSpacing:'.1em'}}>DSP Module Image</div>
+                })()}
+              </div>
+              {/* DSP spec panel */}
+              <div style={{background:'#060606',border:'0.5px solid rgba(255,255,255,0.05)',padding:'40px 36px',display:'flex',flexDirection:'column',justifyContent:'center'}}>
+                <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.2em',textTransform:'uppercase',color:'rgba(201,169,110,0.45)',marginBottom:20}}>SigmaStudio · Programmable DSP</div>
+                {[
+                  ['Processor','ADAU1701 · SigmaDSP'],
+                  ['Power Stage','2000W · Class D'],
+                  ['Channels','2 (Sub + Top)'],
+                  ['USB','Front panel · 1×'],
+                  ['RS-485','RJ-45 rear · 2×'],
+                  ['Crossover','LPF to Canopy, HPF out'],
+                  ['Control','SigmaStudio + Network App'],
+                ].map(([l,v]) => (
+                  <div key={l} style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:10,borderBottom:'0.5px solid rgba(255,255,255,0.03)',paddingBottom:10}}>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.1em',color:'rgba(238,235,229,0.28)',textTransform:'uppercase'}}>{l}</span>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:'rgba(238,235,229,0.65)'}}>{v}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ── XSCACE Network Controller App ── */}
+            <div style={{marginTop:1,background:'#060606',border:'0.5px solid rgba(201,169,110,0.1)',padding:'48px 40px',display:'grid',gridTemplateColumns:'1fr auto',gap:48,alignItems:'center'}}>
+              <div>
+                <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.2em',textTransform:'uppercase',color:'rgba(201,169,110,0.45)',marginBottom:14}}>PC / Mac · LAN Control</div>
+                <div style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(20px,2.2vw,30px)',color:'rgba(238,235,229,0.9)',lineHeight:1.08,marginBottom:16}}>
+                  XSCACE Network<br/><em style={{fontStyle:'italic'}}>Controller App</em>
+                </div>
+                <p style={{fontFamily:"'DM Mono',monospace",fontSize:11,lineHeight:1.75,color:'rgba(238,235,229,0.35)',maxWidth:400,marginBottom:28}}>
+                  Connect to the Banyan Pith over your local network. Adjust parametric EQ, crossover frequency, output delay, and channel routing in real time — without touching the hardware.
+                </p>
+                {[
+                  'Real-time DSP parameter control',
+                  'Parametric EQ · up to 8 bands',
+                  'Crossover & delay per channel',
+                  'Preset save & recall',
+                  'Windows & macOS',
+                ].map(f => (
+                  <div key={f} style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
+                    <div style={{width:4,height:4,borderRadius:'50%',background:'rgba(201,169,110,0.6)',flexShrink:0}}/>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.08em',color:'rgba(238,235,229,0.4)'}}>{f}</span>
+                  </div>
+                ))}
+              </div>
+              {/* App icon placeholder */}
+              <div style={{width:96,height:96,borderRadius:22,background:'#0a0a0a',border:'0.5px solid rgba(201,169,110,0.2)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flexShrink:0,gap:6}}>
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                  <rect x="4" y="8" width="24" height="16" rx="2" stroke="rgba(201,169,110,0.6)" strokeWidth="0.8"/>
+                  <line x1="4" y1="14" x2="28" y2="14" stroke="rgba(201,169,110,0.3)" strokeWidth="0.5"/>
+                  <line x1="12" y1="8" x2="12" y2="24" stroke="rgba(201,169,110,0.3)" strokeWidth="0.5"/>
+                  <circle cx="8" cy="11" r="1" fill="rgba(201,169,110,0.5)"/>
+                  <circle cx="8" cy="18" r="1" fill="rgba(201,169,110,0.5)"/>
+                  <circle cx="8" cy="21" r="1" fill="rgba(201,169,110,0.3)"/>
+                </svg>
+                <span style={{fontFamily:"'DM Mono',monospace",fontSize:6,letterSpacing:'.1em',textTransform:'uppercase',color:'rgba(201,169,110,0.4)'}}>XSCACE</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* wave divider */}
       <div className="pd-wave-divider"><canvas className="pd-wave-canvas"/></div>
       {/* ── RESOURCES & MEDIA ── */}
