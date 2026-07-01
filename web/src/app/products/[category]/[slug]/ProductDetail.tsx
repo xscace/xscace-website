@@ -2728,7 +2728,7 @@ export default function ProductDetail({ product }: { product: Product }) {
 
       {/* ── BANYAN PITH — DSP AMPLIFIER ── */}
       {product._id === 'prod-banyan-pith' && (
-        <section style={{background:'#050505',borderTop:'0.5px solid rgba(255,255,255,0.05)',padding:'72px 0'}}>
+        <section style={{background:'#000',borderTop:'0.5px solid rgba(255,255,255,0.05)',padding:'72px 0'}}>
           <div style={{maxWidth:900,margin:'0 auto',padding:'0 60px'}}>
             <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.22em',textTransform:'uppercase',color:'rgba(201,169,110,0.5)',marginBottom:12}}>Built-In DSP Amplifier</div>
             <h2 style={{fontFamily:"'DM Serif Display',serif",fontWeight:400,fontSize:'clamp(28px,3.5vw,48px)',color:'rgba(238,235,229,0.9)',lineHeight:1.06,marginBottom:56}}>
