@@ -2730,18 +2730,15 @@ export default function ProductDetail({ product }: { product: Product }) {
       {product._id === 'prod-banyan-pith' && (
         <section style={{background:'#050505',borderTop:'0.5px solid rgba(255,255,255,0.05)',padding:'72px 0'}}>
           <div style={{maxWidth:900,margin:'0 auto',padding:'0 60px'}}>
-            {/* Header */}
             <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.22em',textTransform:'uppercase',color:'rgba(201,169,110,0.5)',marginBottom:12}}>Built-In DSP Amplifier</div>
-            <h2 style={{fontFamily:"'DM Serif Display',serif",fontWeight:400,fontSize:'clamp(28px,3.5vw,48px)',color:'rgba(238,235,229,0.9)',lineHeight:1.06,marginBottom:16}}>
+            <h2 style={{fontFamily:"'DM Serif Display',serif",fontWeight:400,fontSize:'clamp(28px,3.5vw,48px)',color:'rgba(238,235,229,0.9)',lineHeight:1.06,marginBottom:56}}>
               The amplifier<br/><em style={{fontStyle:'italic'}}>is the subwoofer.</em>
             </h2>
-            <p style={{fontFamily:"'DM Mono',monospace",fontSize:12,lineHeight:1.75,color:'rgba(238,235,229,0.38)',maxWidth:520,marginBottom:56}}>
-              A 2000W Class D power stage and a SigmaStudio-programmable DSP module live inside the Pith enclosure. No separate rack. No external processor. The full system is two cabinets and two cable runs.
-            </p>
-            {/* DSP image + spec grid */}
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:1,alignItems:'stretch'}}>
+
+            {/* DSP image LEFT + spec panel RIGHT — side by side */}
+            <div style={{display:'flex',gap:'1px',alignItems:'stretch',width:'100%'}}>
               {/* DSP image */}
-              <div style={{background:'#080808',border:'0.5px solid rgba(255,255,255,0.05)',overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center',minHeight:280}}>
+              <div style={{flex:'1 1 50%',background:'#080808',border:'0.5px solid rgba(255,255,255,0.05)',overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center',minHeight:300}}>
                 {(() => {
                   const img = product.galleryImages?.[1] ? getImageUrl(product.galleryImages[1], 900) : null
                   return img
@@ -2750,7 +2747,7 @@ export default function ProductDetail({ product }: { product: Product }) {
                 })()}
               </div>
               {/* DSP spec panel */}
-              <div style={{background:'#060606',border:'0.5px solid rgba(255,255,255,0.05)',padding:'40px 36px',display:'flex',flexDirection:'column',justifyContent:'center'}}>
+              <div style={{flex:'1 1 50%',background:'#060606',border:'0.5px solid rgba(255,255,255,0.05)',padding:'40px 36px',display:'flex',flexDirection:'column',justifyContent:'center'}}>
                 <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.2em',textTransform:'uppercase',color:'rgba(201,169,110,0.45)',marginBottom:20}}>SigmaStudio · Programmable DSP</div>
                 {[
                   ['Processor','ADAU1701 · SigmaDSP'],
@@ -2769,14 +2766,15 @@ export default function ProductDetail({ product }: { product: Product }) {
               </div>
             </div>
 
-            {/* ── XSCACE Network Controller App ── */}
-            <div style={{marginTop:1,background:'#060606',border:'0.5px solid rgba(201,169,110,0.1)',padding:'48px 40px',display:'grid',gridTemplateColumns:'1fr auto',gap:48,alignItems:'center'}}>
-              <div>
+            {/* ── XSCACE Network Controller App — text left, macOS mockup right ── */}
+            <div style={{marginTop:'1px',display:'flex',gap:'1px',alignItems:'stretch',width:'100%'}}>
+              {/* Text panel */}
+              <div style={{flex:'1 1 42%',background:'#060606',border:'0.5px solid rgba(201,169,110,0.08)',padding:'48px 40px',display:'flex',flexDirection:'column',justifyContent:'center'}}>
                 <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.2em',textTransform:'uppercase',color:'rgba(201,169,110,0.45)',marginBottom:14}}>PC / Mac · LAN Control</div>
-                <div style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(20px,2.2vw,30px)',color:'rgba(238,235,229,0.9)',lineHeight:1.08,marginBottom:16}}>
+                <div style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(20px,2.2vw,28px)',color:'rgba(238,235,229,0.9)',lineHeight:1.08,marginBottom:16}}>
                   XSCACE Network<br/><em style={{fontStyle:'italic'}}>Controller App</em>
                 </div>
-                <p style={{fontFamily:"'DM Mono',monospace",fontSize:11,lineHeight:1.75,color:'rgba(238,235,229,0.35)',maxWidth:400,marginBottom:28}}>
+                <p style={{fontFamily:"'DM Mono',monospace",fontSize:11,lineHeight:1.75,color:'rgba(238,235,229,0.35)',marginBottom:28}}>
                   Connect to the Banyan Pith over your local network. Adjust parametric EQ, crossover frequency, output delay, and channel routing in real time — without touching the hardware.
                 </p>
                 {[
@@ -2792,17 +2790,26 @@ export default function ProductDetail({ product }: { product: Product }) {
                   </div>
                 ))}
               </div>
-              {/* App icon placeholder */}
-              <div style={{width:96,height:96,borderRadius:22,background:'#0a0a0a',border:'0.5px solid rgba(201,169,110,0.2)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flexShrink:0,gap:6}}>
-                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                  <rect x="4" y="8" width="24" height="16" rx="2" stroke="rgba(201,169,110,0.6)" strokeWidth="0.8"/>
-                  <line x1="4" y1="14" x2="28" y2="14" stroke="rgba(201,169,110,0.3)" strokeWidth="0.5"/>
-                  <line x1="12" y1="8" x2="12" y2="24" stroke="rgba(201,169,110,0.3)" strokeWidth="0.5"/>
-                  <circle cx="8" cy="11" r="1" fill="rgba(201,169,110,0.5)"/>
-                  <circle cx="8" cy="18" r="1" fill="rgba(201,169,110,0.5)"/>
-                  <circle cx="8" cy="21" r="1" fill="rgba(201,169,110,0.3)"/>
-                </svg>
-                <span style={{fontFamily:"'DM Mono',monospace",fontSize:6,letterSpacing:'.1em',textTransform:'uppercase',color:'rgba(201,169,110,0.4)'}}>XSCACE</span>
+              {/* macOS window mockup */}
+              <div style={{flex:'1 1 58%',background:'#080808',border:'0.5px solid rgba(201,169,110,0.08)',padding:'32px 28px',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                {/* macOS window chrome */}
+                <div style={{width:'100%',borderRadius:10,overflow:'hidden',boxShadow:'0 24px 64px rgba(0,0,0,0.8)',border:'0.5px solid rgba(255,255,255,0.08)'}}>
+                  {/* Title bar */}
+                  <div style={{background:'#1c1c1e',padding:'10px 16px',display:'flex',alignItems:'center',gap:8,borderBottom:'0.5px solid rgba(255,255,255,0.06)'}}>
+                    <div style={{width:11,height:11,borderRadius:'50%',background:'#ff5f57'}}/>
+                    <div style={{width:11,height:11,borderRadius:'50%',background:'#febc2e'}}/>
+                    <div style={{width:11,height:11,borderRadius:'50%',background:'#28c840'}}/>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:'rgba(255,255,255,0.3)',letterSpacing:'.08em',marginLeft:'auto',marginRight:'auto',transform:'translateX(-20px)'}}>XSCACE Network Controller</span>
+                  </div>
+                  {/* Screenshot */}
+                  <div style={{background:'#111',aspectRatio:'1520/960',overflow:'hidden'}}>
+                    <img
+                      src="https://cdn.sanity.io/images/7r0kq57d/production/886620094c00c68ad5e10fb34b4c2071a7dccfa1-2922x1912.png?w=900&auto=format&q=85"
+                      alt="XSCACE Network Controller App"
+                      style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
