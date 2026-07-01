@@ -2443,22 +2443,36 @@ export default function ProductDetail({ product }: { product: Product }) {
                 </a>
               </div>
             </div>
-            {/* Combined system callout */}
-            <div style={{marginTop:1,background:'#060606',border:'0.5px solid rgba(201,169,110,0.1)',padding:'28px 36px',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:20}}>
-              <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.14em',textTransform:'uppercase',color:'rgba(238,235,229,0.32)'}}>
-                Complete System · 6× 5″ Woofer · 2× 12″ Sub · 3× 1.5″ Compression Driver with Waveguide
+            {/* Combined system — specs left, 3D right */}
+            <div style={{marginTop:1,display:'grid',gridTemplateColumns:'1fr 1fr',gap:1,minHeight:520}}>
+              {/* Left — combined specs */}
+              <div style={{background:'#060606',border:'0.5px solid rgba(201,169,110,0.1)',padding:'40px 36px',display:'flex',flexDirection:'column',justifyContent:'center'}}>
+                <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.2em',textTransform:'uppercase',color:'rgba(201,169,110,0.45)',marginBottom:16}}>Complete System</div>
+                <div style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(22px,2.4vw,32px)',color:'rgba(201,169,110,0.85)',marginBottom:32,lineHeight:1.08}}>1800W Combined</div>
+                <div style={{width:32,height:'0.5px',background:'rgba(201,169,110,0.3)',marginBottom:28}}/>
+                {[
+                  ['Full Range','6× 5″ Woofer'],
+                  ['HF','3× 1.5″ Compression Driver'],
+                  ['Waveguide','Controlled HF coverage'],
+                  ['Sub-Bass','2× 12″ Long-Throw'],
+                  ['DSP','2000W Built-in · Class D'],
+                  ['System Range','27Hz – 20kHz'],
+                ].map(([l, v]) => (
+                  <div key={l} style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:10,borderBottom:'0.5px solid rgba(255,255,255,0.03)',paddingBottom:10}}>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.1em',color:'rgba(238,235,229,0.28)',textTransform:'uppercase'}}>{l}</span>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:'rgba(238,235,229,0.65)'}}>{v}</span>
+                  </div>
+                ))}
               </div>
-              <div style={{fontFamily:"'DM Serif Display',serif",fontSize:22,color:'rgba(201,169,110,0.85)',letterSpacing:'-.01em'}}>
-                1800W Combined
+              {/* Right — 3D model */}
+              <div style={{position:'relative',minHeight:520,overflow:'hidden'}}>
+                <ModelReveal
+                  modelUrl="/models/banyan-set-line-array-system.glb"
+                  productName="Banyan Set"
+                  productId="prod-banyan-canopy"
+                  minimal
+                />
               </div>
-            </div>
-            {/* 3D Set model */}
-            <div style={{marginTop:1}}>
-              <ModelReveal
-                modelUrl="/models/banyan-set-line-array-system.glb"
-                productName="Banyan Set"
-                productId="prod-banyan-canopy"
-              />
             </div>
           </div>
         </section>

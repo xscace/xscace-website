@@ -167,6 +167,7 @@ interface Props {
   modelUrl?: string
   productName: string
   productId: string
+  minimal?: boolean  // canvas only — no constraints panel
 }
 
 // ── CLICK SOUND ───────────────────────────────────────────────────────────────
@@ -289,7 +290,7 @@ function OverlayEffects({ mode, active, canvasW, canvasH, mouseX, mouseY }: {
 }
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
-export default function ModelReveal({ modelUrl, productName, productId }: Props) {
+export default function ModelReveal({ modelUrl, productName, productId, minimal }: Props) {
   const mountRef    = useRef<HTMLDivElement>(null)
   const [wire, setWire]         = useState(false)
   const [loaded, setLoaded]     = useState(false)
@@ -647,6 +648,39 @@ export default function ModelReveal({ modelUrl, productName, productId }: Props)
 
   const CONSTRAINTS = CONSTRAINTS_MAP[productId] || CONSTRAINTS_DEFAULT
   const current = CONSTRAINTS[active]
+
+  // Minimal mode — canvas only, no constraints panel, fills its container
+  if (minimal) {
+    return (
+      <div style={{position:'relative',width:'100%',height:'100%',minHeight:480,background:'#000'}}>
+        <div ref={mountRef} style={{position:'absolute',inset:0}}/>
+        <OverlayEffects
+          mode="normal"
+          active={loaded}
+          canvasW={canvasSize.w}
+          canvasH={canvasSize.h}
+          mouseX={mouseNorm.x}
+          mouseY={mouseNorm.y}
+        />
+        {!loaded && <div className="mr-loading"><div className="mr-loading-bar"/></div>}
+        <div className="mr-controls">
+          <button
+            className={`mr-wire-btn${wire ? ' active' : ''}`}
+            onClick={() => { setWire(w => !w); playClick() }}>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+              <rect x="0.5" y="0.5" width="9" height="9" stroke="currentColor" strokeWidth="0.7"/>
+              <line x1="0.5" y1="0.5" x2="9.5" y2="9.5" stroke="currentColor" strokeWidth="0.7"/>
+              <line x1="9.5" y1="0.5" x2="0.5" y2="9.5" stroke="currentColor" strokeWidth="0.7"/>
+              <line x1="5" y1="0.5" x2="5" y2="9.5" stroke="currentColor" strokeWidth="0.7"/>
+              <line x1="0.5" y1="5" x2="9.5" y2="5" stroke="currentColor" strokeWidth="0.7"/>
+            </svg>
+            {wire ? 'Solid' : 'Wireframe'}
+          </button>
+        </div>
+        <div className="mr-cursor-hint">Move cursor to illuminate</div>
+      </div>
+    )
+  }
 
   return (
     <div className="mr-outer">
