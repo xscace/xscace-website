@@ -145,6 +145,20 @@ const CONSTRAINTS_MAP: Record<string, Constraint[]> = {
     { cross:'×', text:'No visible driver',         desc:'The grille sits flush with the enclosure face. No protruding cone, no visible surround. A sealed surface that happens to reproduce 35Hz.', angle:{y:-Math.PI*0.25,x:0}, mode:'normal' },
     { cross:'→', text:'Bass that disappears.',     desc:'The Acacia 10 is felt before it is heard. Pressure without presence — the room fills with low frequency energy and the source stays invisible.', angle:{y:Math.PI*0.15,x:0.05}, mode:'normal', last:true },
   ],
+  'prod-acacia6-std': [
+    { cross:'×', text:'No port noise',          desc:'XS-Flow port geometry eliminates turbulence at the vent exit. Full bass output at reference levels — no chuffing, no compression, no audible artefact.', angle:{y:0,x:0.1}, mode:'normal' },
+    { cross:'×', text:'No amplifier lock-in',   desc:'The Acacia 6 Passive pairs with any amplifier that delivers a subwoofer signal. Your signal chain. Your choice.', angle:{y:Math.PI*0.3,x:0}, mode:'normal' },
+    { cross:'×', text:'No crossover guesswork', desc:'The LFE input accepts a dedicated subwoofer signal directly. Set the crossover in your amplifier or DSP once — the Acacia handles the rest.', angle:{y:0,x:-0.15}, mode:'normal' },
+    { cross:'×', text:'No visible driver',      desc:'The grille sits flush with the enclosure face. No protruding cone, no visible surround. A sealed surface that happens to reproduce 35Hz.', angle:{y:-Math.PI*0.25,x:0}, mode:'normal' },
+    { cross:'→', text:'Bass that disappears.',  desc:'The Acacia 6 Passive is felt before it is heard. Pressure without presence — the room fills with low frequency energy and the source stays invisible.', angle:{y:Math.PI*0.15,x:0.05}, mode:'normal', last:true },
+  ],
+  'prod-acacia10-std': [
+    { cross:'×', text:'No port noise',          desc:'XS-Flow port geometry eliminates turbulence at the vent exit. Full bass output at reference levels — no chuffing, no compression, no audible artefact.', angle:{y:0,x:0.1}, mode:'normal' },
+    { cross:'×', text:'No amplifier lock-in',   desc:'The Acacia 10 Passive pairs with any amplifier that delivers a subwoofer signal. Your signal chain. Your choice.', angle:{y:Math.PI*0.3,x:0}, mode:'normal' },
+    { cross:'×', text:'No crossover guesswork', desc:'The LFE input accepts a dedicated subwoofer signal directly. Set the crossover in your amplifier or DSP once — the Acacia handles the rest.', angle:{y:0,x:-0.15}, mode:'normal' },
+    { cross:'×', text:'No visible driver',      desc:'The grille sits flush with the enclosure face. No protruding cone, no visible surround. A sealed surface that happens to reproduce 35Hz.', angle:{y:-Math.PI*0.25,x:0}, mode:'normal' },
+    { cross:'→', text:'Bass that disappears.',  desc:'The Acacia 10 Passive is felt before it is heard. Pressure without presence — the room fills with low frequency energy and the source stays invisible.', angle:{y:Math.PI*0.15,x:0.05}, mode:'normal', last:true },
+  ],
   'prod-xylem2': [
     { cross:'×', text:'No rack required',          desc:'The Xylem 2 mounts behind a screen, inside a cabinet, or within a wall box. No separate rack space, no ventilation cutouts, no visible hardware in the room.', angle:{y:0,x:0}, mode:'normal' },
     { cross:'×', text:'No passive crossover',      desc:'DSP-active crossover runs inside the unit. Each output is individually time-aligned and equalised in the digital domain — no passive components in the signal path.', angle:{y:Math.PI*0.3,x:0}, mode:'normal' },
@@ -175,7 +189,7 @@ const CONSTRAINTS_DEFAULT: Constraint[] = [
   { cross:'→', text:'Engineered to disappear.',  desc:'When there is nothing to remove, design is complete.', angle:{y:Math.PI*0.2,x:-0.1}, mode:'normal', last:true },
 ]
 
-const FLAGSHIP_IDS = ['prod-bonsai', 'prod-bonsai-ic', 'prod-cane', 'prod-cane-ic', 'prod-quadcane', 'prod-quadcane-ic', 'prod-cedar', 'prod-ghost2', 'prod-aspen6', 'prod-aspen8', 'prod-aster6', 'prod-acacia6-pw', 'prod-acacia10-pw', 'prod-xylem2', 'prod-xylem3', 'prod-xylem4', 'prod-oak', 'prod-willow', 'prod-sage', 'prod-bergenia', 'prod-banyan-canopy', 'prod-banyan-pith', 'prod-spirea']
+const FLAGSHIP_IDS = ['prod-bonsai', 'prod-bonsai-ic', 'prod-cane', 'prod-cane-ic', 'prod-quadcane', 'prod-quadcane-ic', 'prod-cedar', 'prod-ghost2', 'prod-aspen6', 'prod-aspen8', 'prod-aster6', 'prod-acacia6-pw', 'prod-acacia10-pw', 'prod-xylem2', 'prod-xylem3', 'prod-xylem4', 'prod-oak', 'prod-willow', 'prod-sage', 'prod-bergenia', 'prod-banyan-canopy', 'prod-banyan-pith', 'prod-spirea', 'prod-acacia6-std', 'prod-acacia10-std']
 
 interface Props {
   modelUrl?: string
@@ -371,6 +385,8 @@ export default function ModelReveal({ modelUrl, productName, productId, minimal 
   'prod-banyan-canopy':{ cam:[0,0,3.2],          rot:[0.000,-0.45,0.000],   fov:62, exposure:1.0,  ambient:0,   key:2.2, fill:0.4 },
   'prod-banyan-pith':  { cam:[0,0,3.2],          rot:[0.000,-0.40,0.000],   fov:65, exposure:1.0,  ambient:0,   key:2.2, fill:0.4 },
   'prod-spirea':       { cam:[0,0,3.2],          rot:[0.000,-0.45,0.000],   fov:62, exposure:1.0,  ambient:0,   key:2.0, fill:0.4 },
+  'prod-acacia6-std':  { cam:[0,0,3],            rot:[0.000,-0.702,0.000],  fov:78, exposure:0.15, ambient:0,   key:5.0, fill:0.8 },
+  'prod-acacia10-std': { cam:[0,0,3],            rot:[0.000,-0.702,0.000],  fov:78, exposure:0.15, ambient:0,   key:5.0, fill:0.8 },
   }
   const s = (productId && MODEL_SETTINGS[productId]) ? MODEL_SETTINGS[productId]
     : { cam:[0,0,0.82] as [number,number,number], rot:[0,0,0] as [number,number,number], fov:28, exposure:0.75, ambient:0.04, key:0.08, fill:0.2 }
