@@ -2202,7 +2202,15 @@ export default function ProductDetail({ product }: { product: Product }) {
       setAmTheaterIdx(idx)
     }
     window.addEventListener('scroll', handler, { passive: true })
-    return () => window.removeEventListener('scroll', handler)
+    // Inject model-viewer web component script
+    const mv = document.createElement('script')
+    mv.type = 'module'
+    mv.src = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js'
+    document.head.appendChild(mv)
+    return () => {
+      window.removeEventListener('scroll', handler)
+      mv.remove()
+    }
   }, [isAirMini])
 
   const isIW = ['acacia-6-in-wall-passive-subwoofer','acacia-10-in-wall-passive-subwoofer'].includes(product.slug?.current)
@@ -2362,7 +2370,8 @@ export default function ProductDetail({ product }: { product: Product }) {
                     { label:'Spotify Connect',   dot:'#1DB954', border:'rgba(29,185,84,.28)', color:'rgba(29,185,84,.85)', pulse:'am-tag-pulse-green', delay:'.3s' },
                     { label:'Wi-Fi 2.4 + 5GHz', dot:'#38BDF8', border:'rgba(56,189,248,.22)',color:'rgba(56,189,248,.7)', pulse:'',                   delay:'.4s' },
                     { label:'DLNA · UPnP',       dot:'rgba(238,235,229,.4)', border:'rgba(255,255,255,.1)', color:'rgba(238,235,229,.45)', pulse:'', delay:'.5s' },
-                    { label:'Multi-Room',        dot:'#C9A96E', border:'rgba(201,169,110,.22)',color:'rgba(201,169,110,.7)', pulse:'am-tag-pulse-gold', delay:'.6s' },
+                    { label:'HDMI eARC',         dot:'#a78bfa', border:'rgba(167,139,250,.25)',color:'rgba(167,139,250,.75)', pulse:'', delay:'.6s' },
+                    { label:'Multi-Room',        dot:'#C9A96E', border:'rgba(201,169,110,.22)',color:'rgba(201,169,110,.7)', pulse:'am-tag-pulse-gold', delay:'.7s' },
                   ].map(t => (
                     <span key={t.label} className="am-stag"
                       style={{borderColor:t.border, color:t.color, animationDelay:t.delay, animationFillMode:'forwards',
@@ -3126,32 +3135,6 @@ export default function ProductDetail({ product }: { product: Product }) {
               </div>
             </div>
 
-            {/* ── 2. STREAMING PROTOCOLS ── */}
-            <section style={{borderTop:'0.5px solid rgba(255,255,255,.06)',padding:'100px 52px',background:'#000'}}>
-              <div style={{maxWidth:1040,margin:'0 auto'}}>
-                <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.24em',textTransform:'uppercase',color:'rgba(201,169,110,.5)',marginBottom:12}}>Wireless Streaming</div>
-                <h2 style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(26px,3.5vw,48px)',fontWeight:400,color:'rgba(238,235,229,.92)',lineHeight:1.05,marginBottom:48}}>Five ways to <em style={{fontStyle:'italic'}}>send it music.</em></h2>
-                <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:1,background:'rgba(255,255,255,.06)'}}>
-                  {[
-                    {icon:'ti-cast',       name:'AirPlay 2',              badge:'Apple',        body:'Stream from iPhone, iPad, Mac, or Apple TV. Multi-room grouping across AirPlay 2 devices.'},
-                    {icon:'ti-bluetooth',  name:'Bluetooth 5.0 APTX-HD',  badge:'Near-Lossless',body:'24-bit audio over Bluetooth. Lower latency than standard BT. Works with any APTX-capable source.'},
-                    {icon:'ti-brand-spotify', name:'Spotify Connect',     badge:'Direct',       body:'Spotify streams directly to the Air Mini — no phone relay. Put your phone down, music keeps playing.'},
-                    {icon:'ti-wifi',       name:'Wi-Fi 2.4 + 5GHz',       badge:'Dual-Band',    body:'Dual-band for rock-solid connections. 5GHz for speed, 2.4GHz for range. No dropouts mid-room.'},
-                    {icon:'ti-server-2',   name:'DLNA · UPnP',            badge:'Network Library',body:'Browse and play from a NAS or home server. High-resolution FLAC and ALAC over your local network.'},
-                    {icon:'ti-plug',       name:'RCA Analogue',            badge:'Wired Input',  body:'Analogue fallback for turntables, CD players, or any legacy source. Full signal path to speaker output.'},
-                  ].map(p => (
-                    <div key={p.name} style={{background:'#000',padding:'36px 32px',display:'flex',flexDirection:'column',gap:12,position:'relative',transition:'background .25s'}}
-                      onMouseEnter={e=>(e.currentTarget.style.background='#060606')}
-                      onMouseLeave={e=>(e.currentTarget.style.background='#000')}>
-                      <i className={`ti ${p.icon}`} style={{fontSize:32,color:'rgba(201,169,110,.65)',display:'block'}}/>
-                      <div style={{fontFamily:"'DM Serif Display',serif",fontSize:19,fontWeight:400,color:'rgba(238,235,229,.92)'}}>{p.name}</div>
-                      <span style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.14em',textTransform:'uppercase',color:'rgba(201,169,110,.5)',padding:'3px 9px',border:'0.5px solid rgba(201,169,110,.12)',display:'inline-block',width:'fit-content'}}>{p.badge}</span>
-                      <p style={{fontFamily:"'DM Mono',monospace",fontSize:10.5,lineHeight:1.7,color:'rgba(238,235,229,.35)',marginTop:4}}>{p.body}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </section>
 
             {/* ── 3. HI-RES DAC ── */}
             <section style={{borderTop:'0.5px solid rgba(255,255,255,.06)',padding:'100px 52px',background:'#000'}}>
@@ -3291,6 +3274,12 @@ export default function ProductDetail({ product }: { product: Product }) {
                   <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.24em',textTransform:'uppercase',color:'rgba(201,169,110,.5)',marginBottom:16}}>XSCACE App</div>
                   <h2 style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(26px,3.5vw,48px)',fontWeight:400,color:'rgba(238,235,229,.92)',lineHeight:1.1,marginBottom:20}}>Control from<br/><em style={{fontStyle:'italic'}}>anywhere.</em></h2>
                   <p style={{fontFamily:"'DM Mono',monospace",fontSize:11,lineHeight:1.85,color:'rgba(238,235,229,.38)',marginBottom:28}}>The XSCACE app gives you complete control over every Air Mini in your system. Switch sources, adjust volume, tweak EQ, and group rooms — all from your phone without being near the hardware.</p>
+                  <a href="/software/xscace-controller" style={{display:'inline-flex',alignItems:'center',gap:8,fontFamily:"'DM Mono',monospace",fontSize:8.5,letterSpacing:'.14em',textTransform:'uppercase',color:'#C9A96E',border:'0.5px solid rgba(201,169,110,.3)',padding:'9px 18px',textDecoration:'none',marginBottom:28,transition:'border-color .2s'}}
+                    onMouseEnter={e=>(e.currentTarget.style.borderColor='rgba(201,169,110,.65)')}
+                    onMouseLeave={e=>(e.currentTarget.style.borderColor='rgba(201,169,110,.3)')}>
+                    <i className="ti ti-device-mobile" style={{fontSize:13}}/>
+                    XSCACE App →
+                  </a>
                   <div style={{display:'flex',flexDirection:'column',gap:0}}>
                     {[
                       {ico:'ti-adjustments-horizontal', t:'Parametric EQ',      x:'Tune the output to your speakers and room, from your phone.'},
@@ -3324,6 +3313,7 @@ export default function ProductDetail({ product }: { product: Product }) {
                     </div>
                     {[
                       {ico:'ti-plug',          n:'RCA Stereo',          x:'Analogue input — turntable, CD player, line-level source'},
+                      {ico:'ti-device-tv',     n:'HDMI eARC',           x:'TV audio extraction via HDMI eARC — one cable from your TV'},
                       {ico:'ti-cast',          n:'AirPlay 2',           x:'Apple device streaming · multi-room'},
                       {ico:'ti-bluetooth',     n:'Bluetooth 5.0 APTX-HD', x:'24-bit near-lossless wireless'},
                       {ico:'ti-brand-spotify', n:'Spotify Connect',     x:'Direct streaming, no phone relay'},
@@ -3424,22 +3414,17 @@ export default function ProductDetail({ product }: { product: Product }) {
                 @keyframes am-spin-slow { to { transform: rotate(360deg); } }
               `}</style>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',minHeight:520}}>
-                {/* Left — 3D model placeholder */}
-                <div style={{background:'#030303',display:'flex',alignItems:'center',justifyContent:'center',position:'relative',overflow:'hidden',borderRight:'0.5px solid rgba(255,255,255,.06)'}}>
-                  <div style={{position:'absolute',inset:0,background:'radial-gradient(ellipse 70% 65% at 50% 50%,rgba(201,169,110,.045) 0%,transparent 68%)',pointerEvents:'none'}}/>
-                  {/* Outer orbit rings */}
-                  {[180,230,280].map((r,i)=>(
-                    <div key={i} style={{position:'absolute',width:r,height:r,borderRadius:'50%',border:'0.5px solid rgba(201,169,110,0.06)',top:'50%',left:'50%',transform:'translate(-50%,-50%)'}}/>
-                  ))}
-                  {/* Product floating box */}
-                  <div style={{width:'clamp(180px,22vw,260px)',height:'clamp(180px,22vw,260px)',background:'#080808',border:'0.5px solid rgba(201,169,110,.14)',display:'flex',alignItems:'center',justifyContent:'center',position:'relative',animation:'am-float 5s ease-in-out infinite',zIndex:1}}>
-                    {heroImg
-                      ? <img src={heroImg} alt={product.productName} style={{width:'100%',height:'100%',objectFit:'contain',padding:28}}/>
-                      : <span style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.1em',color:'rgba(201,169,110,.2)',textAlign:'center'}}>130 × 130 × 28 mm</span>
-                    }
-                    <div style={{position:'absolute',top:10,right:10,fontFamily:"'DM Mono',monospace",fontSize:6,letterSpacing:'.18em',textTransform:'uppercase',color:'rgba(201,169,110,.4)',border:'0.5px solid rgba(201,169,110,.2)',padding:'2px 6px'}}>3D</div>
-                  </div>
-                  <div style={{position:'absolute',bottom:20,left:'50%',transform:'translateX(-50%)',fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.2em',textTransform:'uppercase',color:'rgba(201,169,110,.22)'}}>Interactive model coming soon</div>
+                {/* Left — 3D model viewer */}
+                <div style={{background:'#030303',position:'relative',overflow:'hidden',borderRight:'0.5px solid rgba(255,255,255,.06)',minHeight:480}}>
+                  {React.createElement('model-viewer', {
+                    src: '/models/air-mini-streaming-amplifier.glb',
+                    'auto-rotate': true,
+                    'camera-controls': true,
+                    'shadow-intensity': '0.4',
+                    'exposure': '0.8',
+                    style: {width:'100%',height:'100%',minHeight:480,background:'transparent','--progress-bar-color':'rgba(201,169,110,0.4)','--progress-bar-height':'2px'},
+                  })}
+                  <div style={{position:'absolute',top:16,left:16,fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.18em',textTransform:'uppercase',color:'rgba(201,169,110,.35)',border:'0.5px solid rgba(201,169,110,.15)',padding:'3px 8px',pointerEvents:'none'}}>3D · Drag to rotate</div>
                 </div>
                 {/* Right — 3 feature points */}
                 <div style={{display:'flex',flexDirection:'column',gap:0}}>
@@ -3488,31 +3473,6 @@ export default function ProductDetail({ product }: { product: Product }) {
               </div>
             </section>
 
-            {/* ── 7. FEATURE HIGHLIGHTS GRID ── */}
-            <section style={{borderTop:'0.5px solid rgba(255,255,255,.06)',padding:'100px 52px',background:'#000'}}>
-              <div style={{maxWidth:1040,margin:'0 auto'}}>
-                <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.24em',textTransform:'uppercase',color:'rgba(201,169,110,.5)',marginBottom:12}}>Why Air Mini</div>
-                <h2 style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(26px,3.5vw,48px)',fontWeight:400,color:'rgba(238,235,229,.92)',marginBottom:52}}>Built for the <em style={{fontStyle:'italic'}}>invisible install.</em></h2>
-                <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:1,background:'rgba(255,255,255,.06)'}}>
-                  {[
-                    {ico:'ti-box',              n:'Impossibly small',     x:'130 × 130 × 28mm. Goes anywhere a cable goes.'},
-                    {ico:'ti-broadcast',        n:'Always-on streaming',  x:'All protocols live simultaneously, no source priority conflicts.'},
-                    {ico:'ti-wave-sine',        n:'Hi-Res DAC',           x:'24-bit digital-to-analogue. APTX-HD over Bluetooth.'},
-                    {ico:'ti-device-mobile',    n:'Full app control',     x:'EQ, source, volume, multi-room — all from your phone.'},
-                    {ico:'ti-plug-connected',   n:'Clean I/O',            x:'RCA in. Speaker out. Power. Three connections total.'},
-                    {ico:'ti-network',          n:'Home Automation',      x:'Open API over IP — compatible with any home automation system.'},
-                  ].map(f=>(
-                    <div key={f.n} style={{background:'#000',padding:'36px 30px',display:'flex',flexDirection:'column',gap:10,transition:'background .25s'}}
-                      onMouseEnter={e=>(e.currentTarget.style.background='#060606')}
-                      onMouseLeave={e=>(e.currentTarget.style.background='#000')}>
-                      <i className={`ti ${f.ico}`} style={{fontSize:36,color:'rgba(201,169,110,.7)',display:'block',marginBottom:6}}/>
-                      <div style={{fontFamily:"'DM Serif Display',serif",fontSize:20,fontWeight:400,color:'rgba(238,235,229,.92)'}}>{f.n}</div>
-                      <div style={{fontFamily:"'DM Mono',monospace",fontSize:10.5,lineHeight:1.65,color:'rgba(238,235,229,.38)'}}>{f.x}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </section>
           </>
         )
       })()}
