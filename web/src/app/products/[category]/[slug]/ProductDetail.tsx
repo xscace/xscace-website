@@ -3034,7 +3034,7 @@ export default function ProductDetail({ product }: { product: Product }) {
                       mv.setAttribute('camera-controls', '')
                       mv.setAttribute('disable-zoom', '')
                       mv.setAttribute('shadow-intensity', '0.4')
-                      mv.setAttribute('exposure', '0.8')
+                      mv.setAttribute('exposure', '1.4')
                       mv.style.cssText = 'width:100%;height:100%;min-height:560px;background:#000;--progress-bar-color:rgba(201,169,110,0.4);--progress-bar-height:2px'
                       el.appendChild(mv)
                     }
