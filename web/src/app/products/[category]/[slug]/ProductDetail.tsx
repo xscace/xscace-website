@@ -3025,16 +3025,17 @@ export default function ProductDetail({ product }: { product: Product }) {
             <section style={{borderTop:'0.5px solid rgba(255,255,255,.06)',background:'#000'}}>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',minHeight:560}}>
                 {/* Left — 3D model viewer */}
-                <div style={{background:'#030303',position:'relative',overflow:'hidden',borderRight:'0.5px solid rgba(255,255,255,.06)',minHeight:560}}>
+                <div style={{background:'#000',position:'relative',overflow:'hidden',borderRight:'0.5px solid rgba(255,255,255,.06)',minHeight:560}}>
                   <div ref={(el) => {
                     if (el && !el.querySelector('model-viewer')) {
                       const mv = document.createElement('model-viewer') as any
                       mv.setAttribute('src', '/models/air-mini-streaming-amplifier.glb')
                       mv.setAttribute('auto-rotate', '')
                       mv.setAttribute('camera-controls', '')
+                      mv.setAttribute('disable-zoom', '')
                       mv.setAttribute('shadow-intensity', '0.4')
                       mv.setAttribute('exposure', '0.8')
-                      mv.style.cssText = 'width:100%;height:100%;min-height:560px;background:transparent;--progress-bar-color:rgba(201,169,110,0.4);--progress-bar-height:2px'
+                      mv.style.cssText = 'width:100%;height:100%;min-height:560px;background:#000;--progress-bar-color:rgba(201,169,110,0.4);--progress-bar-height:2px'
                       el.appendChild(mv)
                     }
                   }} style={{width:'100%',height:'100%',minHeight:560}}/>
@@ -3226,12 +3227,20 @@ export default function ProductDetail({ product }: { product: Product }) {
                   <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.24em',textTransform:'uppercase',color:'rgba(201,169,110,.5)',marginBottom:16}}>XSCACE App</div>
                   <h2 style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(26px,3.5vw,48px)',fontWeight:400,color:'rgba(238,235,229,.92)',lineHeight:1.1,marginBottom:20}}>Control from<br/><em style={{fontStyle:'italic'}}>anywhere.</em></h2>
                   <p style={{fontFamily:"'DM Mono',monospace",fontSize:11,lineHeight:1.85,color:'rgba(238,235,229,.38)',marginBottom:28}}>The XSCACE app gives you complete control over every Air Mini in your system. Switch sources, adjust volume, tweak EQ, and group rooms — all from your phone without being near the hardware.</p>
-                  <a href="/software/xscace-controller" style={{display:'inline-flex',alignItems:'center',gap:8,fontFamily:"'DM Mono',monospace",fontSize:8.5,letterSpacing:'.14em',textTransform:'uppercase',color:'#C9A96E',border:'0.5px solid rgba(201,169,110,.3)',padding:'9px 18px',textDecoration:'none',marginBottom:28,transition:'border-color .2s'}}
-                    onMouseEnter={e=>(e.currentTarget.style.borderColor='rgba(201,169,110,.65)')}
-                    onMouseLeave={e=>(e.currentTarget.style.borderColor='rgba(201,169,110,.3)')}>
-                    <i className="ti ti-device-mobile" style={{fontSize:13}}/>
-                    XSCACE App →
-                  </a>
+                  <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:28}}>
+                    <a href="/software/xscace-controller" style={{display:'inline-flex',alignItems:'center',gap:8,fontFamily:"'DM Mono',monospace",fontSize:8.5,letterSpacing:'.14em',textTransform:'uppercase',color:'#C9A96E',border:'0.5px solid rgba(201,169,110,.3)',padding:'9px 18px',textDecoration:'none',transition:'border-color .2s'}}
+                      onMouseEnter={e=>(e.currentTarget.style.borderColor='rgba(201,169,110,.65)')}
+                      onMouseLeave={e=>(e.currentTarget.style.borderColor='rgba(201,169,110,.3)')}>
+                      <i className="ti ti-device-mobile" style={{fontSize:13}}/>
+                      XSCACE App →
+                    </a>
+                    <a href="/docs/air-mini-api-control.pdf" download style={{display:'inline-flex',alignItems:'center',gap:8,fontFamily:"'DM Mono',monospace",fontSize:8.5,letterSpacing:'.14em',textTransform:'uppercase',color:'rgba(238,235,229,.55)',border:'0.5px solid rgba(255,255,255,.12)',padding:'9px 18px',textDecoration:'none',transition:'border-color .2s,color .2s'}}
+                      onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.3)';e.currentTarget.style.color='rgba(238,235,229,.8)'}}
+                      onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.12)';e.currentTarget.style.color='rgba(238,235,229,.55)'}}>
+                      <i className="ti ti-file-download" style={{fontSize:13}}/>
+                      API Control Doc
+                    </a>
+                  </div>
                   <div style={{display:'flex',flexDirection:'column',gap:0}}>
                     {[
                       {ico:'ti-adjustments-horizontal', t:'Parametric EQ',      x:'Tune the output to your speakers and room, from your phone.'},
