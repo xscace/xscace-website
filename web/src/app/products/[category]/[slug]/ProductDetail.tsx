@@ -1788,7 +1788,7 @@ function SignalChain() {
 
 export default function ProductDetail({ product }: { product: Product }) {
   const [activeGallery, setActiveGallery] = useState(0)
-  const [amTheaterIdx, setAmTheaterIdx] = useState(0)
+  const [amTheaterIdx] = useState(0) // unused after theater removal
   const waveRafsRef = useRef<number[]>([])
   const amToutRef = useRef<HTMLDivElement>(null)
 
@@ -2194,23 +2194,12 @@ export default function ProductDetail({ product }: { product: Product }) {
 
   useEffect(() => {
     if (!isAirMini) return
-    const handler = () => {
-      const el = amToutRef.current
-      if (!el) return
-      const r = el.getBoundingClientRect()
-      const idx = Math.max(0, Math.min(4, Math.floor(-r.top / window.innerHeight)))
-      setAmTheaterIdx(idx)
-    }
-    window.addEventListener('scroll', handler, { passive: true })
     // Inject model-viewer web component script
     const mv = document.createElement('script')
     mv.type = 'module'
     mv.src = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js'
     document.head.appendChild(mv)
-    return () => {
-      window.removeEventListener('scroll', handler)
-      mv.remove()
-    }
+    return () => { mv.remove() }
   }, [isAirMini])
 
   const isIW = ['acacia-6-in-wall-passive-subwoofer','acacia-10-in-wall-passive-subwoofer'].includes(product.slug?.current)
@@ -3028,112 +3017,75 @@ export default function ProductDetail({ product }: { product: Product }) {
           Completely replaces the standard media/gallery block for this product.
       ════════════════════════════════════════════════════════════════ */}
       {isAirMini && (() => {
-        const AM_FEATURES = [
-          {
-            icon: 'ti-box',
-            ey: 'Form Factor',
-            num: '28', numUnit: 'mm',
-            title: <>Smaller than<br/>a remote.</>,
-            body: '130 × 130 × 28mm. 0.6 kg. The Air Mini disappears into walls, behind panels, inside ceiling voids — full wireless capability in a form factor you\'ll forget exists.',
-            chips: ['130 × 130 mm', '0.6 kg', 'Concealed install'],
-          },
-          {
-            icon: 'ti-broadcast',
-            ey: 'Wireless Streaming',
-            title: <>Every source.<br/><em>One box.</em></>,
-            body: 'AirPlay 2, Bluetooth 5.0 APTX-HD, Spotify Connect, DLNA and UPnP — all protocols live simultaneously. No priority switching, no app juggling. Whatever you use, it just works.',
-            chips: ['AirPlay 2', 'BT 5.0 APTX-HD', 'Spotify Connect', 'DLNA · UPnP'],
-          },
-          {
-            icon: 'ti-wave-sine',
-            ey: 'Hi-Res DAC',
-            title: <>Studio-grade<br/><em>conversion.</em></>,
-            body: 'Built-in high-resolution DAC converts digital streams to analogue with precision. APTX-HD delivers up to 24-bit audio over Bluetooth. Bit-perfect playback from every source.',
-            chips: ['24-bit Audio', 'APTX-HD', 'Bit-Perfect'],
-          },
-          {
-            icon: 'ti-device-mobile',
-            ey: 'Mobile App',
-            title: <>Full control.<br/><em>Any device.</em></>,
-            body: 'The XSCACE app gives you source switching, volume, EQ, and multi-room grouping from your phone. Works with any home automation system via Open API over IP.',
-            chips: ['XSCACE App', 'Open API over IP', 'Multi-Room'],
-          },
-          {
-            icon: 'ti-plug-connected',
-            ey: 'I/O & Flexibility',
-            num: '1', numUnit: 'cable out.',
-            title: <>Everything in.<br/><em>Wireless out.</em></>,
-            body: 'RCA analogue input for legacy sources. Speaker output drives passive XSCACE speakers directly. Mount anywhere — equipment closet, wall cavity, rack shelf.',
-            chips: ['RCA In', 'Speaker Out', 'Flexible Mounting'],
-          },
-        ]
-        const N = AM_FEATURES.length
-        const heroImg = getImageUrl(product.heroImage, 900)
-        const lsImgs = (product.lifestyleImages || []).map((img: any) => getImageUrl(img, 1200))
         const glImgs = (product.galleryImages || []).map((img: any) => getImageUrl(img, 1200))
 
         return (
           <>
-            {/* ── 1. FEATURE THEATER ── */}
-            <style>{`
-              @keyframes am-fi { to { opacity:1; transform:translateY(0); } }
-              .am-tf { position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:56px 56px 56px 48px;opacity:0;transform:translateY(20px);transition:opacity .55s ease,transform .55s ease;pointer-events:none; }
-              .am-tf.am-on { opacity:1;transform:translateY(0);pointer-events:auto; }
-            `}</style>
-            <div ref={amToutRef} style={{position:'relative',height:`${N * 100}vh`}}>
-              <div style={{position:'sticky',top:0,height:'100vh',display:'grid',gridTemplateColumns:'1fr 1fr',overflow:'hidden',background:'#000'}}>
-                {/* Left — product image */}
-                <div style={{display:'flex',alignItems:'center',justifyContent:'center',position:'relative',borderRight:'0.5px solid rgba(255,255,255,0.06)'}}>
-                  <div style={{position:'absolute',inset:0,background:'radial-gradient(ellipse 70% 60% at 50% 50%,rgba(201,169,110,0.05) 0%,transparent 70%)',pointerEvents:'none'}}/>
-                  <div style={{
-                    width:'clamp(200px,26vw,340px)',height:'clamp(200px,26vw,340px)',
-                    background:'#080808',border:'0.5px solid rgba(201,169,110,0.12)',
-                    display:'flex',alignItems:'center',justifyContent:'center',
-                    position:'relative',overflow:'hidden',
-                    transform: amTheaterIdx % 2 === 0 ? 'rotate(-1.5deg) translateX(-6px)' : 'rotate(1.5deg) translateX(6px)',
-                    transition:'transform .7s cubic-bezier(.22,1,.36,1)',
-                  }}>
-                    {heroImg
-                      ? <img src={heroImg} alt={product.productName} style={{width:'100%',height:'100%',objectFit:'contain',padding:28}}/>
-                      : <span style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.12em',color:'rgba(201,169,110,.18)'}}>130 × 130 × 28 mm</span>
+            {/* ── 1. 3D MODEL + 3 FEATURE POINTS ── */}
+            <section style={{borderTop:'0.5px solid rgba(255,255,255,.06)',background:'#000'}}>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',minHeight:560}}>
+                {/* Left — 3D model viewer */}
+                <div style={{background:'#030303',position:'relative',overflow:'hidden',borderRight:'0.5px solid rgba(255,255,255,.06)',minHeight:560}}>
+                  <div ref={(el) => {
+                    if (el && !el.querySelector('model-viewer')) {
+                      const mv = document.createElement('model-viewer') as any
+                      mv.setAttribute('src', '/models/air-mini-streaming-amplifier.glb')
+                      mv.setAttribute('auto-rotate', '')
+                      mv.setAttribute('camera-controls', '')
+                      mv.setAttribute('shadow-intensity', '0.4')
+                      mv.setAttribute('exposure', '0.8')
+                      mv.style.cssText = 'width:100%;height:100%;min-height:560px;background:transparent;--progress-bar-color:rgba(201,169,110,0.4);--progress-bar-height:2px'
+                      el.appendChild(mv)
                     }
-                  </div>
+                  }} style={{width:'100%',height:'100%',minHeight:560}}/>
+                  <div style={{position:'absolute',top:16,left:16,fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.18em',textTransform:'uppercase',color:'rgba(201,169,110,.35)',border:'0.5px solid rgba(201,169,110,.15)',padding:'3px 8px',pointerEvents:'none'}}>3D · Drag to rotate</div>
                 </div>
-                {/* Right — sliding text panels */}
-                <div style={{position:'relative',overflow:'hidden'}}>
-                  {AM_FEATURES.map((f, fi) => (
-                    <div key={fi} className={`am-tf${amTheaterIdx === fi ? ' am-on' : ''}`}>
-                      {/* Progress dots */}
-                      <div style={{display:'flex',gap:6,marginBottom:32}}>
-                        {AM_FEATURES.map((_, di) => (
-                          <div key={di} style={{height:1,transition:'background .4s,width .4s',width: amTheaterIdx === di ? 32 : 20,background: amTheaterIdx === di ? 'rgba(201,169,110,0.5)' : 'rgba(201,169,110,0.2)'}}/>
-                        ))}
+                {/* Right — 3 feature points */}
+                <div style={{display:'flex',flexDirection:'column',gap:0}}>
+                  {[
+                    {
+                      ico:'ti-broadcast',
+                      num:'05',
+                      title:'Streaming options',
+                      body:'AirPlay 2, Bluetooth 5.0 APTX-HD, Spotify Connect, DLNA/UPnP, and RCA analogue — five distinct inputs, all active simultaneously.',
+                      tags:['AirPlay 2','BT APTX-HD','Spotify','DLNA']
+                    },
+                    {
+                      ico:'ti-device-mobile',
+                      num:'01',
+                      title:'App control',
+                      body:'Full system control from the XSCACE app — source switching, parametric EQ, volume, and multi-room grouping. Works with any home automation system via Open API over IP.',
+                      tags:['XSCACE App','Open API','Multi-Room']
+                    },
+                    {
+                      ico:'ti-wave-sine',
+                      num:'24',
+                      title:'Hi-Res DAC',
+                      body:'Onboard 192kHz / 24-bit DAC. Bluetooth APTX-HD carries 24-bit audio wirelessly. Every stream is converted and output with full precision.',
+                      tags:['192kHz / 24-bit','APTX-HD','Bit-Perfect']
+                    },
+                  ].map((f,i)=>(
+                    <div key={i} style={{flex:1,padding:'48px 52px',borderBottom: i<2 ? '0.5px solid rgba(255,255,255,.06)' : 'none',display:'flex',gap:24,alignItems:'flex-start',transition:'background .2s'}}
+                      onMouseEnter={e=>(e.currentTarget.style.background='rgba(201,169,110,.02)')}
+                      onMouseLeave={e=>(e.currentTarget.style.background='transparent')}>
+                      <div style={{flex:'0 0 auto',paddingTop:4}}>
+                        <i className={`ti ${f.ico}`} style={{fontSize:32,color:'rgba(201,169,110,.55)',display:'block'}}/>
                       </div>
-                      {/* Icon */}
-                      <i className={`ti ${f.icon}`} style={{fontSize:52,color:'#C9A96E',marginBottom:20,display:'block',lineHeight:1,opacity:.85}}/>
-                      {/* Eyebrow */}
-                      <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.24em',textTransform:'uppercase',color:'rgba(201,169,110,.5)',marginBottom:14}}>{f.ey}</div>
-                      {/* Big number if present */}
-                      {f.num && (
-                        <div style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(52px,7vw,96px)',fontWeight:400,lineHeight:.88,color:'rgba(238,235,229,.92)',letterSpacing:'-.03em',marginBottom:10}}>
-                          {f.num}<em style={{fontStyle:'italic',fontSize:'.52em',opacity:.4,verticalAlign:'middle'}}>{f.numUnit}</em>
+                      <div>
+                        <div style={{fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.2em',textTransform:'uppercase',color:'rgba(201,169,110,.35)',marginBottom:8}}>{f.num}</div>
+                        <div style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(20px,2vw,28px)',fontWeight:400,color:'rgba(238,235,229,.88)',marginBottom:10}}>{f.title}</div>
+                        <p style={{fontFamily:"'DM Mono',monospace",fontSize:11,lineHeight:1.75,color:'rgba(238,235,229,.38)',marginBottom:14}}>{f.body}</p>
+                        <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                          {f.tags.map(t=>(
+                            <span key={t} style={{fontFamily:"'DM Mono',monospace",fontSize:7.5,letterSpacing:'.12em',textTransform:'uppercase',color:'rgba(201,169,110,.45)',padding:'3px 9px',border:'0.5px solid rgba(201,169,110,.12)'}}>{t}</span>
+                          ))}
                         </div>
-                      )}
-                      {/* Title */}
-                      <div style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(24px,2.8vw,40px)',fontWeight:400,lineHeight:1.1,color:'rgba(238,235,229,.92)',marginBottom:16}}>{f.title}</div>
-                      {/* Body */}
-                      <p style={{fontFamily:"'DM Mono',monospace",fontSize:11,lineHeight:1.85,color:'rgba(238,235,229,.38)',maxWidth:380,marginBottom:24}}>{f.body}</p>
-                      {/* Chips */}
-                      <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
-                        {f.chips.map(c => (
-                          <span key={c} style={{padding:'5px 13px',border:'0.5px solid rgba(201,169,110,.12)',fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.12em',textTransform:'uppercase',color:'rgba(201,169,110,.5)'}}>{c}</span>
-                        ))}
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-            </div>
+            </section>
 
 
             {/* ── 3. HI-RES DAC ── */}
@@ -3305,6 +3257,11 @@ export default function ProductDetail({ product }: { product: Product }) {
               <div style={{maxWidth:1040,margin:'0 auto'}}>
                 <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.24em',textTransform:'uppercase',color:'rgba(201,169,110,.5)',marginBottom:12}}>Connectivity</div>
                 <h2 style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(26px,3.5vw,48px)',fontWeight:400,color:'rgba(238,235,229,.92)',lineHeight:1.05,marginBottom:48}}>Simple <em style={{fontStyle:'italic'}}>I/O.</em><br/>Total flexibility.</h2>
+                {glImgs[1] && (
+                  <div style={{width:'100%',marginBottom:1,overflow:'hidden',borderTop:'0.5px solid rgba(255,255,255,.06)'}}>
+                    <img src={glImgs[1]} alt="Air Mini I/O" style={{width:'100%',maxHeight:320,objectFit:'cover',display:'block',filter:'brightness(.85)'}}/>
+                  </div>
+                )}
                 <div style={{display:'flex',gap:1,background:'rgba(255,255,255,.06)'}}>
                   {/* Inputs */}
                   <div style={{background:'#000',padding:'32px 28px',flex:1,display:'flex',flexDirection:'column',gap:12}}>
@@ -3407,75 +3364,6 @@ export default function ProductDetail({ product }: { product: Product }) {
               </div>
             </section>
 
-            {/* ── 6. 3D MODEL + 3 FEATURE POINTS ── */}
-            <section style={{borderTop:'0.5px solid rgba(255,255,255,.06)',background:'#000'}}>
-              <style>{`
-                @keyframes am-float { 0%,100%{transform:translateY(0) rotate(-1deg)} 50%{transform:translateY(-10px) rotate(1deg)} }
-                @keyframes am-spin-slow { to { transform: rotate(360deg); } }
-              `}</style>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',minHeight:520}}>
-                {/* Left — 3D model viewer */}
-                <div style={{background:'#030303',position:'relative',overflow:'hidden',borderRight:'0.5px solid rgba(255,255,255,.06)',minHeight:480}}>
-                  <div ref={(el) => {
-                    if (el && !el.querySelector('model-viewer')) {
-                      const mv = document.createElement('model-viewer') as any
-                      mv.setAttribute('src', '/models/air-mini-streaming-amplifier.glb')
-                      mv.setAttribute('auto-rotate', '')
-                      mv.setAttribute('camera-controls', '')
-                      mv.setAttribute('shadow-intensity', '0.4')
-                      mv.setAttribute('exposure', '0.8')
-                      mv.style.cssText = 'width:100%;height:100%;min-height:480px;background:transparent;--progress-bar-color:rgba(201,169,110,0.4);--progress-bar-height:2px'
-                      el.appendChild(mv)
-                    }
-                  }} style={{width:'100%',height:'100%',minHeight:480}}/>
-                  <div style={{position:'absolute',top:16,left:16,fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.18em',textTransform:'uppercase',color:'rgba(201,169,110,.35)',border:'0.5px solid rgba(201,169,110,.15)',padding:'3px 8px',pointerEvents:'none'}}>3D · Drag to rotate</div>
-                </div>
-                {/* Right — 3 feature points */}
-                <div style={{display:'flex',flexDirection:'column',gap:0}}>
-                  {[
-                    {
-                      ico:'ti-broadcast',
-                      num:'05',
-                      title:'Streaming options',
-                      body:'AirPlay 2, Bluetooth 5.0 APTX-HD, Spotify Connect, DLNA/UPnP, and RCA analogue — five distinct inputs, all active simultaneously.',
-                      tags:['AirPlay 2','BT APTX-HD','Spotify','DLNA']
-                    },
-                    {
-                      ico:'ti-device-mobile',
-                      num:'01',
-                      title:'App control',
-                      body:'Full system control from the XSCACE app — source switching, parametric EQ, volume, and multi-room grouping. Works with any home automation system via Open API over IP.',
-                      tags:['XSCACE App','Open API','Multi-Room']
-                    },
-                    {
-                      ico:'ti-wave-sine',
-                      num:'24',
-                      title:'Hi-Res DAC',
-                      body:'Onboard 192kHz / 24-bit DAC. Bluetooth APTX-HD carries 24-bit audio wirelessly. Every stream is converted and output with full precision.',
-                      tags:['192kHz / 24-bit','APTX-HD','Bit-Perfect']
-                    },
-                  ].map((f,i)=>(
-                    <div key={i} style={{flex:1,padding:'36px 44px',borderBottom: i<2 ? '0.5px solid rgba(255,255,255,.06)' : 'none',display:'flex',gap:24,alignItems:'flex-start',transition:'background .2s'}}
-                      onMouseEnter={e=>(e.currentTarget.style.background='rgba(201,169,110,.02)')}
-                      onMouseLeave={e=>(e.currentTarget.style.background='transparent')}>
-                      <div style={{flex:'0 0 auto',paddingTop:4}}>
-                        <i className={`ti ${f.ico}`} style={{fontSize:28,color:'rgba(201,169,110,.55)',display:'block'}}/>
-                      </div>
-                      <div>
-                        <div style={{fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.2em',textTransform:'uppercase',color:'rgba(201,169,110,.35)',marginBottom:8}}>{f.num}</div>
-                        <div style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(18px,1.8vw,24px)',fontWeight:400,color:'rgba(238,235,229,.88)',marginBottom:10}}>{f.title}</div>
-                        <p style={{fontFamily:"'DM Mono',monospace",fontSize:10.5,lineHeight:1.75,color:'rgba(238,235,229,.38)',marginBottom:14}}>{f.body}</p>
-                        <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-                          {f.tags.map(t=>(
-                            <span key={t} style={{fontFamily:"'DM Mono',monospace",fontSize:7.5,letterSpacing:'.12em',textTransform:'uppercase',color:'rgba(201,169,110,.45)',padding:'3px 9px',border:'0.5px solid rgba(201,169,110,.12)'}}>{t}</span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </section>
 
           </>
         )
@@ -3999,6 +3887,74 @@ export default function ProductDetail({ product }: { product: Product }) {
           )
         })}
 
+        {/* ── SIGNAL CHAIN for Air Mini ── */}
+        {isAirMini && (
+          <div style={{padding:'56px 0 0'}}>
+            <style>{`@keyframes am-signal { to { stroke-dashoffset: -48; } } @keyframes am-signal-slow { to { stroke-dashoffset: -60; } }`}</style>
+            <div style={{maxWidth:900, margin:'0 auto', padding:'0 60px'}}>
+              <h3 style={{fontFamily:"'DM Serif Display',serif", fontWeight:400, fontSize:'clamp(22px,2.5vw,36px)', color:'rgba(238,235,229,0.9)', lineHeight:1.06, marginBottom:10}}>
+                The signal <em style={{fontStyle:'italic'}}>chain.</em>
+              </h3>
+              <p style={{fontFamily:"'DM Mono',monospace", fontSize:12, lineHeight:1.75, color:'rgba(238,235,229,0.38)', maxWidth:520, marginBottom:48}}>
+                Air Mini streams wirelessly and outputs to the Xylem amplifier over a single cable. The Xylem distributes power and signal to your XSCACE speakers — passive drivers, no extra wiring.
+              </p>
+              {/* Animated chain: Air Mini → Xylem → Speakers */}
+              <div style={{display:'flex', alignItems:'center', gap:0, overflowX:'auto', paddingBottom:8}}>
+                {/* Air Mini node */}
+                <div style={{display:'flex', flexDirection:'column', alignItems:'center', flexShrink:0}}>
+                  <div style={{fontFamily:"'DM Mono',monospace", fontSize:7, letterSpacing:'.18em', textTransform:'uppercase', color:'rgba(201,169,110,.5)', marginBottom:12}}>Source + DAC</div>
+                  <div style={{width:120, height:96, background:'#060606', border:'0.5px solid rgba(201,169,110,.35)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, position:'relative'}}>
+                    <i className="ti ti-broadcast" style={{fontSize:28, color:'rgba(201,169,110,.7)'}}/>
+                    <div style={{fontFamily:"'DM Serif Display',serif", fontSize:13, color:'rgba(238,235,229,.8)'}}>Air Mini</div>
+                    <div style={{position:'absolute', top:6, right:6, width:5, height:5, borderRadius:'50%', background:'rgba(201,169,110,.9)', boxShadow:'0 0 6px rgba(201,169,110,.6)'}}/>
+                  </div>
+                  <div style={{fontFamily:"'DM Mono',monospace", fontSize:8, color:'rgba(201,169,110,.45)', marginTop:10}}>192kHz / 24-bit</div>
+                </div>
+                {/* Connector Air Mini → Xylem */}
+                <div style={{flex:'0 0 96px', position:'relative', height:2, margin:'0 0 24px'}}>
+                  <svg width="96" height="16" viewBox="0 0 96 16" fill="none" style={{position:'absolute', top:'50%', left:0, transform:'translateY(-50%)'}}>
+                    <line x1="0" y1="8" x2="88" y2="8" stroke="rgba(201,169,110,.15)" strokeWidth="1"/>
+                    <line x1="0" y1="8" x2="88" y2="8" stroke="rgba(201,169,110,.7)" strokeWidth="1" strokeDasharray="12 12" style={{animation:'am-signal .6s linear infinite'}}/>
+                    <polygon points="88,4 96,8 88,12" fill="rgba(201,169,110,.6)"/>
+                  </svg>
+                  <div style={{position:'absolute', top:'calc(50% + 14px)', left:'50%', transform:'translateX(-50%)', fontFamily:"'DM Mono',monospace", fontSize:7, letterSpacing:'.1em', color:'rgba(255,255,255,.2)', whiteSpace:'nowrap'}}>line out</div>
+                </div>
+                {/* Xylem node */}
+                <div style={{display:'flex', flexDirection:'column', alignItems:'center', flexShrink:0}}>
+                  <div style={{fontFamily:"'DM Mono',monospace", fontSize:7, letterSpacing:'.18em', textTransform:'uppercase', color:'rgba(201,169,110,.5)', marginBottom:12}}>Amplifier</div>
+                  <a href="/products/amplifier-series/xylem-slim-dsp-amplifier" style={{textDecoration:'none'}}>
+                    <div style={{width:120, height:96, background:'#060606', border:'0.5px solid rgba(201,169,110,.25)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, transition:'border-color .2s'}}
+                      onMouseEnter={e=>(e.currentTarget.style.borderColor='rgba(201,169,110,.6)')}
+                      onMouseLeave={e=>(e.currentTarget.style.borderColor='rgba(201,169,110,.25)')}>
+                      <i className="ti ti-cpu" style={{fontSize:28, color:'rgba(201,169,110,.55)'}}/>
+                      <div style={{fontFamily:"'DM Serif Display',serif", fontSize:13, color:'rgba(238,235,229,.7)'}}>Xylem</div>
+                    </div>
+                  </a>
+                  <div style={{fontFamily:"'DM Mono',monospace", fontSize:8, color:'rgba(201,169,110,.45)', marginTop:10}}>DSP amplifier</div>
+                </div>
+                {/* Connector Xylem → Speakers */}
+                <div style={{flex:'0 0 96px', position:'relative', height:2, margin:'0 0 24px'}}>
+                  <svg width="96" height="16" viewBox="0 0 96 16" fill="none" style={{position:'absolute', top:'50%', left:0, transform:'translateY(-50%)'}}>
+                    <line x1="0" y1="8" x2="88" y2="8" stroke="rgba(201,169,110,.15)" strokeWidth="1"/>
+                    <line x1="0" y1="8" x2="88" y2="8" stroke="rgba(201,169,110,.7)" strokeWidth="1" strokeDasharray="12 12" style={{animation:'am-signal .6s linear infinite', animationDelay:'.3s'}}/>
+                    <polygon points="88,4 96,8 88,12" fill="rgba(201,169,110,.6)"/>
+                  </svg>
+                  <div style={{position:'absolute', top:'calc(50% + 14px)', left:'50%', transform:'translateX(-50%)', fontFamily:"'DM Mono',monospace", fontSize:7, letterSpacing:'.1em', color:'rgba(255,255,255,.2)', whiteSpace:'nowrap'}}>speaker cable</div>
+                </div>
+                {/* Speakers node */}
+                <div style={{display:'flex', flexDirection:'column', alignItems:'center', flexShrink:0}}>
+                  <div style={{fontFamily:"'DM Mono',monospace", fontSize:7, letterSpacing:'.18em', textTransform:'uppercase', color:'rgba(201,169,110,.5)', marginBottom:12}}>Output</div>
+                  <div style={{width:120, height:96, background:'#060606', border:'0.5px solid rgba(201,169,110,.18)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6}}>
+                    <i className="ti ti-speakerphone" style={{fontSize:28, color:'rgba(201,169,110,.45)'}}/>
+                    <div style={{fontFamily:"'DM Serif Display',serif", fontSize:13, color:'rgba(238,235,229,.6)'}}>Speakers</div>
+                  </div>
+                  <div style={{fontFamily:"'DM Mono',monospace", fontSize:8, color:'rgba(201,169,110,.45)', marginTop:10}}>XSCACE passive</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── SIGNAL CHAIN for Acacia Passive ── */}
         {(product._id === 'prod-acacia6-std' || product._id === 'prod-acacia10-std') && (() => {
           const is6 = product._id === 'prod-acacia6-std'
@@ -4347,7 +4303,7 @@ export default function ProductDetail({ product }: { product: Product }) {
       )}
 
       {/* ── ACCESSORIES ── */}
-      {(product.accessories?.length > 0 || product.inWallVariant) && (
+      {!isAirMini && (product.accessories?.length > 0 || product.inWallVariant) && (
         <AccessoriesSection
           accessories={product.accessories || []}
           productName={product.productName}
