@@ -3416,14 +3416,18 @@ export default function ProductDetail({ product }: { product: Product }) {
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',minHeight:520}}>
                 {/* Left — 3D model viewer */}
                 <div style={{background:'#030303',position:'relative',overflow:'hidden',borderRight:'0.5px solid rgba(255,255,255,.06)',minHeight:480}}>
-                  {React.createElement('model-viewer', {
-                    src: '/models/air-mini-streaming-amplifier.glb',
-                    'auto-rotate': true,
-                    'camera-controls': true,
-                    'shadow-intensity': '0.4',
-                    'exposure': '0.8',
-                    style: {width:'100%',height:'100%',minHeight:480,background:'transparent','--progress-bar-color':'rgba(201,169,110,0.4)','--progress-bar-height':'2px'},
-                  })}
+                  <div ref={(el) => {
+                    if (el && !el.querySelector('model-viewer')) {
+                      const mv = document.createElement('model-viewer') as any
+                      mv.setAttribute('src', '/models/air-mini-streaming-amplifier.glb')
+                      mv.setAttribute('auto-rotate', '')
+                      mv.setAttribute('camera-controls', '')
+                      mv.setAttribute('shadow-intensity', '0.4')
+                      mv.setAttribute('exposure', '0.8')
+                      mv.style.cssText = 'width:100%;height:100%;min-height:480px;background:transparent;--progress-bar-color:rgba(201,169,110,0.4);--progress-bar-height:2px'
+                      el.appendChild(mv)
+                    }
+                  }} style={{width:'100%',height:'100%',minHeight:480}}/>
                   <div style={{position:'absolute',top:16,left:16,fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.18em',textTransform:'uppercase',color:'rgba(201,169,110,.35)',border:'0.5px solid rgba(201,169,110,.15)',padding:'3px 8px',pointerEvents:'none'}}>3D · Drag to rotate</div>
                 </div>
                 {/* Right — 3 feature points */}
