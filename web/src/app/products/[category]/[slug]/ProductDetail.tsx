@@ -2344,6 +2344,38 @@ export default function ProductDetail({ product }: { product: Product }) {
 
             </div>
 
+            {/* Air Mini — animated streaming tags */}
+            {isAirMini && (
+              <>
+                <style>{`
+                  @keyframes am-tag-in { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+                  @keyframes am-tag-pulse-green { 0%,100% { box-shadow:0 0 0 0 rgba(29,185,84,0); } 50% { box-shadow:0 0 12px 2px rgba(29,185,84,0.18); } }
+                  @keyframes am-tag-pulse-blue  { 0%,100% { box-shadow:0 0 0 0 rgba(74,158,224,0); } 50% { box-shadow:0 0 12px 2px rgba(74,158,224,0.18); } }
+                  @keyframes am-tag-pulse-gold  { 0%,100% { box-shadow:0 0 0 0 rgba(201,169,110,0); } 50% { box-shadow:0 0 10px 2px rgba(201,169,110,0.14); } }
+                  .am-stag { display:inline-flex; align-items:center; gap:6px; padding:5px 12px 5px 9px; border:0.5px solid; font-family:'DM Mono',monospace; font-size:8.5px; letter-spacing:.1em; text-transform:uppercase; opacity:0; animation:am-tag-in .5s ease forwards; }
+                  .am-stag-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+                `}</style>
+                <div style={{display:'flex',flexWrap:'wrap',gap:7,marginBottom:28,marginTop:20}}>
+                  {[
+                    { label:'AirPlay 2',        dot:'#C9A96E', border:'rgba(201,169,110,.3)', color:'#C9A96E',          pulse:'am-tag-pulse-gold',  delay:'.1s' },
+                    { label:'BT 5.0 APTX-HD',   dot:'#4A9EE0', border:'rgba(74,158,224,.28)',color:'rgba(74,158,224,.85)',pulse:'am-tag-pulse-blue',  delay:'.2s' },
+                    { label:'Spotify Connect',   dot:'#1DB954', border:'rgba(29,185,84,.28)', color:'rgba(29,185,84,.85)', pulse:'am-tag-pulse-green', delay:'.3s' },
+                    { label:'Wi-Fi 2.4 + 5GHz', dot:'#38BDF8', border:'rgba(56,189,248,.22)',color:'rgba(56,189,248,.7)', pulse:'',                   delay:'.4s' },
+                    { label:'DLNA · UPnP',       dot:'rgba(238,235,229,.4)', border:'rgba(255,255,255,.1)', color:'rgba(238,235,229,.45)', pulse:'', delay:'.5s' },
+                    { label:'Multi-Room',        dot:'#C9A96E', border:'rgba(201,169,110,.22)',color:'rgba(201,169,110,.7)', pulse:'am-tag-pulse-gold', delay:'.6s' },
+                  ].map(t => (
+                    <span key={t.label} className="am-stag"
+                      style={{borderColor:t.border, color:t.color, animationDelay:t.delay, animationFillMode:'forwards',
+                        ...(t.pulse ? {animation:`am-tag-in .5s ${t.delay} ease forwards, ${t.pulse} 2.8s ${t.delay} ease-in-out infinite`} : {animationDelay:t.delay})
+                      }}>
+                      <span className="am-stag-dot" style={{background:t.dot, boxShadow:`0 0 5px ${t.dot}`}}/>
+                      {t.label}
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
+
             {/* CTAs */}
             <div className="pd-hero-ctas">
               <a href="https://configurator.xscace.com" target="_blank" rel="noopener noreferrer"
@@ -3014,8 +3046,8 @@ export default function ProductDetail({ product }: { product: Product }) {
             icon: 'ti-device-mobile',
             ey: 'Mobile App',
             title: <>Full control.<br/><em>Any device.</em></>,
-            body: 'The XSCACE app gives you source switching, volume, EQ, and multi-room grouping from your phone. AirPlay 2 multi-room means the Air Mini also works natively inside Apple Home.',
-            chips: ['XSCACE App', 'Apple Home', 'Multi-Room'],
+            body: 'The XSCACE app gives you source switching, volume, EQ, and multi-room grouping from your phone. Works with any home automation system via Open API over IP.',
+            chips: ['XSCACE App', 'Open API over IP', 'Multi-Room'],
           },
           {
             icon: 'ti-plug-connected',
@@ -3101,7 +3133,7 @@ export default function ProductDetail({ product }: { product: Product }) {
                 <h2 style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(26px,3.5vw,48px)',fontWeight:400,color:'rgba(238,235,229,.92)',lineHeight:1.05,marginBottom:48}}>Five ways to <em style={{fontStyle:'italic'}}>send it music.</em></h2>
                 <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:1,background:'rgba(255,255,255,.06)'}}>
                   {[
-                    {icon:'ti-cast',       name:'AirPlay 2',              badge:'Apple',        body:'Stream from iPhone, iPad, Mac, or Apple TV. Multi-room grouping. Integrates natively with Apple Home.'},
+                    {icon:'ti-cast',       name:'AirPlay 2',              badge:'Apple',        body:'Stream from iPhone, iPad, Mac, or Apple TV. Multi-room grouping across AirPlay 2 devices.'},
                     {icon:'ti-bluetooth',  name:'Bluetooth 5.0 APTX-HD',  badge:'Near-Lossless',body:'24-bit audio over Bluetooth. Lower latency than standard BT. Works with any APTX-capable source.'},
                     {icon:'ti-brand-spotify', name:'Spotify Connect',     badge:'Direct',       body:'Spotify streams directly to the Air Mini — no phone relay. Put your phone down, music keeps playing.'},
                     {icon:'ti-wifi',       name:'Wi-Fi 2.4 + 5GHz',       badge:'Dual-Band',    body:'Dual-band for rock-solid connections. 5GHz for speed, 2.4GHz for range. No dropouts mid-room.'},
@@ -3159,36 +3191,99 @@ export default function ProductDetail({ product }: { product: Product }) {
             {/* ── 4. MOBILE APP ── */}
             <section style={{borderTop:'0.5px solid rgba(255,255,255,.06)',padding:'100px 52px',background:'#000'}}>
               <div style={{maxWidth:1060,margin:'0 auto',display:'flex',gap:72,alignItems:'center',flexWrap:'wrap'}}>
-                {/* Phone mockup */}
-                <div style={{flex:1,minWidth:200,display:'flex',justifyContent:'center'}}>
-                  <div style={{width:210,background:'#0a0a0a',border:'0.5px solid rgba(201,169,110,.15)',borderRadius:26,padding:'16px 12px',position:'relative'}}>
-                    <div style={{position:'absolute',top:0,left:'50%',transform:'translateX(-50%)',width:60,height:4,background:'#111',borderRadius:'0 0 4px 4px'}}/>
-                    <div style={{background:'#060606',borderRadius:14,padding:'16px 14px',marginTop:12}}>
-                      <div style={{fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.16em',textTransform:'uppercase',color:'rgba(201,169,110,.5)',marginBottom:8}}>Now Playing · Air Mini</div>
-                      <div style={{fontFamily:"'DM Serif Display',serif",fontSize:22,fontWeight:400,color:'rgba(238,235,229,.92)',marginBottom:4}}>Ólafur Arnalds</div>
-                      <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,color:'rgba(238,235,229,.35)',marginBottom:16}}>Near Light · re:member</div>
-                      <div style={{height:2,background:'rgba(255,255,255,.06)',borderRadius:1,marginBottom:6}}><div style={{height:'100%',width:'62%',background:'rgba(201,169,110,.4)',borderRadius:1}}/></div>
-                      <div style={{display:'flex',justifyContent:'space-between',fontFamily:"'DM Mono',monospace",fontSize:7,color:'rgba(201,169,110,.35)',marginBottom:16}}><span>2:14</span><span>5:42</span></div>
-                      <div style={{display:'flex',justifyContent:'center',gap:20,alignItems:'center',marginBottom:16}}>
-                        <i className="ti ti-player-skip-back"  style={{fontSize:20,color:'rgba(201,169,110,.5)'}}/>
-                        <i className="ti ti-player-pause"      style={{fontSize:28,color:'rgba(201,169,110,.8)'}}/>
-                        <i className="ti ti-player-skip-forward" style={{fontSize:20,color:'rgba(201,169,110,.5)'}}/>
+                {/* Phone mockup — rich app UI */}
+                <div style={{flex:1,minWidth:200,display:'flex',justifyContent:'center',alignItems:'center'}}>
+                  {/* Device shell */}
+                  <div style={{width:248,background:'#0c0c0c',border:'0.5px solid rgba(255,255,255,.1)',borderRadius:38,padding:'10px 8px',position:'relative',boxShadow:'0 0 0 1px rgba(0,0,0,.8), 0 32px 80px rgba(0,0,0,.6), inset 0 0 0 0.5px rgba(255,255,255,.05)'}}>
+                    {/* Dynamic island */}
+                    <div style={{width:100,height:28,background:'#000',borderRadius:20,margin:'0 auto 8px',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+                      <div style={{width:8,height:8,borderRadius:'50%',background:'#1a1a1a',border:'0.5px solid #222'}}/>
+                      <div style={{width:20,height:6,borderRadius:4,background:'#141414'}}/>
+                    </div>
+                    {/* Screen */}
+                    <div style={{background:'#0a0a0a',borderRadius:28,overflow:'hidden',border:'0.5px solid rgba(255,255,255,.04)'}}>
+                      {/* Status bar */}
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 18px 4px',background:'#080808'}}>
+                        <span style={{fontFamily:"'DM Mono',monospace",fontSize:8,color:'rgba(238,235,229,.5)',letterSpacing:'.04em'}}>9:41</span>
+                        <div style={{display:'flex',gap:5,alignItems:'center'}}>
+                          <i className="ti ti-signal-4g" style={{fontSize:10,color:'rgba(238,235,229,.45)'}}/>
+                          <i className="ti ti-wifi"       style={{fontSize:10,color:'rgba(238,235,229,.45)'}}/>
+                          <i className="ti ti-battery-2"  style={{fontSize:10,color:'rgba(238,235,229,.45)'}}/>
+                        </div>
                       </div>
-                      <div style={{height:1,background:'rgba(255,255,255,.06)',marginBottom:12}}/>
-                      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
-                        <i className="ti ti-volume"   style={{fontSize:14,color:'rgba(201,169,110,.35)'}}/>
-                        <div style={{flex:1,height:2,background:'rgba(255,255,255,.06)',borderRadius:1}}><div style={{height:'100%',width:'72%',background:'rgba(201,169,110,.3)',borderRadius:1}}/></div>
-                        <i className="ti ti-volume-2" style={{fontSize:14,color:'rgba(201,169,110,.35)'}}/>
-                      </div>
-                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
-                        {[{ico:'ti-cast',n:'AirPlay 2',a:true},{ico:'ti-bluetooth',n:'Bluetooth',a:false},{ico:'ti-brand-spotify',n:'Spotify',a:false},{ico:'ti-wifi',n:'Network',a:false}].map(s=>(
-                          <div key={s.n} style={{background:s.a?'rgba(201,169,110,.04)':'#0a0a0a',border:`0.5px solid rgba(201,169,110,${s.a?.35:.1})`,padding:8,display:'flex',alignItems:'center',gap:6,borderRadius:4}}>
-                            <i className={`ti ${s.ico}`} style={{fontSize:14,color:'rgba(201,169,110,.45)'}}/>
-                            <span style={{fontFamily:"'DM Mono',monospace",fontSize:7.5,color:'rgba(238,235,229,.5)'}}>{s.n}</span>
+                      {/* App header */}
+                      <div style={{padding:'10px 16px 6px',background:'#080808',borderBottom:'0.5px solid rgba(255,255,255,.05)'}}>
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                          <div>
+                            <div style={{fontFamily:"'DM Mono',monospace",fontSize:6.5,letterSpacing:'.22em',textTransform:'uppercase',color:'rgba(201,169,110,.45)'}}>XSCACE</div>
+                            <div style={{fontFamily:"'DM Serif Display',serif",fontSize:14,fontWeight:400,color:'rgba(238,235,229,.88)'}}>Air Mini</div>
                           </div>
+                          <div style={{display:'flex',gap:4}}>
+                            <i className="ti ti-cast"      style={{fontSize:14,color:'rgba(201,169,110,.6)'}}/>
+                            <i className="ti ti-settings"  style={{fontSize:14,color:'rgba(238,235,229,.3)'}}/>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Album art + now playing */}
+                      <div style={{padding:'14px 16px 10px',background:'linear-gradient(180deg,#0d0d0d 0%,#080808 100%)'}}>
+                        <div style={{width:'100%',aspectRatio:'1/1',background:'#111',borderRadius:8,marginBottom:12,position:'relative',overflow:'hidden',border:'0.5px solid rgba(255,255,255,.05)'}}>
+                          <div style={{position:'absolute',inset:0,background:'linear-gradient(135deg,rgba(201,169,110,.08) 0%,rgba(0,0,0,.4) 100%)'}}/>
+                          <div style={{position:'absolute',bottom:10,left:12}}>
+                            <div style={{fontFamily:"'DM Serif Display',serif",fontSize:13,fontWeight:400,color:'rgba(238,235,229,.85)'}}>Ólafur Arnalds</div>
+                            <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,color:'rgba(238,235,229,.4)',marginTop:2}}>Near Light · re:member</div>
+                          </div>
+                          <div style={{position:'absolute',top:10,right:10}}>
+                            <i className="ti ti-heart" style={{fontSize:14,color:'rgba(201,169,110,.5)'}}/>
+                          </div>
+                        </div>
+                        {/* Progress */}
+                        <div style={{marginBottom:8}}>
+                          <div style={{height:2,background:'rgba(255,255,255,.07)',borderRadius:1,marginBottom:4,position:'relative'}}>
+                            <div style={{height:'100%',width:'38%',background:'rgba(201,169,110,.55)',borderRadius:1}}/>
+                            <div style={{position:'absolute',top:'50%',left:'38%',transform:'translate(-50%,-50%)',width:8,height:8,borderRadius:'50%',background:'#C9A96E',boxShadow:'0 0 6px rgba(201,169,110,.5)'}}/>
+                          </div>
+                          <div style={{display:'flex',justifyContent:'space-between',fontFamily:"'DM Mono',monospace",fontSize:7,color:'rgba(201,169,110,.35)'}}><span>2:14</span><span>5:42</span></div>
+                        </div>
+                        {/* Controls */}
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'4px 8px',marginBottom:10}}>
+                          <i className="ti ti-arrows-shuffle" style={{fontSize:14,color:'rgba(238,235,229,.3)'}}/>
+                          <i className="ti ti-player-skip-back" style={{fontSize:18,color:'rgba(238,235,229,.65)'}}/>
+                          <div style={{width:44,height:44,borderRadius:'50%',background:'rgba(201,169,110,.12)',border:'0.5px solid rgba(201,169,110,.3)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                            <i className="ti ti-player-pause" style={{fontSize:20,color:'#C9A96E'}}/>
+                          </div>
+                          <i className="ti ti-player-skip-forward" style={{fontSize:18,color:'rgba(238,235,229,.65)'}}/>
+                          <i className="ti ti-repeat" style={{fontSize:14,color:'rgba(238,235,229,.3)'}}/>
+                        </div>
+                        {/* Volume */}
+                        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:14}}>
+                          <i className="ti ti-volume" style={{fontSize:12,color:'rgba(238,235,229,.3)'}}/>
+                          <div style={{flex:1,height:2,background:'rgba(255,255,255,.07)',borderRadius:1}}><div style={{height:'100%',width:'68%',background:'rgba(201,169,110,.35)',borderRadius:1}}/></div>
+                          <i className="ti ti-volume-2" style={{fontSize:12,color:'rgba(238,235,229,.3)'}}/>
+                        </div>
+                        {/* Source tabs */}
+                        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:4}}>
+                          {[
+                            {ico:'ti-cast',         n:'AirPlay',  c:'rgba(201,169,110,.9)',  bg:'rgba(201,169,110,.09)', bc:'rgba(201,169,110,.3)', active:true},
+                            {ico:'ti-bluetooth',    n:'BT',       c:'rgba(74,158,224,.7)',   bg:'transparent',           bc:'rgba(255,255,255,.07)', active:false},
+                            {ico:'ti-brand-spotify',n:'Spotify',  c:'rgba(29,185,84,.7)',    bg:'transparent',           bc:'rgba(255,255,255,.07)', active:false},
+                            {ico:'ti-wifi',         n:'Network',  c:'rgba(238,235,229,.4)',  bg:'transparent',           bc:'rgba(255,255,255,.07)', active:false},
+                          ].map(s=>(
+                            <div key={s.n} style={{background:s.bg,border:`0.5px solid ${s.bc}`,padding:'6px 4px',display:'flex',flexDirection:'column',alignItems:'center',gap:3,borderRadius:6}}>
+                              <i className={`ti ${s.ico}`} style={{fontSize:13,color:s.c}}/>
+                              <span style={{fontFamily:"'DM Mono',monospace",fontSize:6.5,color:s.active?'rgba(238,235,229,.7)':'rgba(238,235,229,.3)',letterSpacing:'.06em'}}>{s.n}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      {/* EQ mini preview */}
+                      <div style={{padding:'8px 16px 12px',background:'#070707',display:'flex',alignItems:'flex-end',gap:3,height:40}}>
+                        {[55,72,88,65,44,80,92,68,50,78].map((h,i)=>(
+                          <div key={i} style={{flex:1,height:`${h}%`,background:`rgba(201,169,110,${0.08+i*0.02})`,borderRadius:1,transition:'height .3s'}}/>
                         ))}
                       </div>
                     </div>
+                    {/* Home indicator */}
+                    <div style={{width:100,height:4,background:'rgba(255,255,255,.12)',borderRadius:4,margin:'10px auto 0'}}/>
                   </div>
                 </div>
                 {/* Text */}
@@ -3201,7 +3296,7 @@ export default function ProductDetail({ product }: { product: Product }) {
                       {ico:'ti-adjustments-horizontal', t:'Parametric EQ',      x:'Tune the output to your speakers and room, from your phone.'},
                       {ico:'ti-layout-grid',            t:'Multi-Room Grouping',x:'Group multiple Air Minis and play the same source across zones.'},
                       {ico:'ti-switch-2',               t:'Source Switching',   x:'Switch between AirPlay, Bluetooth, Spotify, and RCA in one tap.'},
-                      {ico:'ti-home',                   t:'Apple Home',         x:'AirPlay 2 integration means Siri and Home automations work natively.'},
+                      {ico:'ti-network',                t:'Home Automation',    x:'Works with any home automation software via Open API over IP.'},
                     ].map(row=>(
                       <div key={row.t} style={{display:'flex',alignItems:'flex-start',gap:14,padding:'12px 0',borderBottom:'0.5px solid rgba(255,255,255,.06)'}}>
                         <i className={`ti ${row.ico}`} style={{fontSize:18,color:'rgba(201,169,110,.6)',flexShrink:0,marginTop:1}}/>
@@ -3243,15 +3338,61 @@ export default function ProductDetail({ product }: { product: Product }) {
                       </div>
                     ))}
                   </div>
-                  {/* Centre device */}
-                  <div style={{background:'#000',padding:'32px 24px',flex:'0 0 160px',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:8}}>
-                    <div style={{width:90,height:90,background:'#080808',border:'0.5px solid rgba(201,169,110,.2)',display:'flex',alignItems:'center',justifyContent:'center',position:'relative'}}>
-                      {heroImg
-                        ? <img src={heroImg} alt="Air Mini" style={{width:'100%',height:'100%',objectFit:'contain',padding:12,opacity:.6}}/>
-                        : <span style={{fontFamily:"'DM Mono',monospace",fontSize:7,color:'rgba(201,169,110,.3)',textAlign:'center',lineHeight:1.4}}>AIR<br/>MINI</span>
-                      }
-                    </div>
-                    <div style={{fontFamily:"'DM Mono',monospace",fontSize:7.5,letterSpacing:'.14em',textTransform:'uppercase',color:'rgba(201,169,110,.5)',marginTop:4}}>Hi-Res DAC</div>
+                  {/* Centre — IC chip SVG */}
+                  <div style={{background:'#000',padding:'24px 16px',flex:'0 0 160px',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:10}}>
+                    <svg viewBox="0 0 120 120" width="120" height="120" fill="none" xmlns="http://www.w3.org/2000/svg" style={{overflow:'visible'}}>
+                      <defs>
+                        <filter id="ic-glow" x="-40%" y="-40%" width="180%" height="180%">
+                          <feGaussianBlur stdDeviation="1.5" result="b"/>
+                          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                        </filter>
+                      </defs>
+                      {/* Die body */}
+                      <rect x="28" y="28" width="64" height="64" rx="2" fill="rgba(201,169,110,0.04)" stroke="rgba(201,169,110,0.5)" strokeWidth="0.8"/>
+                      {/* Inner die */}
+                      <rect x="36" y="36" width="48" height="48" rx="1" fill="rgba(201,169,110,0.03)" stroke="rgba(201,169,110,0.2)" strokeWidth="0.5"/>
+                      {/* Grid lines inside */}
+                      <line x1="60" y1="36" x2="60" y2="84" stroke="rgba(201,169,110,0.07)" strokeWidth="0.5"/>
+                      <line x1="36" y1="60" x2="84" y2="60" stroke="rgba(201,169,110,0.07)" strokeWidth="0.5"/>
+                      {/* Label */}
+                      <text x="60" y="56" textAnchor="middle" fill="rgba(201,169,110,0.7)" fontSize="6" fontFamily="monospace" letterSpacing="1.5">DAC</text>
+                      <text x="60" y="67" textAnchor="middle" fill="rgba(201,169,110,0.4)" fontSize="4.5" fontFamily="monospace" letterSpacing="0.5">192kHz / 24-bit</text>
+                      <text x="60" y="76" textAnchor="middle" fill="rgba(238,235,229,0.2)" fontSize="4" fontFamily="monospace" letterSpacing="0.5">Hi-Res</text>
+                      {/* Pins — top */}
+                      {[40,50,60,70,80].map((x,i)=>(
+                        <g key={`t${i}`}>
+                          <line x1={x} y1="28" x2={x} y2="18" stroke="rgba(201,169,110,0.35)" strokeWidth="0.8"/>
+                          <rect x={x-2} y="14" width="4" height="4" fill="rgba(201,169,110,0.25)" stroke="rgba(201,169,110,0.4)" strokeWidth="0.5"/>
+                        </g>
+                      ))}
+                      {/* Pins — bottom */}
+                      {[40,50,60,70,80].map((x,i)=>(
+                        <g key={`b${i}`}>
+                          <line x1={x} y1="92" x2={x} y2="102" stroke="rgba(201,169,110,0.35)" strokeWidth="0.8"/>
+                          <rect x={x-2} y="102" width="4" height="4" fill="rgba(201,169,110,0.25)" stroke="rgba(201,169,110,0.4)" strokeWidth="0.5"/>
+                        </g>
+                      ))}
+                      {/* Pins — left */}
+                      {[40,50,60,70,80].map((y,i)=>(
+                        <g key={`l${i}`}>
+                          <line x1="28" y1={y} x2="18" y2={y} stroke="rgba(201,169,110,0.35)" strokeWidth="0.8"/>
+                          <rect x="14" y={y-2} width="4" height="4" fill="rgba(201,169,110,0.25)" stroke="rgba(201,169,110,0.4)" strokeWidth="0.5"/>
+                        </g>
+                      ))}
+                      {/* Pins — right */}
+                      {[40,50,60,70,80].map((y,i)=>(
+                        <g key={`r${i}`}>
+                          <line x1="92" y1={y} x2="102" y2={y} stroke="rgba(201,169,110,0.35)" strokeWidth="0.8"/>
+                          <rect x="102" y={y-2} width="4" height="4" fill="rgba(201,169,110,0.25)" stroke="rgba(201,169,110,0.4)" strokeWidth="0.5"/>
+                        </g>
+                      ))}
+                      {/* Corner notch */}
+                      <circle cx="32" cy="32" r="3" fill="rgba(0,0,0,.9)" stroke="rgba(201,169,110,0.3)" strokeWidth="0.5"/>
+                      {/* Active pin glow — highlight a few */}
+                      <rect x="58" y="14" width="4" height="4" fill="rgba(201,169,110,0.6)" stroke="rgba(201,169,110,0.9)" strokeWidth="0.5" filter="url(#ic-glow)"/>
+                      <rect x="58" y="102" width="4" height="4" fill="rgba(201,169,110,0.6)" stroke="rgba(201,169,110,0.9)" strokeWidth="0.5" filter="url(#ic-glow)"/>
+                    </svg>
+                    <div style={{fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.14em',textTransform:'uppercase',color:'rgba(201,169,110,.45)',textAlign:'center',lineHeight:1.6}}>Air Mini<br/>Hi-Res DAC</div>
                   </div>
                   {/* Outputs */}
                   <div style={{background:'#000',padding:'32px 28px',flex:1,display:'flex',flexDirection:'column',gap:12}}>
@@ -3276,25 +3417,76 @@ export default function ProductDetail({ product }: { product: Product }) {
               </div>
             </section>
 
-            {/* ── 6. LIFESTYLE IMAGES ── */}
-            {lsImgs.length > 0 && (
-              <section style={{borderTop:'0.5px solid rgba(255,255,255,.06)'}}>
-                <div style={{display:'grid',gridTemplateColumns:`repeat(${Math.min(lsImgs.length,3)},1fr)`,gap:1,background:'rgba(255,255,255,.06)'}}>
-                  {lsImgs.slice(0,3).map((url: string | null, i: number) => {
-                    if (!url) return null
-                    const caps = ['Hidden in plain sight','Under-TV cabinet','Rack shelf · half-width']
-                    return (
-                      <div key={i} style={{position:'relative',aspectRatio:'4/3',overflow:'hidden',background:'#050505'}}>
-                        <img src={url} alt={caps[i] || product.productName} style={{width:'100%',height:'100%',objectFit:'cover',opacity:.75,display:'block',transition:'opacity .4s,transform .6s'}}/>
-                        <div style={{position:'absolute',bottom:0,left:0,right:0,padding:'14px 20px',background:'linear-gradient(to top,rgba(0,0,0,.65) 0%,transparent 100%)'}}>
-                          <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:'.12em',textTransform:'uppercase',color:'rgba(201,169,110,.7)'}}>{caps[i] || ''}</div>
+            {/* ── 6. 3D MODEL + 3 FEATURE POINTS ── */}
+            <section style={{borderTop:'0.5px solid rgba(255,255,255,.06)',background:'#000'}}>
+              <style>{`
+                @keyframes am-float { 0%,100%{transform:translateY(0) rotate(-1deg)} 50%{transform:translateY(-10px) rotate(1deg)} }
+                @keyframes am-spin-slow { to { transform: rotate(360deg); } }
+              `}</style>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',minHeight:520}}>
+                {/* Left — 3D model placeholder */}
+                <div style={{background:'#030303',display:'flex',alignItems:'center',justifyContent:'center',position:'relative',overflow:'hidden',borderRight:'0.5px solid rgba(255,255,255,.06)'}}>
+                  <div style={{position:'absolute',inset:0,background:'radial-gradient(ellipse 70% 65% at 50% 50%,rgba(201,169,110,.045) 0%,transparent 68%)',pointerEvents:'none'}}/>
+                  {/* Outer orbit rings */}
+                  {[180,230,280].map((r,i)=>(
+                    <div key={i} style={{position:'absolute',width:r,height:r,borderRadius:'50%',border:'0.5px solid rgba(201,169,110,0.06)',top:'50%',left:'50%',transform:'translate(-50%,-50%)'}}/>
+                  ))}
+                  {/* Product floating box */}
+                  <div style={{width:'clamp(180px,22vw,260px)',height:'clamp(180px,22vw,260px)',background:'#080808',border:'0.5px solid rgba(201,169,110,.14)',display:'flex',alignItems:'center',justifyContent:'center',position:'relative',animation:'am-float 5s ease-in-out infinite',zIndex:1}}>
+                    {heroImg
+                      ? <img src={heroImg} alt={product.productName} style={{width:'100%',height:'100%',objectFit:'contain',padding:28}}/>
+                      : <span style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.1em',color:'rgba(201,169,110,.2)',textAlign:'center'}}>130 × 130 × 28 mm</span>
+                    }
+                    <div style={{position:'absolute',top:10,right:10,fontFamily:"'DM Mono',monospace",fontSize:6,letterSpacing:'.18em',textTransform:'uppercase',color:'rgba(201,169,110,.4)',border:'0.5px solid rgba(201,169,110,.2)',padding:'2px 6px'}}>3D</div>
+                  </div>
+                  <div style={{position:'absolute',bottom:20,left:'50%',transform:'translateX(-50%)',fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.2em',textTransform:'uppercase',color:'rgba(201,169,110,.22)'}}>Interactive model coming soon</div>
+                </div>
+                {/* Right — 3 feature points */}
+                <div style={{display:'flex',flexDirection:'column',gap:0}}>
+                  {[
+                    {
+                      ico:'ti-broadcast',
+                      num:'05',
+                      title:'Streaming options',
+                      body:'AirPlay 2, Bluetooth 5.0 APTX-HD, Spotify Connect, DLNA/UPnP, and RCA analogue — five distinct inputs, all active simultaneously.',
+                      tags:['AirPlay 2','BT APTX-HD','Spotify','DLNA']
+                    },
+                    {
+                      ico:'ti-device-mobile',
+                      num:'01',
+                      title:'App control',
+                      body:'Full system control from the XSCACE app — source switching, parametric EQ, volume, and multi-room grouping. Works with any home automation system via Open API over IP.',
+                      tags:['XSCACE App','Open API','Multi-Room']
+                    },
+                    {
+                      ico:'ti-wave-sine',
+                      num:'24',
+                      title:'Hi-Res DAC',
+                      body:'Onboard 192kHz / 24-bit DAC. Bluetooth APTX-HD carries 24-bit audio wirelessly. Every stream is converted and output with full precision.',
+                      tags:['192kHz / 24-bit','APTX-HD','Bit-Perfect']
+                    },
+                  ].map((f,i)=>(
+                    <div key={i} style={{flex:1,padding:'36px 44px',borderBottom: i<2 ? '0.5px solid rgba(255,255,255,.06)' : 'none',display:'flex',gap:24,alignItems:'flex-start',transition:'background .2s'}}
+                      onMouseEnter={e=>(e.currentTarget.style.background='rgba(201,169,110,.02)')}
+                      onMouseLeave={e=>(e.currentTarget.style.background='transparent')}>
+                      <div style={{flex:'0 0 auto',paddingTop:4}}>
+                        <i className={`ti ${f.ico}`} style={{fontSize:28,color:'rgba(201,169,110,.55)',display:'block'}}/>
+                      </div>
+                      <div>
+                        <div style={{fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.2em',textTransform:'uppercase',color:'rgba(201,169,110,.35)',marginBottom:8}}>{f.num}</div>
+                        <div style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(18px,1.8vw,24px)',fontWeight:400,color:'rgba(238,235,229,.88)',marginBottom:10}}>{f.title}</div>
+                        <p style={{fontFamily:"'DM Mono',monospace",fontSize:10.5,lineHeight:1.75,color:'rgba(238,235,229,.38)',marginBottom:14}}>{f.body}</p>
+                        <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                          {f.tags.map(t=>(
+                            <span key={t} style={{fontFamily:"'DM Mono',monospace",fontSize:7.5,letterSpacing:'.12em',textTransform:'uppercase',color:'rgba(201,169,110,.45)',padding:'3px 9px',border:'0.5px solid rgba(201,169,110,.12)'}}>{t}</span>
+                          ))}
                         </div>
                       </div>
-                    )
-                  })}
+                    </div>
+                  ))}
                 </div>
-              </section>
-            )}
+              </div>
+            </section>
 
             {/* ── 7. FEATURE HIGHLIGHTS GRID ── */}
             <section style={{borderTop:'0.5px solid rgba(255,255,255,.06)',padding:'100px 52px',background:'#000'}}>
@@ -3308,7 +3500,7 @@ export default function ProductDetail({ product }: { product: Product }) {
                     {ico:'ti-wave-sine',        n:'Hi-Res DAC',           x:'24-bit digital-to-analogue. APTX-HD over Bluetooth.'},
                     {ico:'ti-device-mobile',    n:'Full app control',     x:'EQ, source, volume, multi-room — all from your phone.'},
                     {ico:'ti-plug-connected',   n:'Clean I/O',            x:'RCA in. Speaker out. Power. Three connections total.'},
-                    {ico:'ti-home',             n:'Apple Home native',    x:'AirPlay 2 means Siri, automations, and Home app just work.'},
+                    {ico:'ti-network',          n:'Home Automation',      x:'Open API over IP — compatible with any home automation system.'},
                   ].map(f=>(
                     <div key={f.n} style={{background:'#000',padding:'36px 30px',display:'flex',flexDirection:'column',gap:10,transition:'background .25s'}}
                       onMouseEnter={e=>(e.currentTarget.style.background='#060606')}
