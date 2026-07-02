@@ -2189,11 +2189,25 @@ export default function ProductDetail({ product }: { product: Product }) {
     product.rackMountable ? { label: 'Rack Mount', value: product.rackUnitSize || 'Yes' } : null,
   ].filter(Boolean) as { label: string; value: string }[]
 
+  const isIW = ['acacia-6-in-wall-passive-subwoofer','acacia-10-in-wall-passive-subwoofer'].includes(product.slug?.current)
+
   return (
     <div className="pd-page">
 
+      {/* ── COMING SOON overlay for IW pages ── */}
+      {isIW && (
+        <div style={{position:'fixed', inset:0, zIndex:9999, background:'rgba(0,0,0,0.88)', backdropFilter:'blur(6px)', WebkitBackdropFilter:'blur(6px)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', pointerEvents:'all'}}>
+          <div style={{fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'.28em', textTransform:'uppercase', color:'rgba(201,169,110,0.5)', marginBottom:20}}>Acacia · In-Wall Series</div>
+          <h2 style={{fontFamily:"'DM Serif Display',serif", fontWeight:400, fontSize:'clamp(36px,5vw,72px)', color:'rgba(238,235,229,0.92)', lineHeight:1.05, letterSpacing:'-.02em', marginBottom:16, textAlign:'center'}}>
+            Coming <em style={{fontStyle:'italic'}}>soon.</em>
+          </h2>
+          <p style={{fontFamily:"'DM Mono',monospace", fontSize:11, lineHeight:1.8, color:'rgba(238,235,229,0.32)', textAlign:'center', maxWidth:360}}>
+            Product page in progress. Check back shortly.
+          </p>
+          <a href="/products/subwoofer-series" style={{marginTop:40, fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'.18em', textTransform:'uppercase', color:'rgba(201,169,110,0.65)', textDecoration:'none', borderBottom:'0.5px solid rgba(201,169,110,0.3)', paddingBottom:3}}>← Back to Subwoofers</a>
+        </div>
+      )}
 
-      
 
       {/* ── HERO ── */}
       <section className="pd-hero">
