@@ -14,6 +14,7 @@ const MODELS = [
   { id: 'prod-aspen6',    name: 'Aspen 6',          file: 'aspen-6-in-ceiling-speaker.glb' },
   { id: 'prod-aspen8',    name: 'Aspen 8',          file: 'aspen-8-in-ceiling-speaker.glb' },
   { id: 'prod-air-mini',   name: 'Air Mini',          file: 'air-mini-streaming-amplifier.glb' },
+  { id: 'prod-air-amp',    name: 'Air Amp',           file: 'air-amp-streaming-amplifier.glb' },
   { id: 'prod-xylem3',     name: 'Xylem 3',          file: 'xylem-3-dsp-amplifier.glb' },
   { id: 'prod-oak',        name: 'Oak',              file: 'oak-in-wall-home-cinema-speaker.glb' },
   { id: 'prod-willow',     name: 'Willow',           file: 'willow-in-wall-home-cinema-speaker.glb' },
@@ -455,7 +456,7 @@ function ModelTest({ id, name, file }: { id: string; name: string; file: string 
   )
 }
 
-const AR_MODELS = MODELS.filter(m => ['prod-air-mini', 'prod-xylem3', 'prod-cedar'].includes(m.id))
+const AR_MODELS = MODELS.filter(m => ['prod-air-mini', 'prod-air-amp', 'prod-xylem3', 'prod-cedar'].includes(m.id))
 
 export default function Test3DPage() {
   return (

@@ -1798,6 +1798,7 @@ export default function ProductDetail({ product }: { product: Product }) {
   const isSub      = product.category?.slug?.current === 'subwoofer-series'
   const isOutdoor  = product.category?.slug?.current === 'outdoor-series'
   const isAirMini  = product._id === 'prod-air-mini'
+  const isAirAmp   = product._id === 'prod-air-amp'
   const mountingMethodsList = product.mountingMethods
     ? (Array.isArray(product.mountingMethods)
         ? product.mountingMethods
@@ -2193,14 +2194,13 @@ export default function ProductDetail({ product }: { product: Product }) {
   ].filter(Boolean) as { label: string; value: string }[]
 
   useEffect(() => {
-    if (!isAirMini) return
-    // Inject model-viewer web component script
+    if (!isAirMini && !isAirAmp) return
     const mv = document.createElement('script')
     mv.type = 'module'
     mv.src = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js'
     document.head.appendChild(mv)
     return () => { mv.remove() }
-  }, [isAirMini])
+  }, [isAirMini, isAirAmp])
 
   const isIW = ['acacia-6-in-wall-passive-subwoofer','acacia-10-in-wall-passive-subwoofer'].includes(product.slug?.current)
 
@@ -2361,6 +2361,40 @@ export default function ProductDetail({ product }: { product: Product }) {
                     { label:'DLNA · UPnP',       dot:'rgba(238,235,229,.4)', border:'rgba(255,255,255,.1)', color:'rgba(238,235,229,.45)', pulse:'', delay:'.5s' },
                     { label:'HDMI eARC',         dot:'#a78bfa', border:'rgba(167,139,250,.25)',color:'rgba(167,139,250,.75)', pulse:'', delay:'.6s' },
                     { label:'Multi-Room',        dot:'#C9A96E', border:'rgba(201,169,110,.22)',color:'rgba(201,169,110,.7)', pulse:'am-tag-pulse-gold', delay:'.7s' },
+                  ].map(t => (
+                    <span key={t.label} className="am-stag"
+                      style={{borderColor:t.border, color:t.color, animationDelay:t.delay, animationFillMode:'forwards',
+                        ...(t.pulse ? {animation:`am-tag-in .5s ${t.delay} ease forwards, ${t.pulse} 2.8s ${t.delay} ease-in-out infinite`} : {animationDelay:t.delay})
+                      }}>
+                      <span className="am-stag-dot" style={{background:t.dot, boxShadow:`0 0 5px ${t.dot}`}}/>
+                      {t.label}
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Air Amp — animated streaming tags */}
+            {isAirAmp && (
+              <>
+                <style>{`
+                  @keyframes am-tag-in { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+                  @keyframes am-tag-pulse-green { 0%,100% { box-shadow:0 0 0 0 rgba(29,185,84,0); } 50% { box-shadow:0 0 12px 2px rgba(29,185,84,0.18); } }
+                  @keyframes am-tag-pulse-blue  { 0%,100% { box-shadow:0 0 0 0 rgba(74,158,224,0); } 50% { box-shadow:0 0 12px 2px rgba(74,158,224,0.18); } }
+                  @keyframes am-tag-pulse-gold  { 0%,100% { box-shadow:0 0 0 0 rgba(201,169,110,0); } 50% { box-shadow:0 0 10px 2px rgba(201,169,110,0.14); } }
+                  .am-stag { display:inline-flex; align-items:center; gap:6px; padding:5px 12px 5px 9px; border:0.5px solid; font-family:'DM Mono',monospace; font-size:8.5px; letter-spacing:.1em; text-transform:uppercase; opacity:0; animation:am-tag-in .5s ease forwards; }
+                  .am-stag-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+                `}</style>
+                <div style={{display:'flex',flexWrap:'wrap',gap:7,marginBottom:28,marginTop:20}}>
+                  {[
+                    { label:'2×80W Built-in',    dot:'#C9A96E', border:'rgba(201,169,110,.45)', color:'#C9A96E',           pulse:'am-tag-pulse-gold',  delay:'.1s' },
+                    { label:'AirPlay 2',          dot:'#C9A96E', border:'rgba(201,169,110,.25)', color:'rgba(201,169,110,.7)', pulse:'',                 delay:'.2s' },
+                    { label:'BT 5.0 APTX-HD',    dot:'#4A9EE0', border:'rgba(74,158,224,.28)', color:'rgba(74,158,224,.85)', pulse:'am-tag-pulse-blue', delay:'.3s' },
+                    { label:'Spotify Connect',    dot:'#1DB954', border:'rgba(29,185,84,.28)',  color:'rgba(29,185,84,.85)', pulse:'am-tag-pulse-green', delay:'.4s' },
+                    { label:'Wi-Fi 2.4 + 5GHz',  dot:'#38BDF8', border:'rgba(56,189,248,.22)', color:'rgba(56,189,248,.7)', pulse:'',                  delay:'.5s' },
+                    { label:'HDMI eARC',          dot:'#a78bfa', border:'rgba(167,139,250,.25)',color:'rgba(167,139,250,.75)', pulse:'',                 delay:'.6s' },
+                    { label:'Sub Out',            dot:'rgba(238,235,229,.5)', border:'rgba(255,255,255,.12)', color:'rgba(238,235,229,.5)', pulse:'', delay:'.7s' },
+                    { label:'Multi-Room',         dot:'#C9A96E', border:'rgba(201,169,110,.22)',color:'rgba(201,169,110,.65)', pulse:'am-tag-pulse-gold', delay:'.8s' },
                   ].map(t => (
                     <span key={t.label} className="am-stag"
                       style={{borderColor:t.border, color:t.color, animationDelay:t.delay, animationFillMode:'forwards',
@@ -3378,8 +3412,388 @@ export default function ProductDetail({ product }: { product: Product }) {
         )
       })()}
 
+      {/* ═══════════════════════════════════════════════════════════════
+          AIR AMP — same structure as Air Mini, built-in amp differentiator
+      ════════════════════════════════════════════════════════════════ */}
+      {isAirAmp && (() => {
+        const glImgs = (product.galleryImages || []).map((img: any) => getImageUrl(img, 1200))
+        return (
+          <>
+            {/* ── 1. 3D MODEL + 3 FEATURE POINTS ── */}
+            <section style={{borderTop:'0.5px solid rgba(255,255,255,.06)',background:'#000'}}>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',minHeight:560}}>
+                {/* Left — 3D model viewer */}
+                <div style={{background:'#000',position:'relative',overflow:'hidden',borderRight:'0.5px solid rgba(255,255,255,.06)',minHeight:560}}>
+                  <div ref={(el) => {
+                    if (el && !el.querySelector('model-viewer')) {
+                      const mv = document.createElement('model-viewer') as any
+                      mv.setAttribute('src', '/models/air-amp-streaming-amplifier.glb')
+                      mv.setAttribute('auto-rotate', '')
+                      mv.setAttribute('camera-controls', '')
+                      mv.setAttribute('disable-zoom', '')
+                      mv.setAttribute('shadow-intensity', '0.4')
+                      mv.setAttribute('exposure', '1.4')
+                      mv.style.cssText = 'width:100%;height:100%;min-height:560px;background:#000;--progress-bar-color:rgba(201,169,110,0.4);--progress-bar-height:2px'
+                      el.appendChild(mv)
+                    }
+                  }} style={{width:'100%',height:'100%',minHeight:560}}/>
+                  <div style={{position:'absolute',top:16,left:16,fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.18em',textTransform:'uppercase',color:'rgba(201,169,110,.35)',border:'0.5px solid rgba(201,169,110,.15)',padding:'3px 8px',pointerEvents:'none'}}>3D · Drag to rotate</div>
+                </div>
+                {/* Right — 3 feature points */}
+                <div style={{display:'flex',flexDirection:'column',gap:0}}>
+                  {[
+                    {
+                      ico:'ti-bolt',
+                      num:'80',
+                      title:'Built-in amplifier',
+                      body:'2×80W Class D amplifier at 4Ω — or 2×40W at 8Ω. Drives passive XSCACE speakers directly. No Xylem, no rack gear, no extra cables. One box, full power.',
+                      tags:['2×80W · 4Ω','Class D','Sub Out']
+                    },
+                    {
+                      ico:'ti-broadcast',
+                      num:'05',
+                      title:'Streaming options',
+                      body:'AirPlay 2, Bluetooth 5.0 APTX-HD, Spotify Connect, DLNA/UPnP, HDMI eARC, SPDIF Optical, USB, and RCA analogue — all inputs live simultaneously.',
+                      tags:['AirPlay 2','BT APTX-HD','Spotify','HDMI eARC']
+                    },
+                    {
+                      ico:'ti-wave-sine',
+                      num:'24',
+                      title:'Hi-Res DAC',
+                      body:'Onboard 192kHz / 24-bit DAC. Bluetooth APTX-HD carries 24-bit audio wirelessly. Every stream is converted and output with full precision.',
+                      tags:['192kHz / 24-bit','APTX-HD','Bit-Perfect']
+                    },
+                  ].map((f,i)=>(
+                    <div key={i} style={{flex:1,padding:'48px 52px',borderBottom: i<2 ? '0.5px solid rgba(255,255,255,.06)' : 'none',display:'flex',gap:24,alignItems:'flex-start',transition:'background .2s'}}
+                      onMouseEnter={e=>(e.currentTarget.style.background='rgba(201,169,110,.02)')}
+                      onMouseLeave={e=>(e.currentTarget.style.background='transparent')}>
+                      <div style={{flex:'0 0 auto',paddingTop:4}}>
+                        <i className={`ti ${f.ico}`} style={{fontSize:32,color:'rgba(201,169,110,.55)',display:'block'}}/>
+                      </div>
+                      <div>
+                        <div style={{fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.2em',textTransform:'uppercase',color:'rgba(201,169,110,.35)',marginBottom:8}}>{f.num}</div>
+                        <div style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(20px,2vw,28px)',fontWeight:400,color:'rgba(238,235,229,.88)',marginBottom:10}}>{f.title}</div>
+                        <p style={{fontFamily:"'DM Mono',monospace",fontSize:11,lineHeight:1.75,color:'rgba(238,235,229,.38)',marginBottom:14}}>{f.body}</p>
+                        <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                          {f.tags.map(t=>(
+                            <span key={t} style={{fontFamily:"'DM Mono',monospace",fontSize:7.5,letterSpacing:'.12em',textTransform:'uppercase',color:'rgba(201,169,110,.45)',padding:'3px 9px',border:'0.5px solid rgba(201,169,110,.12)'}}>{t}</span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            {/* ── 2. POWER SECTION ── */}
+            <section style={{borderTop:'0.5px solid rgba(255,255,255,.06)',padding:'100px 52px',background:'#000'}}>
+              <div style={{maxWidth:1100,margin:'0 auto',display:'flex',gap:80,alignItems:'center',flexWrap:'wrap'}}>
+                <div style={{flex:'0 0 44%',minWidth:280}}>
+                  <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.24em',textTransform:'uppercase',color:'rgba(201,169,110,.5)',marginBottom:16}}>Amplification</div>
+                  <h2 style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(26px,3.5vw,48px)',fontWeight:400,color:'rgba(238,235,229,.92)',lineHeight:1.1,marginBottom:20}}>No amp needed. <em style={{fontStyle:'italic'}}>Ever.</em></h2>
+                  <p style={{fontFamily:"'DM Mono',monospace",fontSize:11,lineHeight:1.85,color:'rgba(238,235,229,.38)',marginBottom:32}}>The Air Amp has a Class D amplifier built in. Stream to it wirelessly, connect your passive XSCACE speakers, and you're done. No Xylem, no rack shelf, no wiring complexity.</p>
+                  <div style={{display:'flex',gap:1,background:'rgba(255,255,255,.06)'}}>
+                    {[{l:'Power (4Ω)',v:'2×80W'},{l:'Power (8Ω)',v:'2×40W'},{l:'Topology',v:'Class D'}].map(s=>(
+                      <div key={s.l} style={{background:'#000',padding:'20px 22px',flex:1}}>
+                        <div style={{fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.2em',textTransform:'uppercase',color:'rgba(201,169,110,.5)',marginBottom:6}}>{s.l}</div>
+                        <div style={{fontFamily:"'DM Serif Display',serif",fontSize:22,fontWeight:400,color:'rgba(238,235,229,.92)'}}>{s.v}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{flex:1,minWidth:260,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                  {/* Power / waveform SVG */}
+                  <svg viewBox="0 0 320 200" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:'100%',maxWidth:340,height:200}}>
+                    <defs><filter id="aa-gw" x="-30%" y="-50%" width="160%" height="200%"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+                    <line x1="0" y1="100" x2="320" y2="100" stroke="rgba(255,255,255,.04)" strokeWidth=".5"/>
+                    <line x1="0" y1="50"  x2="320" y2="50"  stroke="rgba(255,255,255,.03)" strokeWidth=".5"/>
+                    <line x1="0" y1="150" x2="320" y2="150" stroke="rgba(255,255,255,.03)" strokeWidth=".5"/>
+                    {/* Input — compressed digital signal */}
+                    <polyline points="0,100 20,100 20,62 40,62 40,100 60,100 60,72 80,72 80,100 100,100 100,58 120,58 120,100 140,100 140,68 160,68" stroke="rgba(201,169,110,.18)" strokeWidth="1" fill="none"/>
+                    {/* Output — amplified analogue */}
+                    <path d="M 160 100 C 172 100 178 22 196 22 C 214 22 222 178 240 178 C 258 178 266 36 284 36 C 302 36 308 148 320 100" stroke="rgba(201,169,110,.9)" strokeWidth="1.4" fill="none" filter="url(#aa-gw)"/>
+                    <text x="70"  y="185" fill="rgba(201,169,110,.3)" fontSize="7" fontFamily="monospace" letterSpacing="1" textAnchor="middle">STREAM IN</text>
+                    <text x="248" y="185" fill="rgba(201,169,110,.3)" fontSize="7" fontFamily="monospace" letterSpacing="1" textAnchor="middle">AMP OUT</text>
+                    <line x1="160" y1="10" x2="160" y2="175" stroke="rgba(201,169,110,.12)" strokeWidth=".5" strokeDasharray="3 4"/>
+                    <text x="160" y="8" fill="rgba(201,169,110,.4)" fontSize="6.5" fontFamily="monospace" letterSpacing="1.5" textAnchor="middle">CLASS D</text>
+                    <circle cx="0"   cy="100" r="3" fill="rgba(201,169,110,.3)"/>
+                    <circle cx="320" cy="100" r="3" fill="rgba(201,169,110,.8)" filter="url(#aa-gw)"/>
+                  </svg>
+                </div>
+              </div>
+            </section>
+
+            {/* ── 3. HI-RES DAC ── */}
+            <section style={{borderTop:'0.5px solid rgba(255,255,255,.06)',padding:'100px 52px',background:'#000'}}>
+              <div style={{maxWidth:1100,margin:'0 auto',display:'flex',gap:80,alignItems:'center',flexWrap:'wrap'}}>
+                <div style={{flex:'0 0 44%',minWidth:280}}>
+                  <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.24em',textTransform:'uppercase',color:'rgba(201,169,110,.5)',marginBottom:16}}>Audio Quality</div>
+                  <h2 style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(26px,3.5vw,48px)',fontWeight:400,color:'rgba(238,235,229,.92)',lineHeight:1.1,marginBottom:20}}>Hi-Res <em style={{fontStyle:'italic'}}>DAC.</em></h2>
+                  <p style={{fontFamily:"'DM Mono',monospace",fontSize:11,lineHeight:1.85,color:'rgba(238,235,229,.38)',marginBottom:32}}>A dedicated high-resolution DAC sits at the heart of the Air Amp. Bluetooth APTX-HD carries 24-bit audio wirelessly. Every stream — compressed or lossless — is decoded and amplified with the precision your speakers deserve.</p>
+                  <div style={{display:'flex',gap:1,background:'rgba(255,255,255,.06)'}}>
+                    {[{l:'Bit Depth',v:'24-bit'},{l:'BT Codec',v:'APTX-HD'},{l:'Formats',v:'FLAC · ALAC'}].map(s=>(
+                      <div key={s.l} style={{background:'#000',padding:'20px 22px',flex:1}}>
+                        <div style={{fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.2em',textTransform:'uppercase',color:'rgba(201,169,110,.5)',marginBottom:6}}>{s.l}</div>
+                        <div style={{fontFamily:"'DM Serif Display',serif",fontSize:22,fontWeight:400,color:'rgba(238,235,229,.92)'}}>{s.v}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{flex:1,minWidth:260,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                  <svg viewBox="0 0 320 200" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:'100%',maxWidth:340,height:200}}>
+                    <defs><filter id="aa-gw2" x="-30%" y="-50%" width="160%" height="200%"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+                    <line x1="0" y1="100" x2="320" y2="100" stroke="rgba(255,255,255,.04)" strokeWidth=".5"/>
+                    <line x1="0" y1="50"  x2="320" y2="50"  stroke="rgba(255,255,255,.03)" strokeWidth=".5"/>
+                    <line x1="0" y1="150" x2="320" y2="150" stroke="rgba(255,255,255,.03)" strokeWidth=".5"/>
+                    <polyline points="0,100 20,100 20,55 40,55 40,100 60,100 60,68 80,68 80,100 100,100 100,52 120,52 120,100 140,100 140,72 160,72" stroke="rgba(201,169,110,.18)" strokeWidth="1" fill="none"/>
+                    <path d="M 160 100 C 176 100 184 30 200 30 C 216 30 224 170 240 170 C 256 170 264 42 280 42 C 296 42 304 140 320 100" stroke="rgba(201,169,110,.85)" strokeWidth="1.2" fill="none" filter="url(#aa-gw2)"/>
+                    <text x="70"  y="185" fill="rgba(201,169,110,.3)" fontSize="7" fontFamily="monospace" letterSpacing="1" textAnchor="middle">DIGITAL IN</text>
+                    <text x="240" y="185" fill="rgba(201,169,110,.3)" fontSize="7" fontFamily="monospace" letterSpacing="1" textAnchor="middle">ANALOGUE OUT</text>
+                    <line x1="160" y1="10" x2="160" y2="175" stroke="rgba(201,169,110,.12)" strokeWidth=".5" strokeDasharray="3 4"/>
+                    <text x="160" y="8" fill="rgba(201,169,110,.4)" fontSize="6.5" fontFamily="monospace" letterSpacing="1.5" textAnchor="middle">DAC</text>
+                    <circle cx="0"   cy="100" r="3" fill="rgba(201,169,110,.3)"/>
+                    <circle cx="320" cy="100" r="3" fill="rgba(201,169,110,.7)" filter="url(#aa-gw2)"/>
+                  </svg>
+                </div>
+              </div>
+            </section>
+
+            {/* ── 4. MOBILE APP ── */}
+            <section style={{borderTop:'0.5px solid rgba(255,255,255,.06)',padding:'100px 52px',background:'#000'}}>
+              <div style={{maxWidth:1060,margin:'0 auto',display:'flex',gap:72,alignItems:'center',flexWrap:'wrap'}}>
+                <div style={{flex:1,minWidth:200,display:'flex',justifyContent:'center',alignItems:'center'}}>
+                  <div style={{width:248,background:'#0c0c0c',border:'0.5px solid rgba(255,255,255,.1)',borderRadius:38,padding:'10px 8px',position:'relative',boxShadow:'0 0 0 1px rgba(0,0,0,.8), 0 32px 80px rgba(0,0,0,.6), inset 0 0 0 0.5px rgba(255,255,255,.05)'}}>
+                    <div style={{width:100,height:28,background:'#000',borderRadius:20,margin:'0 auto 8px',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+                      <div style={{width:8,height:8,borderRadius:'50%',background:'#1a1a1a',border:'0.5px solid #222'}}/>
+                      <div style={{width:20,height:6,borderRadius:4,background:'#141414'}}/>
+                    </div>
+                    <div style={{background:'#0a0a0a',borderRadius:28,overflow:'hidden',border:'0.5px solid rgba(255,255,255,.04)'}}>
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 18px 4px',background:'#080808'}}>
+                        <span style={{fontFamily:"'DM Mono',monospace",fontSize:8,color:'rgba(238,235,229,.5)',letterSpacing:'.04em'}}>9:41</span>
+                        <div style={{display:'flex',gap:5,alignItems:'center'}}>
+                          <i className="ti ti-signal-4g" style={{fontSize:10,color:'rgba(238,235,229,.45)'}}/>
+                          <i className="ti ti-wifi"       style={{fontSize:10,color:'rgba(238,235,229,.45)'}}/>
+                          <i className="ti ti-battery-2"  style={{fontSize:10,color:'rgba(238,235,229,.45)'}}/>
+                        </div>
+                      </div>
+                      <div style={{padding:'10px 16px 6px',background:'#080808',borderBottom:'0.5px solid rgba(255,255,255,.05)'}}>
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                          <div>
+                            <div style={{fontFamily:"'DM Mono',monospace",fontSize:6.5,letterSpacing:'.22em',textTransform:'uppercase',color:'rgba(201,169,110,.45)'}}>XSCACE</div>
+                            <div style={{fontFamily:"'DM Serif Display',serif",fontSize:14,fontWeight:400,color:'rgba(238,235,229,.88)'}}>Air Amp</div>
+                          </div>
+                          <div style={{display:'flex',gap:4}}>
+                            <i className="ti ti-cast"      style={{fontSize:14,color:'rgba(201,169,110,.6)'}}/>
+                            <i className="ti ti-settings"  style={{fontSize:14,color:'rgba(238,235,229,.3)'}}/>
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{padding:'14px 16px 10px',background:'linear-gradient(180deg,#0d0d0d 0%,#080808 100%)'}}>
+                        <div style={{width:'100%',aspectRatio:'1/1',background:'#111',borderRadius:8,marginBottom:12,position:'relative',overflow:'hidden',border:'0.5px solid rgba(255,255,255,.05)'}}>
+                          <div style={{position:'absolute',inset:0,background:'linear-gradient(135deg,rgba(201,169,110,.08) 0%,rgba(0,0,0,.4) 100%)'}}/>
+                          <div style={{position:'absolute',bottom:10,left:12}}>
+                            <div style={{fontFamily:"'DM Serif Display',serif",fontSize:13,fontWeight:400,color:'rgba(238,235,229,.85)'}}>Ólafur Arnalds</div>
+                            <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,color:'rgba(238,235,229,.4)',marginTop:2}}>Near Light · re:member</div>
+                          </div>
+                          <div style={{position:'absolute',top:10,right:10}}>
+                            <i className="ti ti-heart" style={{fontSize:14,color:'rgba(201,169,110,.5)'}}/>
+                          </div>
+                        </div>
+                        <div style={{marginBottom:8}}>
+                          <div style={{height:2,background:'rgba(255,255,255,.07)',borderRadius:1,marginBottom:4,position:'relative'}}>
+                            <div style={{height:'100%',width:'38%',background:'rgba(201,169,110,.55)',borderRadius:1}}/>
+                            <div style={{position:'absolute',top:'50%',left:'38%',transform:'translate(-50%,-50%)',width:8,height:8,borderRadius:'50%',background:'#C9A96E',boxShadow:'0 0 6px rgba(201,169,110,.5)'}}/>
+                          </div>
+                          <div style={{display:'flex',justifyContent:'space-between',fontFamily:"'DM Mono',monospace",fontSize:7,color:'rgba(201,169,110,.35)'}}><span>2:14</span><span>5:42</span></div>
+                        </div>
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'4px 8px',marginBottom:10}}>
+                          <i className="ti ti-arrows-shuffle" style={{fontSize:14,color:'rgba(238,235,229,.3)'}}/>
+                          <i className="ti ti-player-skip-back" style={{fontSize:18,color:'rgba(238,235,229,.65)'}}/>
+                          <div style={{width:44,height:44,borderRadius:'50%',background:'rgba(201,169,110,.12)',border:'0.5px solid rgba(201,169,110,.3)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                            <i className="ti ti-player-pause" style={{fontSize:20,color:'#C9A96E'}}/>
+                          </div>
+                          <i className="ti ti-player-skip-forward" style={{fontSize:18,color:'rgba(238,235,229,.65)'}}/>
+                          <i className="ti ti-repeat" style={{fontSize:14,color:'rgba(238,235,229,.3)'}}/>
+                        </div>
+                        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:14}}>
+                          <i className="ti ti-volume" style={{fontSize:12,color:'rgba(238,235,229,.3)'}}/>
+                          <div style={{flex:1,height:2,background:'rgba(255,255,255,.07)',borderRadius:1}}><div style={{height:'100%',width:'68%',background:'rgba(201,169,110,.35)',borderRadius:1}}/></div>
+                          <i className="ti ti-volume-2" style={{fontSize:12,color:'rgba(238,235,229,.3)'}}/>
+                        </div>
+                        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:4}}>
+                          {[
+                            {ico:'ti-cast',         n:'AirPlay',  c:'rgba(201,169,110,.9)',  bg:'rgba(201,169,110,.09)', bc:'rgba(201,169,110,.3)', active:true},
+                            {ico:'ti-bluetooth',    n:'BT',       c:'rgba(74,158,224,.7)',   bg:'transparent',           bc:'rgba(255,255,255,.07)', active:false},
+                            {ico:'ti-brand-spotify',n:'Spotify',  c:'rgba(29,185,84,.7)',    bg:'transparent',           bc:'rgba(255,255,255,.07)', active:false},
+                            {ico:'ti-wifi',         n:'Network',  c:'rgba(238,235,229,.4)',  bg:'transparent',           bc:'rgba(255,255,255,.07)', active:false},
+                          ].map(s=>(
+                            <div key={s.n} style={{background:s.bg,border:`0.5px solid ${s.bc}`,padding:'6px 4px',display:'flex',flexDirection:'column',alignItems:'center',gap:3,borderRadius:6}}>
+                              <i className={`ti ${s.ico}`} style={{fontSize:13,color:s.c}}/>
+                              <span style={{fontFamily:"'DM Mono',monospace",fontSize:6.5,color:s.active?'rgba(238,235,229,.7)':'rgba(238,235,229,.3)',letterSpacing:'.06em'}}>{s.n}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div style={{padding:'8px 16px 12px',background:'#070707',display:'flex',alignItems:'flex-end',gap:3,height:40}}>
+                        {[55,72,88,65,44,80,92,68,50,78].map((h,i)=>(
+                          <div key={i} style={{flex:1,height:`${h}%`,background:`rgba(201,169,110,${0.08+i*0.02})`,borderRadius:1,transition:'height .3s'}}/>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{width:100,height:4,background:'rgba(255,255,255,.12)',borderRadius:4,margin:'10px auto 0'}}/>
+                  </div>
+                </div>
+                <div style={{flex:'0 0 44%',minWidth:280}}>
+                  <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.24em',textTransform:'uppercase',color:'rgba(201,169,110,.5)',marginBottom:16}}>XSCACE App</div>
+                  <h2 style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(26px,3.5vw,48px)',fontWeight:400,color:'rgba(238,235,229,.92)',lineHeight:1.1,marginBottom:20}}>Control from<br/><em style={{fontStyle:'italic'}}>anywhere.</em></h2>
+                  <p style={{fontFamily:"'DM Mono',monospace",fontSize:11,lineHeight:1.85,color:'rgba(238,235,229,.38)',marginBottom:28}}>The XSCACE app gives you complete control over every Air Amp in your system. Switch sources, adjust volume, tweak EQ, and group rooms — all from your phone without being near the hardware.</p>
+                  <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:28}}>
+                    <a href="/software/xscace-controller" style={{display:'inline-flex',alignItems:'center',gap:8,fontFamily:"'DM Mono',monospace",fontSize:8.5,letterSpacing:'.14em',textTransform:'uppercase',color:'#C9A96E',border:'0.5px solid rgba(201,169,110,.3)',padding:'9px 18px',textDecoration:'none',transition:'border-color .2s'}}
+                      onMouseEnter={e=>(e.currentTarget.style.borderColor='rgba(201,169,110,.65)')}
+                      onMouseLeave={e=>(e.currentTarget.style.borderColor='rgba(201,169,110,.3)')}>
+                      <i className="ti ti-device-mobile" style={{fontSize:13}}/>
+                      XSCACE App →
+                    </a>
+                    <a href="/docs/air-amp-api-control.pdf" download style={{display:'inline-flex',alignItems:'center',gap:8,fontFamily:"'DM Mono',monospace",fontSize:8.5,letterSpacing:'.14em',textTransform:'uppercase',color:'rgba(238,235,229,.55)',border:'0.5px solid rgba(255,255,255,.12)',padding:'9px 18px',textDecoration:'none',transition:'border-color .2s,color .2s'}}
+                      onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.3)';e.currentTarget.style.color='rgba(238,235,229,.8)'}}
+                      onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.12)';e.currentTarget.style.color='rgba(238,235,229,.55)'}}>
+                      <i className="ti ti-file-download" style={{fontSize:13}}/>
+                      API Control Doc
+                    </a>
+                  </div>
+                  <div style={{display:'flex',flexDirection:'column',gap:0}}>
+                    {[
+                      {ico:'ti-adjustments-horizontal', t:'Parametric EQ',      x:'Tune the output to your speakers and room, from your phone.'},
+                      {ico:'ti-layout-grid',            t:'Multi-Room Grouping',x:'Group multiple Air Amps and play the same source across zones.'},
+                      {ico:'ti-switch-2',               t:'Source Switching',   x:'Switch between AirPlay, Bluetooth, Spotify, SPDIF, and RCA in one tap.'},
+                      {ico:'ti-network',                t:'Home Automation',    x:'Works with any home automation software via Open API over IP.'},
+                    ].map(row=>(
+                      <div key={row.t} style={{display:'flex',alignItems:'flex-start',gap:14,padding:'12px 0',borderBottom:'0.5px solid rgba(255,255,255,.06)'}}>
+                        <i className={`ti ${row.ico}`} style={{fontSize:18,color:'rgba(201,169,110,.6)',flexShrink:0,marginTop:1}}/>
+                        <div>
+                          <div style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:'rgba(238,235,229,.55)',letterSpacing:'.04em'}}>{row.t}</div>
+                          <div style={{fontFamily:"'DM Mono',monospace",fontSize:9.5,color:'rgba(238,235,229,.35)',lineHeight:1.55,marginTop:2}}>{row.x}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ── 5. I/O DIAGRAM ── */}
+            <section style={{borderTop:'0.5px solid rgba(255,255,255,.06)',padding:'100px 52px',background:'#000'}}>
+              <div style={{maxWidth:1040,margin:'0 auto'}}>
+                <div style={{fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:'.24em',textTransform:'uppercase',color:'rgba(201,169,110,.5)',marginBottom:12}}>Connectivity</div>
+                <h2 style={{fontFamily:"'DM Serif Display',serif",fontSize:'clamp(26px,3.5vw,48px)',fontWeight:400,color:'rgba(238,235,229,.92)',lineHeight:1.05,marginBottom:48}}>Simple <em style={{fontStyle:'italic'}}>I/O.</em><br/>Total flexibility.</h2>
+                {glImgs[1] && (
+                  <div style={{width:'100%',marginBottom:1,overflow:'hidden',borderTop:'0.5px solid rgba(255,255,255,.06)'}}>
+                    <img src={glImgs[1]} alt="Air Amp I/O" style={{width:'100%',maxHeight:320,objectFit:'cover',display:'block',filter:'brightness(.85)'}}/>
+                  </div>
+                )}
+                <div style={{display:'flex',gap:1,background:'rgba(255,255,255,.06)'}}>
+                  {/* Inputs */}
+                  <div style={{background:'#000',padding:'32px 28px',flex:1,display:'flex',flexDirection:'column',gap:12}}>
+                    <div style={{fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.22em',textTransform:'uppercase',color:'rgba(201,169,110,.5)',marginBottom:4,display:'flex',alignItems:'center',gap:8}}>
+                      Inputs<span style={{flex:1,height:1,background:'rgba(255,255,255,.06)',display:'inline-block'}}/>
+                    </div>
+                    {[
+                      {ico:'ti-plug',           n:'RCA Stereo',            x:'Analogue input — turntable, CD player, line-level source'},
+                      {ico:'ti-device-tv',      n:'HDMI eARC',             x:'TV audio extraction via HDMI eARC — one cable from your TV'},
+                      {ico:'ti-topology-star',  n:'SPDIF Optical',         x:'Digital optical input — soundbars, TVs, legacy sources'},
+                      {ico:'ti-usb',            n:'USB',                   x:'USB audio input — computer playback, direct digital'},
+                      {ico:'ti-cast',           n:'AirPlay 2',             x:'Apple device streaming · multi-room'},
+                      {ico:'ti-bluetooth',      n:'Bluetooth 5.0 APTX-HD', x:'24-bit near-lossless wireless'},
+                      {ico:'ti-brand-spotify',  n:'Spotify Connect',       x:'Direct streaming, no phone relay'},
+                      {ico:'ti-wifi',           n:'DLNA · UPnP',           x:'Network media library — FLAC, ALAC'},
+                      {ico:'ti-network',        n:'Ethernet (RJ45)',        x:'Wired network for stable, low-latency streaming'},
+                    ].map(p=>(
+                      <div key={p.n} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px',border:'0.5px solid rgba(201,169,110,.08)',background:'#060606'}}>
+                        <i className={`ti ${p.ico}`} style={{fontSize:20,color:'rgba(201,169,110,.55)',flexShrink:0}}/>
+                        <div>
+                          <div style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:'rgba(238,235,229,.55)',letterSpacing:'.04em'}}>{p.n}</div>
+                          <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:'rgba(238,235,229,.35)',lineHeight:1.45,marginTop:2}}>{p.x}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Centre — IC chip SVG */}
+                  <div style={{background:'#000',padding:'24px 16px',flex:'0 0 160px',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:10}}>
+                    <svg viewBox="0 0 120 120" width="120" height="120" fill="none" xmlns="http://www.w3.org/2000/svg" style={{overflow:'visible'}}>
+                      <defs>
+                        <filter id="aa-ic-glow" x="-40%" y="-40%" width="180%" height="180%">
+                          <feGaussianBlur stdDeviation="1.5" result="b"/>
+                          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                        </filter>
+                      </defs>
+                      <rect x="28" y="28" width="64" height="64" rx="2" fill="rgba(201,169,110,0.04)" stroke="rgba(201,169,110,0.5)" strokeWidth="0.8"/>
+                      <rect x="36" y="36" width="48" height="48" rx="1" fill="rgba(201,169,110,0.03)" stroke="rgba(201,169,110,0.2)" strokeWidth="0.5"/>
+                      <line x1="60" y1="36" x2="60" y2="84" stroke="rgba(201,169,110,0.07)" strokeWidth="0.5"/>
+                      <line x1="36" y1="60" x2="84" y2="60" stroke="rgba(201,169,110,0.07)" strokeWidth="0.5"/>
+                      <text x="60" y="53" textAnchor="middle" fill="rgba(201,169,110,0.7)" fontSize="5.5" fontFamily="monospace" letterSpacing="1">DAC + AMP</text>
+                      <text x="60" y="63" textAnchor="middle" fill="rgba(201,169,110,0.4)" fontSize="4.5" fontFamily="monospace" letterSpacing="0.5">192kHz / 24-bit</text>
+                      <text x="60" y="72" textAnchor="middle" fill="rgba(238,235,229,0.2)" fontSize="4" fontFamily="monospace" letterSpacing="0.5">2×80W Class D</text>
+                      {[40,50,60,70,80].map((x,i)=>(
+                        <g key={`t${i}`}>
+                          <line x1={x} y1="28" x2={x} y2="18" stroke="rgba(201,169,110,0.35)" strokeWidth="0.8"/>
+                          <rect x={x-2} y="14" width="4" height="4" fill="rgba(201,169,110,0.25)" stroke="rgba(201,169,110,0.4)" strokeWidth="0.5"/>
+                        </g>
+                      ))}
+                      {[40,50,60,70,80].map((x,i)=>(
+                        <g key={`b${i}`}>
+                          <line x1={x} y1="92" x2={x} y2="102" stroke="rgba(201,169,110,0.35)" strokeWidth="0.8"/>
+                          <rect x={x-2} y="102" width="4" height="4" fill="rgba(201,169,110,0.25)" stroke="rgba(201,169,110,0.4)" strokeWidth="0.5"/>
+                        </g>
+                      ))}
+                      {[40,50,60,70,80].map((y,i)=>(
+                        <g key={`l${i}`}>
+                          <line x1="28" y1={y} x2="18" y2={y} stroke="rgba(201,169,110,0.35)" strokeWidth="0.8"/>
+                          <rect x="14" y={y-2} width="4" height="4" fill="rgba(201,169,110,0.25)" stroke="rgba(201,169,110,0.4)" strokeWidth="0.5"/>
+                        </g>
+                      ))}
+                      {[40,50,60,70,80].map((y,i)=>(
+                        <g key={`r${i}`}>
+                          <line x1="92" y1={y} x2="102" y2={y} stroke="rgba(201,169,110,0.35)" strokeWidth="0.8"/>
+                          <rect x="102" y={y-2} width="4" height="4" fill="rgba(201,169,110,0.25)" stroke="rgba(201,169,110,0.4)" strokeWidth="0.5"/>
+                        </g>
+                      ))}
+                      <circle cx="32" cy="32" r="3" fill="rgba(0,0,0,.9)" stroke="rgba(201,169,110,0.3)" strokeWidth="0.5"/>
+                      <rect x="58" y="14" width="4" height="4" fill="rgba(201,169,110,0.6)" stroke="rgba(201,169,110,0.9)" strokeWidth="0.5" filter="url(#aa-ic-glow)"/>
+                      <rect x="58" y="102" width="4" height="4" fill="rgba(201,169,110,0.6)" stroke="rgba(201,169,110,0.9)" strokeWidth="0.5" filter="url(#aa-ic-glow)"/>
+                    </svg>
+                    <div style={{fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.14em',textTransform:'uppercase',color:'rgba(201,169,110,.45)',textAlign:'center',lineHeight:1.6}}>Air Amp<br/>DAC + Class D</div>
+                  </div>
+                  {/* Outputs */}
+                  <div style={{background:'#000',padding:'32px 28px',flex:1,display:'flex',flexDirection:'column',gap:12}}>
+                    <div style={{fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:'.22em',textTransform:'uppercase',color:'rgba(201,169,110,.5)',marginBottom:4,display:'flex',alignItems:'center',gap:8}}>
+                      Outputs<span style={{flex:1,height:1,background:'rgba(255,255,255,.06)',display:'inline-block'}}/>
+                    </div>
+                    {[
+                      {ico:'ti-volume',         n:'Speaker Out (2×80W)',   x:'Drive passive XSCACE speakers directly — no external amp needed'},
+                      {ico:'ti-speakerphone',   n:'Subwoofer Out',         x:'Dedicated sub output for XSCACE passive subwoofers'},
+                      {ico:'ti-wifi',           n:'Wi-Fi 2.4GHz + 5GHz',  x:'Dual-band — 5GHz for speed, 2.4GHz for range'},
+                      {ico:'ti-device-mobile',  n:'XSCACE App',            x:'iOS and Android — EQ, volume, source, grouping'},
+                    ].map(p=>(
+                      <div key={p.n} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px',border:'0.5px solid rgba(201,169,110,.08)',background:'#060606'}}>
+                        <i className={`ti ${p.ico}`} style={{fontSize:20,color:'rgba(201,169,110,.55)',flexShrink:0}}/>
+                        <div>
+                          <div style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:'rgba(238,235,229,.55)',letterSpacing:'.04em'}}>{p.n}</div>
+                          <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:'rgba(238,235,229,.35)',lineHeight:1.45,marginTop:2}}>{p.x}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+          </>
+        )
+      })()}
+
       {/* ── RESOURCES & MEDIA ── */}
-      {!isAirMini && (product.productVideos && product.productVideos.length > 0 && !isAmp) ? (
+      {!isAirMini && !isAirAmp && (product.productVideos && product.productVideos.length > 0 && !isAmp) ? (
         <VideoGallery
           images={[]}
           videos={product.productVideos || []}
@@ -3896,6 +4310,71 @@ export default function ProductDetail({ product }: { product: Product }) {
           )
         })}
 
+        {/* ── SIGNAL CHAIN for Air Amp ── */}
+        {isAirAmp && (
+          <div style={{padding:'56px 0 0'}}>
+            <style>{`@keyframes aa-signal { to { stroke-dashoffset: -48; } }`}</style>
+            <div style={{maxWidth:900, margin:'0 auto', padding:'0 60px'}}>
+              <h3 style={{fontFamily:"'DM Serif Display',serif", fontWeight:400, fontSize:'clamp(22px,2.5vw,36px)', color:'rgba(238,235,229,0.9)', lineHeight:1.06, marginBottom:10}}>
+                The signal <em style={{fontStyle:'italic'}}>chain.</em>
+              </h3>
+              <p style={{fontFamily:"'DM Mono',monospace", fontSize:12, lineHeight:1.75, color:'rgba(238,235,229,0.38)', maxWidth:520, marginBottom:48}}>
+                Air Amp streams wirelessly and drives your passive XSCACE speakers directly. No Xylem amplifier required — the amp is built in.
+              </p>
+              <div style={{display:'flex', alignItems:'center', gap:0, overflowX:'auto', paddingBottom:8}}>
+                {/* Air Amp node */}
+                <div style={{display:'flex', flexDirection:'column', alignItems:'center', flexShrink:0}}>
+                  <div style={{fontFamily:"'DM Mono',monospace", fontSize:7, letterSpacing:'.18em', textTransform:'uppercase', color:'rgba(201,169,110,.5)', marginBottom:12}}>Source + DAC + Amp</div>
+                  <div style={{width:140, height:96, background:'#060606', border:'0.5px solid rgba(201,169,110,.45)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, position:'relative'}}>
+                    <div style={{display:'flex', gap:10, alignItems:'center'}}>
+                      <i className="ti ti-broadcast" style={{fontSize:22, color:'rgba(201,169,110,.7)'}}/>
+                      <i className="ti ti-bolt" style={{fontSize:22, color:'rgba(201,169,110,.9)'}}/>
+                    </div>
+                    <div style={{fontFamily:"'DM Serif Display',serif", fontSize:13, color:'rgba(238,235,229,.85)'}}>Air Amp</div>
+                    <div style={{position:'absolute', top:6, right:6, width:5, height:5, borderRadius:'50%', background:'rgba(201,169,110,.9)', boxShadow:'0 0 6px rgba(201,169,110,.6)'}}/>
+                  </div>
+                  <div style={{fontFamily:"'DM Mono',monospace", fontSize:8, color:'rgba(201,169,110,.45)', marginTop:10}}>2×80W · 192kHz</div>
+                </div>
+                {/* Connector — direct to speakers */}
+                <div style={{flex:'0 0 96px', position:'relative', height:2, margin:'0 0 24px'}}>
+                  <svg width="96" height="16" viewBox="0 0 96 16" fill="none" style={{position:'absolute', top:'50%', left:0, transform:'translateY(-50%)'}}>
+                    <line x1="0" y1="8" x2="88" y2="8" stroke="rgba(201,169,110,.15)" strokeWidth="1"/>
+                    <line x1="0" y1="8" x2="88" y2="8" stroke="rgba(201,169,110,.7)" strokeWidth="1" strokeDasharray="12 12" style={{animation:'aa-signal .6s linear infinite'}}/>
+                    <polygon points="88,4 96,8 88,12" fill="rgba(201,169,110,.6)"/>
+                  </svg>
+                  <div style={{position:'absolute', top:'calc(50% + 14px)', left:'50%', transform:'translateX(-50%)', fontFamily:"'DM Mono',monospace", fontSize:7, letterSpacing:'.1em', color:'rgba(255,255,255,.2)', whiteSpace:'nowrap'}}>speaker cable</div>
+                </div>
+                {/* Speakers node */}
+                <div style={{display:'flex', flexDirection:'column', alignItems:'center', flexShrink:0}}>
+                  <div style={{fontFamily:"'DM Mono',monospace", fontSize:7, letterSpacing:'.18em', textTransform:'uppercase', color:'rgba(201,169,110,.5)', marginBottom:12}}>Output</div>
+                  <div style={{width:120, height:96, background:'#060606', border:'0.5px solid rgba(201,169,110,.18)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6}}>
+                    <i className="ti ti-speakerphone" style={{fontSize:28, color:'rgba(201,169,110,.45)'}}/>
+                    <div style={{fontFamily:"'DM Serif Display',serif", fontSize:13, color:'rgba(238,235,229,.6)'}}>Speakers</div>
+                  </div>
+                  <div style={{fontFamily:"'DM Mono',monospace", fontSize:8, color:'rgba(201,169,110,.45)', marginTop:10}}>XSCACE passive</div>
+                </div>
+                {/* Sub connector */}
+                <div style={{flex:'0 0 72px', position:'relative', height:2, margin:'0 0 24px'}}>
+                  <svg width="72" height="16" viewBox="0 0 72 16" fill="none" style={{position:'absolute', top:'50%', left:0, transform:'translateY(-50%)'}}>
+                    <line x1="0" y1="8" x2="64" y2="8" stroke="rgba(201,169,110,.1)" strokeWidth="1" strokeDasharray="4 4"/>
+                    <polygon points="64,4 72,8 64,12" fill="rgba(201,169,110,.3)"/>
+                  </svg>
+                  <div style={{position:'absolute', top:'calc(50% + 14px)', left:'50%', transform:'translateX(-50%)', fontFamily:"'DM Mono',monospace", fontSize:7, letterSpacing:'.1em', color:'rgba(255,255,255,.15)', whiteSpace:'nowrap'}}>sub out (opt.)</div>
+                </div>
+                {/* Subwoofer node */}
+                <div style={{display:'flex', flexDirection:'column', alignItems:'center', flexShrink:0}}>
+                  <div style={{fontFamily:"'DM Mono',monospace", fontSize:7, letterSpacing:'.18em', textTransform:'uppercase', color:'rgba(201,169,110,.35)', marginBottom:12}}>Optional</div>
+                  <div style={{width:100, height:96, background:'#050505', border:'0.5px solid rgba(201,169,110,.1)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6}}>
+                    <i className="ti ti-wave-sine" style={{fontSize:24, color:'rgba(201,169,110,.3)'}}/>
+                    <div style={{fontFamily:"'DM Serif Display',serif", fontSize:12, color:'rgba(238,235,229,.4)'}}>Sub</div>
+                  </div>
+                  <div style={{fontFamily:"'DM Mono',monospace", fontSize:8, color:'rgba(201,169,110,.3)', marginTop:10}}>passive subwoofer</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── SIGNAL CHAIN for Air Mini ── */}
         {isAirMini && (
           <div style={{padding:'56px 0 0'}}>
@@ -4312,7 +4791,7 @@ export default function ProductDetail({ product }: { product: Product }) {
       )}
 
       {/* ── ACCESSORIES ── */}
-      {!isAirMini && (product.accessories?.length > 0 || product.inWallVariant) && (
+      {!isAirMini && !isAirAmp && (product.accessories?.length > 0 || product.inWallVariant) && (
         <AccessoriesSection
           accessories={product.accessories || []}
           productName={product.productName}
