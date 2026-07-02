@@ -3469,6 +3469,100 @@ export default function ProductDetail({ product }: { product: Product }) {
           )
         })}
 
+        {/* ── SIGNAL CHAIN for Acacia Passive ── */}
+        {(product._id === 'prod-acacia6-std' || product._id === 'prod-acacia10-std') && (() => {
+          const is6 = product._id === 'prod-acacia6-std'
+          const subName = is6 ? 'Acacia 6' : 'Acacia 10'
+          const satName = is6 ? 'Bonsai' : 'Cane'
+          const satCat = 'slim-array-series'
+          const satSlug = is6 ? 'bonsai-mini-slim-array-speaker' : 'cane-slim-array-speaker'
+          const satDesc = 'Slim Array Speaker'
+          return (
+            <div style={{padding:'56px 0 0'}}>
+              <style>{`@keyframes sc-signal { to { stroke-dashoffset: -40; } }`}</style>
+              <div style={{maxWidth:900, margin:'0 auto', padding:'0 60px'}}>
+                <h3 style={{fontFamily:"'DM Serif Display',serif", fontWeight:400, fontSize:'clamp(22px,2.5vw,36px)', color:'rgba(238,235,229,0.9)', lineHeight:1.06, marginBottom:10}}>
+                  The signal <em style={{fontStyle:'italic'}}>chain.</em>
+                </h3>
+                <p style={{fontFamily:"'DM Mono',monospace", fontSize:12, lineHeight:1.75, color:'rgba(238,235,229,0.38)', maxWidth:520, marginBottom:48}}>
+                  The {subName} Passive pairs natively with the Xylem 3 — a 3-channel DSP amplifier that drives the subwoofer and a pair of {satName} slim-array speakers from a single chassis.
+                </p>
+                <svg viewBox="0 0 760 345" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:'100%', display:'block'}}>
+                  <defs>
+                    <filter id="sc-glow" x="-30%" y="-30%" width="160%" height="160%">
+                      <feGaussianBlur stdDeviation="2" result="blur"/>
+                      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                    </filter>
+                  </defs>
+                  {/* ── Xylem 3 box ── */}
+                  <rect x="10" y="90" width="158" height="130" rx="1.5" stroke="rgba(201,169,110,0.3)" strokeWidth="0.5" fill="rgba(201,169,110,0.025)"/>
+                  <line x1="10" y1="90" x2="72" y2="90" stroke="rgba(201,169,110,0.65)" strokeWidth="1.5"/>
+                  <text x="89" y="117" textAnchor="middle" fill="rgba(201,169,110,0.75)" fontSize="7.5" fontFamily="monospace" letterSpacing="2">XYLEM 3</text>
+                  <text x="89" y="133" textAnchor="middle" fill="rgba(238,235,229,0.38)" fontSize="7" fontFamily="monospace">3-Channel DSP Amp</text>
+                  <text x="89" y="147" textAnchor="middle" fill="rgba(238,235,229,0.22)" fontSize="6.5" fontFamily="monospace">400W · Class D</text>
+                  <line x1="24" y1="159" x2="154" y2="159" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5"/>
+                  <text x="24" y="175" fill="rgba(201,169,110,0.45)" fontSize="6.5" fontFamily="monospace" letterSpacing="1">CH 1  L</text>
+                  <text x="24" y="190" fill="rgba(201,169,110,0.45)" fontSize="6.5" fontFamily="monospace" letterSpacing="1">CH 2  R</text>
+                  <text x="24" y="205" fill="rgba(201,169,110,0.28)" fontSize="6.5" fontFamily="monospace" letterSpacing="1">SUB OUT</text>
+                  {/* Output ports */}
+                  <circle cx="168" cy="172" r="3" fill="rgba(201,169,110,0.65)" filter="url(#sc-glow)"/>
+                  <circle cx="168" cy="188" r="3" fill="rgba(201,169,110,0.65)" filter="url(#sc-glow)"/>
+                  <circle cx="168" cy="204" r="3.5" fill="rgba(201,169,110,0.4)" filter="url(#sc-glow)"/>
+                  {/* ── Base paths (static, very faint) ── */}
+                  <path d="M 168 172 C 340 172 340 68 570 68"  stroke="rgba(201,169,110,0.05)" strokeWidth="1.5"/>
+                  <path d="M 168 188 C 340 188 340 188 570 188" stroke="rgba(201,169,110,0.05)" strokeWidth="1.5"/>
+                  <path d="M 168 204 C 340 204 340 293 570 293" stroke="rgba(201,169,110,0.04)" strokeWidth="2"/>
+                  {/* ── Animated signal paths ── */}
+                  <path d="M 168 172 C 340 172 340 68 570 68"  stroke="rgba(201,169,110,0.8)"  strokeWidth="0.85" style={{strokeDasharray:'6 14', animation:'sc-signal 1.8s linear infinite'}} filter="url(#sc-glow)"/>
+                  <path d="M 168 188 C 340 188 340 188 570 188" stroke="rgba(201,169,110,0.8)"  strokeWidth="0.85" style={{strokeDasharray:'6 14', animation:'sc-signal 1.8s -0.6s linear infinite'}} filter="url(#sc-glow)"/>
+                  <path d="M 168 204 C 340 204 340 293 570 293" stroke="rgba(201,169,110,0.6)"  strokeWidth="1.3"  style={{strokeDasharray:'9 9',  animation:'sc-signal 1.3s -0.3s linear infinite'}} filter="url(#sc-glow)"/>
+                  {/* Endpoint dots */}
+                  <circle cx="570" cy="68"  r="3"   fill="rgba(201,169,110,0.55)" filter="url(#sc-glow)"/>
+                  <circle cx="570" cy="188" r="3"   fill="rgba(201,169,110,0.55)" filter="url(#sc-glow)"/>
+                  <circle cx="570" cy="293" r="4"   fill="rgba(201,169,110,0.45)" filter="url(#sc-glow)"/>
+                  {/* ── L Satellite box ── */}
+                  <rect x="574" y="18" width="176" height="100" rx="1.5" stroke="rgba(201,169,110,0.18)" strokeWidth="0.5" fill="rgba(201,169,110,0.015)"/>
+                  <text x="590" y="45"  fill="rgba(201,169,110,0.5)"  fontSize="6.5" fontFamily="monospace" letterSpacing="2">L CHANNEL</text>
+                  <text x="590" y="65"  fill="rgba(238,235,229,0.85)" fontSize="11"  fontFamily="Georgia,serif">{satName}</text>
+                  <text x="590" y="81"  fill="rgba(238,235,229,0.28)" fontSize="7"   fontFamily="monospace">{satDesc}</text>
+                  <text x="590" y="99"  fill="rgba(201,169,110,0.35)" fontSize="6.5" fontFamily="monospace" letterSpacing="1">→ VIEW PRODUCT</text>
+                  {/* ── R Satellite box ── */}
+                  <rect x="574" y="138" width="176" height="100" rx="1.5" stroke="rgba(201,169,110,0.18)" strokeWidth="0.5" fill="rgba(201,169,110,0.015)"/>
+                  <text x="590" y="165" fill="rgba(201,169,110,0.5)"  fontSize="6.5" fontFamily="monospace" letterSpacing="2">R CHANNEL</text>
+                  <text x="590" y="185" fill="rgba(238,235,229,0.85)" fontSize="11"  fontFamily="Georgia,serif">{satName}</text>
+                  <text x="590" y="201" fill="rgba(238,235,229,0.28)" fontSize="7"   fontFamily="monospace">{satDesc}</text>
+                  <text x="590" y="219" fill="rgba(201,169,110,0.35)" fontSize="6.5" fontFamily="monospace" letterSpacing="1">→ VIEW PRODUCT</text>
+                  {/* ── Acacia Passive box (highlighted) ── */}
+                  <rect x="574" y="252" width="176" height="82" rx="1.5" stroke="rgba(201,169,110,0.5)" strokeWidth="0.8" fill="rgba(201,169,110,0.04)"/>
+                  <line x1="574" y1="252" x2="680" y2="252" stroke="rgba(201,169,110,0.75)" strokeWidth="1.5"/>
+                  <text x="590" y="276" fill="rgba(201,169,110,0.65)" fontSize="6.5" fontFamily="monospace" letterSpacing="2">SUB INPUT</text>
+                  <text x="590" y="296" fill="rgba(238,235,229,0.92)" fontSize="11"  fontFamily="Georgia,serif">{subName} Passive</text>
+                  <text x="590" y="312" fill="rgba(238,235,229,0.28)" fontSize="7"   fontFamily="monospace">Passive Subwoofer · 200W</text>
+                  <text x="590" y="326" fill="rgba(201,169,110,0.5)"  fontSize="6.5" fontFamily="monospace" letterSpacing="1">YOU ARE HERE</text>
+                </svg>
+                {/* Product row */}
+                <div style={{display:'flex', gap:'1px', marginTop:'1px'}}>
+                  <a href="/products/amplifier-series/xylem-3-dsp-amplifier" style={{flex:'1 1 33%', background:'#060606', border:'0.5px solid rgba(201,169,110,0.12)', padding:'24px 28px', textDecoration:'none', display:'block'}}>
+                    <div style={{fontFamily:"'DM Mono',monospace", fontSize:7, letterSpacing:'.18em', textTransform:'uppercase', color:'rgba(201,169,110,0.45)', marginBottom:8}}>Amplifier</div>
+                    <div style={{fontFamily:"'DM Serif Display',serif", fontSize:18, color:'rgba(238,235,229,0.88)', marginBottom:4}}>Xylem 3</div>
+                    <div style={{fontFamily:"'DM Mono',monospace", fontSize:9, color:'rgba(238,235,229,0.3)'}}>400W · 3-Ch · DSP · Class D</div>
+                  </a>
+                  <a href={`/products/${satCat}/${satSlug}`} style={{flex:'1 1 33%', background:'#060606', border:'0.5px solid rgba(201,169,110,0.12)', padding:'24px 28px', textDecoration:'none', display:'block'}}>
+                    <div style={{fontFamily:"'DM Mono',monospace", fontSize:7, letterSpacing:'.18em', textTransform:'uppercase', color:'rgba(201,169,110,0.45)', marginBottom:8}}>L + R Satellite</div>
+                    <div style={{fontFamily:"'DM Serif Display',serif", fontSize:18, color:'rgba(238,235,229,0.88)', marginBottom:4}}>{satName} <em style={{fontStyle:'italic'}}>×2</em></div>
+                    <div style={{fontFamily:"'DM Mono',monospace", fontSize:9, color:'rgba(238,235,229,0.3)'}}>Slim Array · 8Ω</div>
+                  </a>
+                  <div style={{flex:'1 1 33%', background:'rgba(201,169,110,0.04)', border:'0.5px solid rgba(201,169,110,0.28)', padding:'24px 28px'}}>
+                    <div style={{fontFamily:"'DM Mono',monospace", fontSize:7, letterSpacing:'.18em', textTransform:'uppercase', color:'rgba(201,169,110,0.6)', marginBottom:8}}>Subwoofer · This Page</div>
+                    <div style={{fontFamily:"'DM Serif Display',serif", fontSize:18, color:'rgba(238,235,229,0.88)', marginBottom:4}}>{subName} Passive</div>
+                    <div style={{fontFamily:"'DM Mono',monospace", fontSize:9, color:'rgba(238,235,229,0.3)'}}>200W · Passive · 4Ω</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        })()}
+
         {/* Build Your System CTA */}
         <div className="pd-setup-cta-row">
           <div className="pd-setup-cta-text">
@@ -3771,116 +3865,6 @@ export default function ProductDetail({ product }: { product: Product }) {
           </a>
         </section>
       )}
-
-      {/* ── ACACIA PASSIVE — SIGNAL CHAIN ── */}
-{(product._id === 'prod-acacia6-std' || product._id === 'prod-acacia10-std') && (() => {
-  const is6 = product._id === 'prod-acacia6-std'
-  const subName = is6 ? 'Acacia 6' : 'Acacia 10'
-  const satName = is6 ? 'Bonsai' : 'Cane'
-  const satCat = 'slim-array-series'
-  const satSlug = is6 ? 'bonsai-mini-slim-array-speaker' : 'cane-slim-array-speaker'
-  const satDesc = 'Slim Array Speaker'
-  return (
-    <section style={{background:'#000', borderTop:'0.5px solid rgba(255,255,255,0.05)', padding:'72px 0'}}>
-      <style>{`
-        @keyframes sc-signal { to { stroke-dashoffset: -40; } }
-        .sc-line     { stroke-dasharray: 6 14; animation: sc-signal 1.8s linear infinite; }
-        .sc-line-b   { stroke-dasharray: 6 14; animation: sc-signal 1.8s linear infinite; animation-delay: -0.6s; }
-        .sc-line-sub { stroke-dasharray: 9 9;  animation: sc-signal 1.3s linear infinite; animation-delay: -0.3s; }
-      `}</style>
-      <div style={{maxWidth:900, margin:'0 auto', padding:'0 60px'}}>
-        <div style={{fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'.22em', textTransform:'uppercase', color:'rgba(201,169,110,0.5)', marginBottom:12}}>System Architecture</div>
-        <h2 style={{fontFamily:"'DM Serif Display',serif", fontWeight:400, fontSize:'clamp(28px,3.5vw,48px)', color:'rgba(238,235,229,0.9)', lineHeight:1.06, marginBottom:12}}>
-          The signal <em style={{fontStyle:'italic'}}>chain.</em>
-        </h2>
-        <p style={{fontFamily:"'DM Mono',monospace", fontSize:12, lineHeight:1.75, color:'rgba(238,235,229,0.38)', maxWidth:520, marginBottom:52}}>
-          The {subName} Passive pairs natively with the Xylem 3 — a 3-channel DSP amplifier that drives the subwoofer and a pair of {satName} slim-array speakers from a single chassis.
-        </p>
-
-        {/* SVG signal chain */}
-        <svg viewBox="0 0 760 310" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:'100%', display:'block'}}>
-          <defs>
-            <filter id="sc-glow" x="-30%" y="-30%" width="160%" height="160%">
-              <feGaussianBlur stdDeviation="2" result="blur"/>
-              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-          </defs>
-
-          {/* ── Xylem 3 box ── */}
-          <rect x="10" y="90" width="158" height="130" rx="1.5" stroke="rgba(201,169,110,0.3)" strokeWidth="0.5" fill="rgba(201,169,110,0.025)"/>
-          <line x1="10" y1="90" x2="72" y2="90" stroke="rgba(201,169,110,0.65)" strokeWidth="1.5"/>
-          <text x="89" y="117" textAnchor="middle" fill="rgba(201,169,110,0.75)" fontSize="7.5" fontFamily="monospace" letterSpacing="2">XYLEM 3</text>
-          <text x="89" y="133" textAnchor="middle" fill="rgba(238,235,229,0.38)" fontSize="7" fontFamily="monospace">3-Channel DSP Amp</text>
-          <text x="89" y="147" textAnchor="middle" fill="rgba(238,235,229,0.22)" fontSize="6.5" fontFamily="monospace">400W · Class D</text>
-          <line x1="24" y1="159" x2="154" y2="159" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5"/>
-          <text x="24" y="175" fill="rgba(201,169,110,0.45)" fontSize="6.5" fontFamily="monospace" letterSpacing="1">CH 1  L</text>
-          <text x="24" y="190" fill="rgba(201,169,110,0.45)" fontSize="6.5" fontFamily="monospace" letterSpacing="1">CH 2  R</text>
-          <text x="24" y="205" fill="rgba(201,169,110,0.28)" fontSize="6.5" fontFamily="monospace" letterSpacing="1">SUB OUT</text>
-          {/* Output ports */}
-          <circle cx="168" cy="172" r="3" fill="rgba(201,169,110,0.65)" filter="url(#sc-glow)"/>
-          <circle cx="168" cy="188" r="3" fill="rgba(201,169,110,0.65)" filter="url(#sc-glow)"/>
-          <circle cx="168" cy="204" r="3.5" fill="rgba(201,169,110,0.4)" filter="url(#sc-glow)"/>
-
-          {/* ── Base paths (static, very faint) ── */}
-          <path d="M 168 172 C 340 172 340 68 570 68"  stroke="rgba(201,169,110,0.05)" strokeWidth="1.5"/>
-          <path d="M 168 188 C 340 188 340 188 570 188" stroke="rgba(201,169,110,0.05)" strokeWidth="1.5"/>
-          <path d="M 168 204 C 340 204 340 262 570 262" stroke="rgba(201,169,110,0.04)" strokeWidth="2"/>
-
-          {/* ── Animated signal paths ── */}
-          <path d="M 168 172 C 340 172 340 68 570 68"  stroke="rgba(201,169,110,0.8)"  strokeWidth="0.85" className="sc-line"   filter="url(#sc-glow)"/>
-          <path d="M 168 188 C 340 188 340 188 570 188" stroke="rgba(201,169,110,0.8)"  strokeWidth="0.85" className="sc-line-b" filter="url(#sc-glow)"/>
-          <path d="M 168 204 C 340 204 340 262 570 262" stroke="rgba(201,169,110,0.6)"  strokeWidth="1.3"  className="sc-line-sub" filter="url(#sc-glow)"/>
-
-          {/* Endpoint dots */}
-          <circle cx="570" cy="68"  r="3"   fill="rgba(201,169,110,0.55)" filter="url(#sc-glow)"/>
-          <circle cx="570" cy="188" r="3"   fill="rgba(201,169,110,0.55)" filter="url(#sc-glow)"/>
-          <circle cx="570" cy="262" r="4"   fill="rgba(201,169,110,0.45)" filter="url(#sc-glow)"/>
-
-          {/* ── L Satellite box ── */}
-          <rect x="574" y="18" width="176" height="100" rx="1.5" stroke="rgba(201,169,110,0.18)" strokeWidth="0.5" fill="rgba(201,169,110,0.015)"/>
-          <text x="590" y="45"  fill="rgba(201,169,110,0.5)"  fontSize="6.5" fontFamily="monospace" letterSpacing="2">L CHANNEL</text>
-          <text x="590" y="65"  fill="rgba(238,235,229,0.85)" fontSize="11"  fontFamily="Georgia,serif">{satName}</text>
-          <text x="590" y="81"  fill="rgba(238,235,229,0.28)" fontSize="7"   fontFamily="monospace">{satDesc}</text>
-          <text x="590" y="99"  fill="rgba(201,169,110,0.35)" fontSize="6.5" fontFamily="monospace" letterSpacing="1">→ VIEW PRODUCT</text>
-
-          {/* ── R Satellite box ── */}
-          <rect x="574" y="138" width="176" height="100" rx="1.5" stroke="rgba(201,169,110,0.18)" strokeWidth="0.5" fill="rgba(201,169,110,0.015)"/>
-          <text x="590" y="165" fill="rgba(201,169,110,0.5)"  fontSize="6.5" fontFamily="monospace" letterSpacing="2">R CHANNEL</text>
-          <text x="590" y="185" fill="rgba(238,235,229,0.85)" fontSize="11"  fontFamily="Georgia,serif">{satName}</text>
-          <text x="590" y="201" fill="rgba(238,235,229,0.28)" fontSize="7"   fontFamily="monospace">{satDesc}</text>
-          <text x="590" y="219" fill="rgba(201,169,110,0.35)" fontSize="6.5" fontFamily="monospace" letterSpacing="1">→ VIEW PRODUCT</text>
-
-          {/* ── Acacia Passive box (highlighted) ── */}
-          <rect x="574" y="218" width="176" height="82" rx="1.5" stroke="rgba(201,169,110,0.5)" strokeWidth="0.8" fill="rgba(201,169,110,0.04)"/>
-          <line x1="574" y1="218" x2="680" y2="218" stroke="rgba(201,169,110,0.75)" strokeWidth="1.5"/>
-          <text x="590" y="242" fill="rgba(201,169,110,0.65)" fontSize="6.5" fontFamily="monospace" letterSpacing="2">SUB INPUT</text>
-          <text x="590" y="262" fill="rgba(238,235,229,0.92)" fontSize="11"  fontFamily="Georgia,serif">{subName} Passive</text>
-          <text x="590" y="278" fill="rgba(238,235,229,0.28)" fontSize="7"   fontFamily="monospace">Passive Subwoofer · 200W</text>
-          <text x="590" y="292" fill="rgba(201,169,110,0.5)"  fontSize="6.5" fontFamily="monospace" letterSpacing="1">YOU ARE HERE</text>
-        </svg>
-
-        {/* Product row */}
-        <div style={{display:'flex', gap:'1px', marginTop:'1px'}}>
-          <a href="/products/amplifier-series/xylem-3-dsp-amplifier" style={{flex:'1 1 33%', background:'#060606', border:'0.5px solid rgba(201,169,110,0.12)', padding:'24px 28px', textDecoration:'none', display:'block'}}>
-            <div style={{fontFamily:"'DM Mono',monospace", fontSize:7, letterSpacing:'.18em', textTransform:'uppercase', color:'rgba(201,169,110,0.45)', marginBottom:8}}>Amplifier</div>
-            <div style={{fontFamily:"'DM Serif Display',serif", fontSize:18, color:'rgba(238,235,229,0.88)', marginBottom:4}}>Xylem 3</div>
-            <div style={{fontFamily:"'DM Mono',monospace", fontSize:9, color:'rgba(238,235,229,0.3)'}}>400W · 3-Ch · DSP · Class D</div>
-          </a>
-          <a href={`/products/${satCat}/${satSlug}`} style={{flex:'1 1 33%', background:'#060606', border:'0.5px solid rgba(201,169,110,0.12)', padding:'24px 28px', textDecoration:'none', display:'block'}}>
-            <div style={{fontFamily:"'DM Mono',monospace", fontSize:7, letterSpacing:'.18em', textTransform:'uppercase', color:'rgba(201,169,110,0.45)', marginBottom:8}}>L + R Satellite</div>
-            <div style={{fontFamily:"'DM Serif Display',serif", fontSize:18, color:'rgba(238,235,229,0.88)', marginBottom:4}}>{satName} <em style={{fontStyle:'italic'}}>×2</em></div>
-            <div style={{fontFamily:"'DM Mono',monospace", fontSize:9, color:'rgba(238,235,229,0.3)'}}>Slim Array · 8Ω</div>
-          </a>
-          <div style={{flex:'1 1 33%', background:'rgba(201,169,110,0.04)', border:'0.5px solid rgba(201,169,110,0.28)', padding:'24px 28px'}}>
-            <div style={{fontFamily:"'DM Mono',monospace", fontSize:7, letterSpacing:'.18em', textTransform:'uppercase', color:'rgba(201,169,110,0.6)', marginBottom:8}}>Subwoofer · This Page</div>
-            <div style={{fontFamily:"'DM Serif Display',serif", fontSize:18, color:'rgba(238,235,229,0.88)', marginBottom:4}}>{subName} Passive</div>
-            <div style={{fontFamily:"'DM Mono',monospace", fontSize:9, color:'rgba(238,235,229,0.3)'}}>200W · Passive · 4Ω</div>
-          </div>
-        </div>
-      </div>
-    </section>
-  )
-})()}
 
       {/* ── GALLERY — last section ── */}
       {galleryAll.length > 0 && (
