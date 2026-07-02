@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Air Mini — Concept · XSCACE</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: #000;
+  color: rgba(238,235,229,0.88);
+  font-family: 'DM Mono', monospace;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+:root {
+  --gold: #C9A96E;
+  --gold-dim: rgba(201,169,110,0.5);
+  --gold-faint: rgba(201,169,110,0.12);
+  --cream: rgba(238,235,229,0.92);
+  --cream-mid: rgba(238,235,229,0.55);
+  --cream-dim: rgba(238,235,229,0.35);
+  --border: rgba(255,255,255,0.06);
+  --border-gold: rgba(201,169,110,0.15);
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 18px 52px;
+  transition: background 0.4s, border-color 0.4s;
+  border-bottom: 0.5px solid transparent;
+}
+nav.stuck {
+  background: rgba(0,0,0,0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-color: var(--border);
+}
+.nav-logo { font-size: 10px; letter-spacing: .26em; text-transform: uppercase; color: var(--gold); text-decoration: none; }
+.nav-links { display: flex; gap: 36px; align-items: center; }
+.nav-link { font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: var(--cream-dim); text-decoration: none; transition: color .2s; }
+.nav-link:hover { color: var(--cream); }
+.nav-cta { padding: 8px 22px; background: var(--gold); font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: #000; text-decoration: none; transition: opacity .2s; }
+.nav-cta:hover { opacity: .85; }
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 120px 48px 100px;
+  text-align: center;
+  position: relative; overflow: hidden;
+}
+.hero-radial {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 65% 55% at 50% 58%, rgba(201,169,110,0.055) 0%, transparent 72%);
+}
+.hero-ey {
+  font-size: 8.5px; letter-spacing: .28em; text-transform: uppercase;
+  color: var(--gold-dim); margin-bottom: 20px;
+  opacity: 0; animation: fadein .9s .2s forwards;
+}
+/* Product image placeholder — square to match 130×130mm form factor */
+.hero-product {
+  width: clamp(160px, 24vw, 300px);
+  height: clamp(160px, 24vw, 300px);
+  margin: 0 auto 48px;
+  position: relative;
+  opacity: 0; animation: rise 1.1s .3s cubic-bezier(.22,1,.36,1) forwards;
+}
+.hero-product-inner {
+  width: 100%; height: 100%;
+  background: #090909;
+  border: 0.5px solid rgba(201,169,110,0.18);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 8px; letter-spacing: .14em; color: rgba(201,169,110,0.25);
+  position: relative;
+}
+.hero-product-inner::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(145deg, rgba(201,169,110,0.06) 0%, transparent 55%);
+}
+/* Subtle glow behind product */
+.hero-product::after {
+  content: '';
+  position: absolute; inset: -40px;
+  background: radial-gradient(ellipse at center, rgba(201,169,110,0.08) 0%, transparent 65%);
+  z-index: -1;
+}
+.hero-name {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(56px, 9vw, 110px);
+  font-weight: 400; line-height: .95;
+  letter-spacing: -.025em; color: var(--cream);
+  margin-bottom: 14px;
+  opacity: 0; animation: fadein .9s .5s forwards;
+}
+.hero-name em { font-style: italic; color: rgba(238,235,229,0.55); }
+.hero-tagline {
+  font-size: 10px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--cream-dim); margin-bottom: 44px;
+  opacity: 0; animation: fadein .9s .65s forwards;
+}
+.hero-pills {
+  display: flex; gap: 7px; flex-wrap: wrap; justify-content: center;
+  margin-bottom: 52px;
+  opacity: 0; animation: fadein .9s .8s forwards;
+}
+.pill {
+  padding: 6px 15px;
+  border: 0.5px solid rgba(255,255,255,0.08);
+  font-size: 8.5px; letter-spacing: .11em; text-transform: uppercase;
+  color: var(--cream-dim);
+}
+.hero-scroll {
+  position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  font-size: 7.5px; letter-spacing: .2em; text-transform: uppercase;
+  color: rgba(201,169,110,0.28);
+  opacity: 0; animation: fadein 1s 1.1s forwards;
+}
+.scroll-bar {
+  width: 0.5px; height: 44px;
+  background: linear-gradient(to bottom, rgba(201,169,110,0.5), transparent);
+  animation: scrollbar 1.9s ease-in-out infinite;
+}
+@keyframes fadein { to { opacity: 1; } }
+@keyframes rise   { to { opacity: 1; transform: translateY(0); } from { opacity: 0; transform: translateY(22px); } }
+@keyframes scrollbar { 0%,100%{opacity:.2;transform:scaleY(.5);transform-origin:top} 50%{opacity:1;transform:scaleY(1)} }
+
+/* ── SPEC STRIP ── */
+.spec-strip {
+  display: flex;
+  border-top: 0.5px solid var(--border); border-bottom: 0.5px solid var(--border);
+  overflow-x: auto; scrollbar-width: none;
+}
+.spec-strip::-webkit-scrollbar { display: none; }
+.spec-item {
+  flex: 1; min-width: 150px;
+  padding: 18px 28px;
+  border-right: 0.5px solid var(--border);
+  display: flex; flex-direction: column; gap: 5px;
+}
+.spec-item:last-child { border-right: none; }
+.spec-lbl { font-size: 7px; letter-spacing: .22em; text-transform: uppercase; color: var(--gold-dim); }
+.spec-val { font-size: 12.5px; letter-spacing: .03em; color: var(--cream); }
+
+/* ── FEATURE THEATER ── */
+/* Outer container is exactly 4 × 100vh so sticky gets 3 screens of "travel" */
+.theater-outer {
+  position: relative;
+  height: 400vh;
+}
+.theater-sticky {
+  position: sticky; top: 0;
+  height: 100vh;
+  display: grid; grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+}
+/* Left pane — product image, stays put */
+.t-img-pane {
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  border-right: 0.5px solid var(--border);
+}
+.t-img-pane::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 70% 60% at 50% 50%, rgba(201,169,110,0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+.t-product {
+  width: clamp(200px, 28vw, 380px);
+  height: clamp(200px, 28vw, 380px);
+  background: #080808;
+  border: 0.5px solid rgba(201,169,110,0.12);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 8px; letter-spacing: .12em; color: rgba(201,169,110,0.2);
+  position: relative; transition: transform 0.6s cubic-bezier(.22,1,.36,1);
+}
+.t-product.slight-left  { transform: rotate(-2deg) translateX(-8px); }
+.t-product.slight-right { transform: rotate( 2deg) translateX( 8px); }
+.t-product::after {
+  content: '';
+  position: absolute; inset: -60px;
+  background: radial-gradient(ellipse at center, rgba(201,169,110,0.07) 0%, transparent 65%);
+  z-index: -1;
+}
+/* Right pane — feature text */
+.t-text-pane {
+  position: relative; overflow: hidden;
+}
+.t-feature {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 64px 64px 64px 56px;
+  opacity: 0; transform: translateY(28px);
+  transition: opacity .65s ease, transform .65s ease;
+  pointer-events: none;
+}
+.t-feature.active {
+  opacity: 1; transform: translateY(0);
+  pointer-events: auto;
+}
+.t-progress {
+  display: flex; gap: 6px; margin-bottom: 36px;
+}
+.t-dot {
+  width: 20px; height: 0.5px;
+  background: rgba(201,169,110,0.2);
+  transition: background .4s, width .4s;
+}
+.t-dot.on { background: var(--gold-dim); width: 32px; }
+.tf-ey {
+  font-size: 8px; letter-spacing: .24em; text-transform: uppercase;
+  color: var(--gold-dim); margin-bottom: 18px;
+}
+.tf-num {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(56px, 7.5vw, 104px);
+  font-weight: 400; line-height: .88;
+  color: var(--cream); letter-spacing: -.03em;
+  margin-bottom: 10px;
+}
+.tf-num em { font-style: italic; font-size: .52em; opacity: .45; vertical-align: middle; }
+.tf-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(26px, 3vw, 44px);
+  font-weight: 400; line-height: 1.1;
+  color: var(--cream); margin-bottom: 18px;
+}
+.tf-title em { font-style: italic; }
+.tf-body {
+  font-size: 11.5px; line-height: 1.85;
+  color: var(--cream-dim); max-width: 380px; margin-bottom: 28px;
+}
+.tf-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.tf-chip {
+  padding: 5px 13px;
+  border: 0.5px solid var(--gold-faint);
+  font-size: 8px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--gold-dim);
+}
+
+/* ── 3D MODEL ── */
+.model-section {
+  min-height: 100vh;
+  background: #000;
+  border-top: 0.5px solid var(--border);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 100px 48px;
+  text-align: center;
+}
+.model-ey { font-size: 8px; letter-spacing: .26em; text-transform: uppercase; color: var(--gold-dim); margin-bottom: 16px; }
+.model-title { font-family:'DM Serif Display',serif; font-weight:400; font-size:clamp(30px,4vw,56px); color:var(--cream); margin-bottom:12px; }
+.model-title em { font-style:italic; }
+.model-sub { font-size:11px; line-height:1.8; color:var(--cream-dim); max-width:440px; margin:0 auto 56px; }
+.model-viewer {
+  width: 100%; max-width: 860px; height: 520px;
+  border: 0.5px solid rgba(201,169,110,0.1);
+  background: #060606;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 18px;
+  position: relative; overflow: hidden;
+}
+.model-viewer::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(201,169,110,0.05) 0%, transparent 70%);
+}
+/* Rotating cube placeholder */
+.cube-wrap {
+  width: 120px; height: 120px;
+  perspective: 400px;
+}
+.cube {
+  width: 100%; height: 100%;
+  transform-style: preserve-3d;
+  animation: spin3d 8s linear infinite;
+  position: relative;
+}
+.cube-face {
+  position: absolute; inset: 0;
+  border: 0.5px solid rgba(201,169,110,0.25);
+  background: rgba(201,169,110,0.02);
+}
+.cube-face.front  { transform: translateZ(60px); }
+.cube-face.back   { transform: translateZ(-60px) rotateY(180deg); }
+.cube-face.left   { transform: translateX(-60px) rotateY(-90deg); }
+.cube-face.right  { transform: translateX(60px) rotateY(90deg); }
+.cube-face.top    { transform: translateY(-60px) rotateX(90deg); }
+.cube-face.bottom { transform: translateY(60px) rotateX(-90deg); }
+@keyframes spin3d { from{transform:rotateX(12deg) rotateY(0)} to{transform:rotateX(12deg) rotateY(360deg)} }
+.model-label { font-size: 9px; letter-spacing:.18em; text-transform:uppercase; color:var(--gold-dim); z-index:1; }
+.model-sub-label { font-size: 8px; color:rgba(201,169,110,.3); z-index:1; }
+.model-hint { font-size: 8px; letter-spacing:.16em; text-transform:uppercase; color:rgba(201,169,110,.28); margin-top: 20px; }
+
+/* ── WIRELESS SECTION ── */
+.wireless-section {
+  border-top: 0.5px solid var(--border);
+  padding: 110px 52px;
+}
+.wireless-inner { max-width:1100px; margin:0 auto; display:flex; gap:80px; align-items:center; }
+.wl-left { flex: 0 0 42%; }
+.wl-ey { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:var(--gold-dim); margin-bottom:16px; }
+.wl-title { font-family:'DM Serif Display',serif; font-size:clamp(28px,3.5vw,50px); font-weight:400; color:var(--cream); line-height:1.1; margin-bottom:20px; }
+.wl-title em { font-style:italic; }
+.wl-body { font-size:11.5px; line-height:1.85; color:var(--cream-dim); margin-bottom:36px; }
+.proto-list { display:flex; flex-direction:column; gap:0; }
+.proto-row {
+  display:flex; align-items:center; gap:14px;
+  padding: 12px 0;
+  border-bottom: 0.5px solid var(--border);
+}
+.proto-row:first-child { border-top: 0.5px solid var(--border); }
+.proto-dot { width:5px; height:5px; border-radius:50%; background:var(--gold-dim); flex-shrink:0; }
+.proto-name { font-size:10px; letter-spacing:.08em; color:rgba(238,235,229,0.72); flex:1; }
+.proto-badge {
+  font-size:7px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--gold-dim); padding:3px 9px;
+  border:0.5px solid var(--gold-faint);
+}
+.wl-right { flex:1; display:flex; align-items:center; justify-content:center; }
+/* Concentric rings animation */
+.orbit {
+  position:relative; width:340px; height:340px;
+}
+.orbit-center {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  width:54px; height:54px;
+  background:#080808; border:0.5px solid rgba(201,169,110,0.3);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  font-size:6.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold-dim);
+  line-height:1.5; z-index:2; text-align:center;
+}
+.orbit-ring {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  border-radius:50%; border:0.5px solid rgba(201,169,110,0.12);
+  animation: ora 3.6s ease-out infinite;
+}
+.orbit-ring:nth-child(2) { width:100px;  height:100px;  animation-delay:0s; }
+.orbit-ring:nth-child(3) { width:168px;  height:168px;  animation-delay:.7s; }
+.orbit-ring:nth-child(4) { width:238px;  height:238px;  animation-delay:1.4s; }
+.orbit-ring:nth-child(5) { width:308px;  height:308px;  animation-delay:2.1s; }
+@keyframes ora {
+  0%   { opacity:0; transform:translate(-50%,-50%) scale(.88); }
+  18%  { opacity:.9; }
+  100% { opacity:0; transform:translate(-50%,-50%) scale(1.04); }
+}
+.orbit-lbl {
+  position:absolute; font-size:8px; letter-spacing:.13em; text-transform:uppercase;
+  color:rgba(238,235,229,0.6); white-space:nowrap;
+  display:flex; align-items:center; gap:8px;
+}
+.orbit-lbl::before { content:''; width:14px; height:0.5px; background:rgba(201,169,110,0.3); }
+.ol-a { top:14%; right:-2%; }
+.ol-b { bottom:24%; right:-6%; }
+.ol-c { bottom:12%; left:2%; }
+.ol-d { top:26%; left:0%; }
+.ol-w { top:2%; left:50%; transform:translateX(-50%); flex-direction:column; font-size:7px; text-align:center; }
+.ol-w::before { display:none; }
+
+/* ── BENTO ── */
+.bento-section {
+  border-top:0.5px solid var(--border);
+  padding:100px 48px;
+}
+.bento-ey { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:var(--gold-dim); text-align:center; margin-bottom:12px; }
+.bento-h { font-family:'DM Serif Display',serif; font-size:clamp(28px,3.5vw,50px); font-weight:400; color:var(--cream); text-align:center; margin-bottom:56px; }
+.bento-h em { font-style:italic; }
+.bento-grid {
+  display:grid;
+  grid-template-columns: repeat(4,1fr);
+  grid-template-rows: auto auto;
+  gap:1px; background:var(--border);
+  max-width:1080px; margin:0 auto;
+}
+.bc { background:#000; padding:36px 30px; }
+.bc.span2 { grid-column:span 2; }
+.bc.span2h { grid-column:span 2; grid-row:span 2; }
+.bc-lbl { font-size:7px; letter-spacing:.2em; text-transform:uppercase; color:var(--gold-dim); margin-bottom:10px; }
+.bc-big { font-family:'DM Serif Display',serif; font-size:clamp(36px,4.5vw,64px); font-weight:400; color:var(--cream); line-height:.92; letter-spacing:-.02em; margin-bottom:8px; }
+.bc-big em { font-style:italic; font-size:.52em; opacity:.4; vertical-align:middle; }
+.bc-desc { font-size:10px; line-height:1.65; color:var(--cream-dim); }
+.bc-list { display:flex; flex-direction:column; gap:5px; margin-top:2px; }
+.bc-li { font-size:9.5px; color:var(--cream-mid); padding:5px 0; border-bottom:0.5px solid var(--border); }
+
+/* ── PAIRS WITH ── */
+.pairs-section { border-top:0.5px solid var(--border); padding:90px 0; }
+.pairs-header { padding:0 52px 44px; }
+.pairs-ey { font-size:8px; letter-spacing:.24em; text-transform:uppercase; color:var(--gold-dim); margin-bottom:12px; }
+.pairs-h { font-family:'DM Serif Display',serif; font-size:clamp(26px,3vw,44px); font-weight:400; color:var(--cream); }
+.pairs-h em { font-style:italic; }
+.pairs-track {
+  display:flex; gap:1px; padding:0 52px;
+  overflow-x:auto; scrollbar-width:none;
+}
+.pairs-track::-webkit-scrollbar { display:none; }
+.pair-card {
+  flex:0 0 240px;
+  background:#060606; border:0.5px solid var(--border);
+  padding:28px 24px; text-decoration:none;
+  transition:border-color .2s;
+}
+.pair-card:hover { border-color:rgba(201,169,110,0.22); }
+.pair-thumb {
+  width:100%; aspect-ratio:1;
+  background:#0a0a0a; margin-bottom:18px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:7.5px; letter-spacing:.1em; color:rgba(201,169,110,0.18);
+}
+.pair-cat { font-size:7px; letter-spacing:.18em; text-transform:uppercase; color:var(--gold-dim); margin-bottom:6px; }
+.pair-name { font-family:'DM Serif Display',serif; font-size:20px; font-weight:400; color:var(--cream); margin-bottom:4px; }
+.pair-spec { font-size:9px; color:var(--cream-dim); }
+
+/* ── CTA ── */
+.cta-section {
+  border-top:0.5px solid var(--border);
+  padding:130px 48px;
+  text-align:center;
+  position:relative; overflow:hidden;
+}
+.cta-section::before {
+  content:'';
+  position:absolute; inset:0;
+  background:radial-gradient(ellipse 70% 55% at 50% 50%, rgba(201,169,110,0.04) 0%, transparent 70%);
+}
+.cta-ey { font-size:8px; letter-spacing:.26em; text-transform:uppercase; color:var(--gold-dim); margin-bottom:16px; }
+.cta-h { font-family:'DM Serif Display',serif; font-size:clamp(38px,6vw,80px); font-weight:400; color:var(--cream); line-height:1.02; letter-spacing:-.025em; margin-bottom:14px; }
+.cta-h em { font-style:italic; }
+.cta-sub { font-size:11px; color:var(--cream-dim); max-width:380px; margin:0 auto 48px; line-height:1.75; }
+.cta-btns { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+.btn-p { padding:13px 34px; background:var(--gold); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:#000; text-decoration:none; transition:opacity .2s; }
+.btn-p:hover { opacity:.85; }
+.btn-s { padding:13px 34px; border:0.5px solid rgba(201,169,110,0.32); font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:var(--gold-dim); text-decoration:none; transition:border-color .2s; }
+.btn-s:hover { border-color:var(--gold); color:var(--gold); }
+
+/* ── REVEAL ── */
+.rev { opacity:0; transform:translateY(22px); transition:opacity .8s ease,transform .8s ease; }
+.rev.d1 { transition-delay:.1s; }
+.rev.d2 { transition-delay:.2s; }
+.rev.d3 { transition-delay:.3s; }
+.rev.vis { opacity:1; transform:translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <a class="nav-logo" href="#">XSCACE</a>
+  <div class="nav-links">
+    <a class="nav-link" href="#">Products</a>
+    <a class="nav-link" href="#">Air Series</a>
+    <a class="nav-cta" href="#">Enquire</a>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════
+     HERO
+══════════════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-radial"></div>
+  <div class="hero-ey">Amplifiers & Streamers · Air Series</div>
+
+  <!-- Product placeholder (swap for real image or model-viewer) -->
+  <div class="hero-product">
+    <div class="hero-product-inner">
+      130 × 130 × 28 mm
+    </div>
+  </div>
+
+  <h1 class="hero-name">Air <em>Mini</em></h1>
+  <div class="hero-tagline">Compact Wireless Streamer</div>
+
+  <div class="hero-pills">
+    <span class="pill">AirPlay 2</span>
+    <span class="pill">BT 5.0 APTX-HD</span>
+    <span class="pill">Spotify Connect</span>
+    <span class="pill">Wi-Fi 2.4 + 5GHz</span>
+    <span class="pill">DLNA · UPnP</span>
+    <span class="pill">Black</span>
+  </div>
+
+  <div class="hero-scroll">
+    <div class="scroll-bar"></div>
+    <span>Scroll</span>
+  </div>
+</section>
+
+<!-- SPEC STRIP -->
+<div class="spec-strip">
+  <div class="spec-item"><div class="spec-lbl">Dimensions</div><div class="spec-val">130 × 130 × 28 mm</div></div>
+  <div class="spec-item"><div class="spec-lbl">Weight</div><div class="spec-val">0.6 kg</div></div>
+  <div class="spec-item"><div class="spec-lbl">Wireless</div><div class="spec-val">Wi-Fi 2.4 + 5 GHz</div></div>
+  <div class="spec-item"><div class="spec-lbl">Streaming</div><div class="spec-val">AirPlay 2 · BT APTX-HD · Spotify</div></div>
+  <div class="spec-item"><div class="spec-lbl">Colour</div><div class="spec-val">Black</div></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     FEATURE THEATER
+     4 features × 100vh = 400vh outer height
+     Sticky pane: product left, text right
+══════════════════════════════════════════ -->
+<div class="theater-outer" id="theater">
+  <div class="theater-sticky">
+
+    <!-- LEFT: product image stays pinned -->
+    <div class="t-img-pane">
+      <div class="t-product" id="t-product">PRODUCT IMAGE / 3D MODEL</div>
+    </div>
+
+    <!-- RIGHT: feature text rotates on scroll -->
+    <div class="t-text-pane" id="t-text-pane">
+
+      <!-- Feature 0: Form factor -->
+      <div class="t-feature active" data-idx="0">
+        <div class="t-progress" id="t-progress"></div>
+        <div class="tf-ey">Form Factor</div>
+        <div class="tf-num">28<em>mm</em></div>
+        <div class="tf-title">Smaller than<br/>a remote.</div>
+        <div class="tf-body">130 × 130 × 28mm. The Air Mini disappears behind panels, under shelving, or inside any XSCACE slim installation. 0.6kg of full wireless capability in a form factor you'll forget is there.</div>
+        <div class="tf-chips">
+          <span class="tf-chip">130 × 130 mm footprint</span>
+          <span class="tf-chip">0.6 kg</span>
+          <span class="tf-chip">Single-box install</span>
+        </div>
+      </div>
+
+      <!-- Feature 1: Wireless ecosystem -->
+      <div class="t-feature" data-idx="1">
+        <div class="t-progress"></div>
+        <div class="tf-ey">Wireless Ecosystem</div>
+        <div class="tf-title">Every source.<br/><em>One box.</em></div>
+        <div class="tf-body">AirPlay 2 from any Apple device. Bluetooth 5.0 APTX-HD for near-lossless wireless audio. Spotify Connect for direct device-free playback. DLNA and UPnP for your network library. All simultaneously available.</div>
+        <div class="tf-chips">
+          <span class="tf-chip">AirPlay 2</span>
+          <span class="tf-chip">BT 5.0 APTX-HD</span>
+          <span class="tf-chip">Spotify Connect</span>
+          <span class="tf-chip">DLNA · UPnP</span>
+        </div>
+      </div>
+
+      <!-- Feature 2: Connectivity -->
+      <div class="t-feature" data-idx="2">
+        <div class="t-progress"></div>
+        <div class="tf-ey">Connectivity</div>
+        <div class="tf-title">Wired in.<br/><em>Wireless out.</em></div>
+        <div class="tf-body">RCA analogue input for legacy sources. Speaker output to directly drive passive speakers in your XSCACE system. Everything else comes in over air — no cables, no rack, no compromise.</div>
+        <div class="tf-chips">
+          <span class="tf-chip">RCA In</span>
+          <span class="tf-chip">Speaker Out (Powered)</span>
+          <span class="tf-chip">Wi-Fi 2.4 + 5 GHz</span>
+        </div>
+      </div>
+
+      <!-- Feature 3: Installation -->
+      <div class="t-feature" data-idx="3">
+        <div class="t-progress"></div>
+        <div class="tf-ey">Installation</div>
+        <div class="tf-num">1<em>cable.</em></div>
+        <div class="tf-title">Designed to<br/><em>vanish.</em></div>
+        <div class="tf-body">Mount the Air Mini inside a wall cavity, behind a panel, or in an equipment closet. One cable to your speaker, power in — nothing visible. The music is everywhere. The device is nowhere.</div>
+        <div class="tf-chips">
+          <span class="tf-chip">Concealed install</span>
+          <span class="tf-chip">Always-on standby</span>
+          <span class="tf-chip">One cable output</span>
+        </div>
+      </div>
+
+    </div><!-- /t-text-pane -->
+  </div><!-- /theater-sticky -->
+</div><!-- /theater-outer -->
+
+<!-- ══════════════════════════════════════════
+     3D MODEL SECTION
+══════════════════════════════════════════ -->
+<section class="model-section" id="model-sec">
+  <div class="model-ey rev">Explore · Air Mini</div>
+  <h2 class="model-title rev d1">Inspect every <em>detail.</em></h2>
+  <p class="model-sub rev d2">Drag to rotate. Pinch to zoom. Every surface, port, and edge of the Air Mini — visible from any angle.</p>
+  <div class="model-viewer rev d3">
+    <!-- Three.js / model-viewer goes here -->
+    <div class="cube-wrap">
+      <div class="cube">
+        <div class="cube-face front"></div>
+        <div class="cube-face back"></div>
+        <div class="cube-face left"></div>
+        <div class="cube-face right"></div>
+        <div class="cube-face top"></div>
+        <div class="cube-face bottom"></div>
+      </div>
+    </div>
+    <div class="model-label">3D Model · air-mini.glb</div>
+    <div class="model-sub-label">Three.js viewer · drag to rotate · pinch to zoom</div>
+  </div>
+  <div class="model-hint rev d3">↑  3D model drops in here</div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     WIRELESS SECTION
+══════════════════════════════════════════ -->
+<section class="wireless-section">
+  <div class="wireless-inner">
+    <div class="wl-left rev">
+      <div class="wl-ey">Wireless</div>
+      <h2 class="wl-title">Everywhere<br/><em>audio.</em></h2>
+      <p class="wl-body">The Air Mini supports every major streaming protocol simultaneously. Your iPhone streams via AirPlay 2. Android or any Bluetooth source via APTX-HD. Spotify plays directly without needing your phone in the room. All protocols live — all the time.</p>
+      <div class="proto-list">
+        <div class="proto-row"><div class="proto-dot"></div><span class="proto-name">AirPlay 2</span><span class="proto-badge">Apple</span></div>
+        <div class="proto-row"><div class="proto-dot"></div><span class="proto-name">Bluetooth 5.0 APTX-HD</span><span class="proto-badge">Near-Lossless</span></div>
+        <div class="proto-row"><div class="proto-dot"></div><span class="proto-name">Spotify Connect</span><span class="proto-badge">Direct</span></div>
+        <div class="proto-row"><div class="proto-dot"></div><span class="proto-name">DLNA · UPnP</span><span class="proto-badge">Network</span></div>
+        <div class="proto-row"><div class="proto-dot"></div><span class="proto-name">Wi-Fi 2.4GHz + 5GHz</span><span class="proto-badge">Dual-Band</span></div>
+      </div>
+    </div>
+    <div class="wl-right rev d1">
+      <div class="orbit">
+        <div class="orbit-ring"></div>
+        <div class="orbit-ring"></div>
+        <div class="orbit-ring"></div>
+        <div class="orbit-ring"></div>
+        <div class="orbit-center">AIR<br/>MINI</div>
+        <div class="orbit-lbl ol-a">AirPlay 2</div>
+        <div class="orbit-lbl ol-b">BT APTX-HD</div>
+        <div class="orbit-lbl ol-c">Spotify</div>
+        <div class="orbit-lbl ol-d">DLNA · UPnP</div>
+        <div class="orbit-lbl ol-w">Wi-Fi<br/>2.4 + 5GHz</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     BENTO SPEC GRID
+══════════════════════════════════════════ -->
+<section class="bento-section">
+  <div class="bento-ey rev">Technical Specifications</div>
+  <h2 class="bento-h rev d1">Everything <em>in numbers.</em></h2>
+  <div class="bento-grid rev d2">
+    <div class="bc span2">
+      <div class="bc-lbl">Footprint</div>
+      <div class="bc-big">130<em>mm sq</em></div>
+      <div class="bc-desc">130 × 130 × 28mm. One of the smallest full-featured streamers available.</div>
+    </div>
+    <div class="bc">
+      <div class="bc-lbl">Weight</div>
+      <div class="bc-big">0.6<em>kg</em></div>
+    </div>
+    <div class="bc">
+      <div class="bc-lbl">Height</div>
+      <div class="bc-big">28<em>mm</em></div>
+    </div>
+
+    <div class="bc span2">
+      <div class="bc-lbl">Wireless Streaming Protocols</div>
+      <div class="bc-list">
+        <div class="bc-li">AirPlay 2</div>
+        <div class="bc-li">Bluetooth 5.0 APTX-HD</div>
+        <div class="bc-li">Spotify Connect</div>
+        <div class="bc-li">DLNA · UPnP</div>
+      </div>
+    </div>
+    <div class="bc span2">
+      <div class="bc-lbl">Connectivity</div>
+      <div class="bc-list">
+        <div class="bc-li">In · RCA · AirPlay 2 · BT · Spotify</div>
+        <div class="bc-li">Out · Speaker (Powered)</div>
+        <div class="bc-li">Network · Wi-Fi 2.4GHz + 5GHz</div>
+        <div class="bc-li">Colour · Black</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     PAIRS WITH
+══════════════════════════════════════════ -->
+<section class="pairs-section">
+  <div class="pairs-header">
+    <div class="pairs-ey rev">System Design</div>
+    <h2 class="pairs-h rev d1">Pairs <em>naturally.</em></h2>
+  </div>
+  <div class="pairs-track">
+    <div class="pair-card"><div class="pair-thumb">image</div><div class="pair-cat">Slim Array</div><div class="pair-name">Bonsai</div><div class="pair-spec">Mini Slim Array Speaker</div></div>
+    <div class="pair-card"><div class="pair-thumb">image</div><div class="pair-cat">Slim Array</div><div class="pair-name">Cane</div><div class="pair-spec">Slim Array Speaker</div></div>
+    <div class="pair-card"><div class="pair-thumb">image</div><div class="pair-cat">Outdoor Series</div><div class="pair-name">Spirea</div><div class="pair-spec">Outdoor Landscape Speaker</div></div>
+    <div class="pair-card"><div class="pair-thumb">image</div><div class="pair-cat">Slim Array</div><div class="pair-name">Camphor 6</div><div class="pair-spec">6.5″ Slim Array Speaker</div></div>
+    <div class="pair-card"><div class="pair-thumb">image</div><div class="pair-cat">Slim Array</div><div class="pair-name">Camphor 8</div><div class="pair-spec">8″ Slim Array Speaker</div></div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="cta-ey rev">Air Mini · XSCACE</div>
+  <h2 class="cta-h rev d1">Hear it in<br/><em>your space.</em></h2>
+  <p class="cta-sub rev d2">Book a demo at an XSCACE showroom, or enquire for a full system proposal including the Air Mini.</p>
+  <div class="cta-btns rev d3">
+    <a class="btn-p" href="#">Enquire Now</a>
+    <a class="btn-s" href="#">Download Spec Sheet</a>
+  </div>
+</section>
+
+<script>
+// ── NAV ──────────────────────────────────────────────────────────────────────
+const nav = document.getElementById('nav')
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('stuck', window.scrollY > 50)
+}, {passive:true})
+
+// ── FEATURE THEATER ───────────────────────────────────────────────────────────
+const FEATURES = 4
+const theater = document.getElementById('theater')
+const features = document.querySelectorAll('.t-feature')
+const tProduct = document.getElementById('t-product')
+
+// Build progress dots inside each feature panel
+features.forEach((f, fi) => {
+  const prog = f.querySelector('.t-progress')
+  if (!prog) return
+  for (let i = 0; i < FEATURES; i++) {
+    const d = document.createElement('div')
+    d.className = 't-dot' + (i === fi ? ' on' : '')
+    prog.appendChild(d)
+  }
+})
+
+function updateTheater() {
+  const rect = theater.getBoundingClientRect()
+  const scrolled = -rect.top   // how far we've scrolled into the theater
+  const sectionH = window.innerHeight
+  const idx = Math.max(0, Math.min(FEATURES - 1, Math.floor(scrolled / sectionH)))
+
+  features.forEach((f, i) => {
+    f.classList.toggle('active', i === idx)
+  })
+
+  // Subtle product image tilt based on which feature is active
+  tProduct.className = 't-product' + (idx % 2 === 0 ? ' slight-left' : ' slight-right')
+}
+
+window.addEventListener('scroll', updateTheater, {passive:true})
+updateTheater()
+
+// ── REVEAL ON SCROLL ──────────────────────────────────────────────────────────
+const revEls = document.querySelectorAll('.rev')
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('vis'); obs.unobserve(e.target) }
+  })
+}, { threshold: 0.12 })
+revEls.forEach(el => obs.observe(el))
+</script>
+</body>
+</html>
